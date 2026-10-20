@@ -22,6 +22,8 @@ data class CompanionSettings(
     val secret: String = "",
     /** Comptes Claude dont on ignore les événements. */
     val mutedAccounts: Set<String> = emptySet(),
+    val localSessions: Boolean = true,
+    val cloudSessions: Boolean = true,
     val instantMode: Boolean = false,
     val enabledEvents: Set<EventType> = EventType.entries.filter { it.defaultEnabled }.toSet(),
     val urgentStyle: AlertStyle = AlertStyle.FULL_SCREEN,
@@ -35,6 +37,11 @@ data class CompanionSettings(
     val quietEnd: Int = 7,
     val quietAllowsUrgent: Boolean = true,
 ) {
+    /** Faut-il ignorer complètement cet événement (compte ou origine filtrés) ? */
+    fun isFiltered(event: ClaudeEvent): Boolean =
+        (event.account != null && event.account in mutedAccounts) ||
+            (if (event.cloud) !cloudSessions else !localSessions)
+
     /** Code à saisir dans `hooks/install.sh` : « sujet.clé ». */
     val pairingCode: String get() = "$topic.$secret"
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -20,12 +21,14 @@ import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TitleCard
+import com.claudecompanion.notify.PhoneLink
 import com.claudecompanion.ui.CompanionViewModel
 
 @Composable
 fun HistoryScreen(viewModel: CompanionViewModel) {
     val history by viewModel.history.collectAsStateWithLifecycle()
     val listState = rememberScalingLazyListState()
+    val context = LocalContext.current
 
     Scaffold(
         timeText = { TimeText() },
@@ -43,7 +46,7 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
             }
             items(history, key = { it.id }) { event ->
                 TitleCard(
-                    onClick = {},
+                    onClick = { event.url?.let { PhoneLink.open(context, it) } },
                     title = { Text(event.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     time = {
                         Text(
@@ -53,8 +56,9 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    event.project?.let { Text("📁 $it", style = MaterialTheme.typography.caption3) }
+                    event.project?.let { Text((if (event.cloud) "☁️ " else "📁 ") + it, style = MaterialTheme.typography.caption3) }
                     event.account?.let { Text("👤 $it", style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    if (event.url != null) Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
                     Text(event.message, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
             }

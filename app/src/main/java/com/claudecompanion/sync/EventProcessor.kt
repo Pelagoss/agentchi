@@ -24,7 +24,7 @@ class EventProcessor(
             // Message non signé avec notre clé (autre personne, ancien appairage…) : ignoré.
             val event = EventParser.toEvent(msg, settings.secret)
             event?.account?.let { store.addKnownAccount(it) }
-            if (event == null || (event.account != null && event.account in settings.mutedAccounts)) {
+            if (event == null || settings.isFiltered(event)) {
                 store.setSince(msg.id)
             } else {
                 handle(event)

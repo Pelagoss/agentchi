@@ -37,8 +37,17 @@ data class ClaudeEvent(
     val session: String? = null,
     /** Compte Claude (e-mail) ou libellé choisi sur l'ordinateur. */
     val account: String? = null,
+    /** Session cloud (claude.ai/code) plutôt que locale. */
+    val cloud: Boolean = false,
+    /** Lien de la session cloud, ouvrable sur le téléphone. */
+    val url: String? = null,
     /** Horodatage Unix en secondes. */
     val time: Long,
 ) {
     val title: String get() = "${type.emoji} ${type.label}"
+
+    /** « ☁️ projet · compte » : d'où vient l'événement. */
+    val origin: String
+        get() = (if (cloud) "☁️ " else "") +
+            listOfNotNull(project, account?.substringBefore('@')).joinToString(" · ").ifEmpty { if (cloud) "Cloud" else "Claude" }
 }

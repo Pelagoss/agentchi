@@ -68,7 +68,7 @@ class EventNotifier(private val context: Context) {
             .setColor(ContextCompat.getColor(context, R.color.claude_orange))
             .setContentTitle(event.title)
             .setContentText(text)
-            .setSubText(listOfNotNull(event.project, event.account?.substringBefore('@')).joinToString(" · ").ifEmpty { null })
+            .setSubText(event.origin)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setWhen(event.time * 1000)
             .setShowWhen(true)
@@ -83,6 +83,10 @@ class EventNotifier(private val context: Context) {
             )
             .setContentIntent(openAppIntent())
             .setGroup(GROUP)
+
+        event.url?.let { url ->
+            builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, url, notificationId))
+        }
 
         if (style == AlertStyle.FULL_SCREEN) {
             builder.setFullScreenIntent(AlertActivity.pendingIntent(context, event, notificationId), true)

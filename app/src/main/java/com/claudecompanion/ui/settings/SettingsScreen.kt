@@ -81,6 +81,16 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                     )
                 }
             }
+            item {
+                Toggle("💻 Sessions locales", "Claude Code sur tes ordinateurs", settings.localSessions) { on ->
+                    update { it.copy(localSessions = on) }
+                }
+            }
+            item {
+                Toggle("☁️ Sessions cloud", "claude.ai/code", settings.cloudSessions) { on ->
+                    update { it.copy(cloudSessions = on) }
+                }
+            }
             accounts.sorted().forEach { account ->
                 item {
                     Toggle("👤 $account", null, account !in settings.mutedAccounts) { on ->

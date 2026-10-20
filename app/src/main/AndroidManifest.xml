@@ -58,6 +58,10 @@
             android:foregroundServiceType="remoteMessaging" />
 
         <receiver
+            android:name=".notify.OpenOnPhoneReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".sync.BootReceiver"
             android:exported="true">
             <intent-filter>

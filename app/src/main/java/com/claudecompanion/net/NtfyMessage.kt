@@ -30,6 +30,10 @@ data class SecurePayload(
     val s: String? = null,
     /** Compte Claude. */
     val a: String? = null,
+    /** Session cloud. */
+    val c: Boolean = false,
+    /** Lien de la session cloud. */
+    val u: String? = null,
 )
 
 object EventParser {
@@ -57,6 +61,9 @@ object EventParser {
             project = payload.p?.takeIf { it.isNotBlank() },
             session = payload.s?.takeIf { it.isNotBlank() },
             account = payload.a?.takeIf { it.isNotBlank() },
+            cloud = payload.c,
+            // Seuls les liens claude.ai sont ouverts sur le téléphone
+            url = payload.u?.takeIf { it.startsWith("https://claude.ai/") },
             time = msg.time,
         )
     }

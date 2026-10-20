@@ -30,6 +30,8 @@ class CompanionStore(context: Context) {
         val secret = stringPreferencesKey("secret")
         val mutedAccounts = stringSetPreferencesKey("muted_accounts")
         val knownAccounts = stringSetPreferencesKey("known_accounts")
+        val localSessions = booleanPreferencesKey("local_sessions")
+        val cloudSessions = booleanPreferencesKey("cloud_sessions")
         val instant = booleanPreferencesKey("instant")
         val events = stringSetPreferencesKey("events")
         val urgentStyle = stringPreferencesKey("urgent_style")
@@ -56,6 +58,8 @@ class CompanionStore(context: Context) {
             token = p[Keys.token] ?: d.token,
             secret = p[Keys.secret] ?: d.secret,
             mutedAccounts = p[Keys.mutedAccounts] ?: d.mutedAccounts,
+            localSessions = p[Keys.localSessions] ?: d.localSessions,
+            cloudSessions = p[Keys.cloudSessions] ?: d.cloudSessions,
             instantMode = p[Keys.instant] ?: d.instantMode,
             enabledEvents = p[Keys.events]?.map { EventType.fromKey(it) }?.toSet() ?: d.enabledEvents,
             urgentStyle = enumOr(p[Keys.urgentStyle], d.urgentStyle),
@@ -78,6 +82,8 @@ class CompanionStore(context: Context) {
             p[Keys.topic] = s.topic
             p[Keys.token] = s.token
             p[Keys.mutedAccounts] = s.mutedAccounts
+            p[Keys.localSessions] = s.localSessions
+            p[Keys.cloudSessions] = s.cloudSessions
             p[Keys.instant] = s.instantMode
             p[Keys.events] = s.enabledEvents.map { it.key }.toSet()
             p[Keys.urgentStyle] = s.urgentStyle.name

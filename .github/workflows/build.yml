@@ -26,7 +26,10 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Vérification des scripts de hook
-        run: shellcheck hooks/*.sh
+        run: |
+          shellcheck hooks/*.sh
+          cmp hooks/claude-companion-notify.sh .claude/hooks/claude-companion-notify.sh \
+            || { echo "Relancer ./hooks/install.sh --project ."; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:

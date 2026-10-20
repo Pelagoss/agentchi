@@ -4,10 +4,14 @@
 # Utilisation en hook Claude Code : l'événement JSON arrive sur stdin.
 # Utilisation manuelle :  claude-companion-notify.sh <type> "<message>"
 #   types : permission | input | done | subagent | session_start | session_end | compact | error | other
+# Option --cloud-only (en premier) : ne fait rien hors d'une session cloud claude.ai/code.
 #
-# Configuration (écrite par install.sh dans ~/.claude/claude-companion.env) :
-#   CLAUDE_COMPANION_TOPIC    sujet ntfy de la montre        ┐ donnés par le code d'appairage
-#   CLAUDE_COMPANION_KEY      clé secrète de la montre       ┘ (Paramètres > Appairer)
+# Configuration (écrite par install.sh dans ~/.claude/claude-companion.env,
+# ou variables d'environnement, par ex. celles d'un environnement cloud) :
+#   CLAUDE_COMPANION_PAIRING  code d'appairage « sujet.clé » (Paramètres > Appairer)
+#     ou bien séparément :
+#   CLAUDE_COMPANION_TOPIC    sujet ntfy de la montre
+#   CLAUDE_COMPANION_KEY      clé secrète de la montre
 #   CLAUDE_COMPANION_SERVER   facultatif, défaut : https://ntfy.sh
 #   CLAUDE_COMPANION_TOKEN    facultatif, jeton d'accès pour un serveur ntfy protégé
 #   CLAUDE_COMPANION_ACCOUNT  facultatif, nom du compte affiché sur la montre
@@ -16,6 +20,11 @@
 # Le contenu est chiffré (AES-256-CBC + HMAC-SHA256) : le serveur ntfy ne voit rien,
 # et la montre ignore tout message qui n'a pas été produit avec sa clé.
 set -uo pipefail
+
+if [ "${1:-}" = "--cloud-only" ]; then
+  shift
+  [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
+fi
 
 CONFIG="${CLAUDE_COMPANION_CONFIG:-$HOME/.claude/claude-companion.env}"
 # shellcheck disable=SC1090
@@ -26,6 +35,11 @@ TOPIC="${CLAUDE_COMPANION_TOPIC:-}"
 TOKEN="${CLAUDE_COMPANION_TOKEN:-}"
 KEY="${CLAUDE_COMPANION_KEY:-}"
 ACCOUNT="${CLAUDE_COMPANION_ACCOUNT:-}"
+PAIRING="${CLAUDE_COMPANION_PAIRING:-}"
+if [ -n "$PAIRING" ] && [ "${PAIRING#*.}" != "$PAIRING" ]; then
+  TOPIC="${PAIRING%%.*}"
+  KEY="${PAIRING#*.}"
+fi
 
 # Ne jamais bloquer ni faire échouer Claude Code.
 [ -n "$TOPIC" ] && [ -n "$KEY" ] || exit 0
@@ -91,13 +105,24 @@ MESSAGE="$(tr '\n\r\t' '   ' <<<"$MESSAGE" | sed 's/  */ /g; s/^ //; s/ $//' | c
 [ -n "$MESSAGE" ] || MESSAGE="Événement Claude ($TYPE)"
 
 # Compte Claude connecté, pour pouvoir filtrer par compte sur la montre
+[ -n "$ACCOUNT" ] || ACCOUNT="${CLAUDE_CODE_USER_EMAIL:-}"
 if [ -z "$ACCOUNT" ]; then
   CLAUDE_JSON="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
   [ -f "$CLAUDE_JSON" ] && ACCOUNT="$(jq -r '.oauthAccount.emailAddress // empty' "$CLAUDE_JSON" 2>/dev/null)"
 fi
 
+# Session cloud (claude.ai/code) : lien pour l'ouvrir depuis le téléphone
+CLOUD=false
+URL=""
+if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+  CLOUD=true
+  REMOTE_ID="${CLAUDE_CODE_REMOTE_SESSION_ID:-}"
+  [ -n "$REMOTE_ID" ] && URL="https://claude.ai/code/session_${REMOTE_ID#cse_}"
+fi
+
 PLAIN="$(jq -cn --arg t "$TYPE" --arg m "$MESSAGE" --arg p "$PROJECT" --arg s "$SESSION" --arg a "$ACCOUNT" \
-  '{t: $t, m: $m, p: $p, s: $s, a: $a} | with_entries(select(.value != ""))')"
+  --arg u "$URL" --argjson c "$CLOUD" \
+  '{t: $t, m: $m, p: $p, s: $s, a: $a, u: $u, c: $c} | with_entries(select(.value != "" and .value != false))')"
 
 # Chiffrement v1 — voir app/.../net/PayloadCrypto.kt
 hex_digest() { openssl dgst -sha256 "$@" | awk '{print $NF}'; }
