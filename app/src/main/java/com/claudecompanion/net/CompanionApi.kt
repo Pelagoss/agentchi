@@ -40,9 +40,14 @@ class CompanionApi(
         .readTimeout(20, TimeUnit.SECONDS)
         .build(),
 ) {
-    suspend fun register(serverUrl: String, name: String): DeviceRegistration =
-        call(serverUrl, null, "POST", "/v1/devices", jsonBody { put("name", name) })
+    suspend fun register(serverUrl: String, name: String, pushToken: String): DeviceRegistration =
+        call(serverUrl, null, "POST", "/v1/devices", jsonBody { put("name", name); put("push_token", pushToken) })
             .let { EventParser.json.decodeFromString(DeviceRegistration.serializer(), it) }
+
+    /** Transmet le jeton FCM de la montre (Firebase le renouvelle de temps en temps). */
+    suspend fun setPushToken(settings: CompanionSettings, token: String) {
+        call(settings, "PUT", "/v1/device/push", jsonBody { put("token", token) })
+    }
 
     suspend fun createCode(settings: CompanionSettings, label: String): PairingCode =
         call(settings, "POST", "/v1/codes", jsonBody { put("label", label) })
@@ -56,7 +61,7 @@ class CompanionApi(
         call(settings, "DELETE", "/v1/codes/$id")
     }
 
-    /** Demande au serveur d'envoyer un événement de test à la montre. */
+    /** Demande au serveur d'envoyer un push de test à la montre. */
     suspend fun test(settings: CompanionSettings) {
         call(settings, "POST", "/v1/test", jsonBody { })
     }

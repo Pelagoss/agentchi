@@ -24,12 +24,9 @@ data class CompanionSettings(
     val deviceToken: String = "",
     /** Ordinateurs (ou comptes) dont on ignore les événements. */
     val mutedAccounts: Set<String> = emptySet(),
-    /** Notifications de l'appli Claude relayées par le téléphone. */
-    val phoneNotifications: Boolean = true,
     /** Événements du hook Claude Code sur un ordinateur (plugin). */
     val localSessions: Boolean = true,
     val cloudSessions: Boolean = true,
-    val instantMode: Boolean = false,
     val enabledEvents: Set<EventType> = EventType.entries.filter { it.defaultEnabled }.toSet(),
     val urgentStyle: AlertStyle = AlertStyle.FULL_SCREEN,
     val urgentVibration: VibrationPattern = VibrationPattern.DOUBLE,
@@ -46,7 +43,6 @@ data class CompanionSettings(
     fun isFiltered(event: ClaudeEvent): Boolean =
         (event.account != null && event.account in mutedAccounts) ||
             when {
-                event.fromPhone -> !phoneNotifications
                 event.cloud -> !cloudSessions
                 else -> !localSessions
             }

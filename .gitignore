@@ -16,3 +16,4 @@ keystore/release.properties
 
 # Serveur : état local
 server/data/
+server/firebase-service-account.json

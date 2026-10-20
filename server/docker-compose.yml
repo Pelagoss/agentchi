@@ -1,5 +1,7 @@
 # Serveur Claude Companion + Caddy (HTTPS automatique avec Let's Encrypt).
-#   CC_DOMAIN=cc.example.fr docker compose up -d
+#   1. Place la clé du compte de service Firebase dans firebase-service-account.json
+#      (lisible par le conteneur : chmod 644).
+#   2. CC_DOMAIN=cc.example.fr docker compose up -d
 # Le nom de domaine doit pointer vers ce serveur, ports 80 et 443 ouverts.
 services:
   companion:
@@ -8,8 +10,10 @@ services:
     environment:
       CC_PUBLIC_URL: https://${CC_DOMAIN:?définis CC_DOMAIN, par ex. cc.example.fr}
       CC_TRUST_PROXY: "true"
+      CC_FCM_CREDENTIALS: /secrets/firebase-service-account.json
     volumes:
       - companion-data:/data
+      - ./firebase-service-account.json:/secrets/firebase-service-account.json:ro
 
   caddy:
     image: caddy:2

@@ -3,7 +3,6 @@ package com.claudecompanion
 import com.claudecompanion.data.CompanionSettings
 import com.claudecompanion.data.EventType
 import com.claudecompanion.net.EventParser
-import com.claudecompanion.net.NtfyMessage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -11,18 +10,27 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EventParserTest {
-    // Lignes réellement produites par le serveur (server/) pour un hook Claude Code
-    private val permissionLine = """{"id":"e1","time":1792500475,"event":"message","topic":"wce8njn2bmz5kpfx","message":"{\"t\":\"permission\",\"m\":\"Claude needs your permission to use Bash\",\"p\":\"mon-projet\",\"s\":\"abcdef12\",\"a\":\"MacBook\"}"}"""
-    private val cloudLine = """{"id":"e2","time":1792500490,"event":"message","topic":"w9fc5939jntnm365","message":"{\"t\":\"done\",\"m\":\"ok\",\"p\":\"mon-depot\",\"s\":\"7652430b\",\"a\":\"Cloud perso\",\"c\":true,\"u\":\"https://claude.ai/code/session_016aBUrCQFd6JdJcmHdCzaBN\"}"}"""
+    // Données de push FCM réellement produites par le serveur (server/) pour un hook Claude Code
+    private val permissionPush = mapOf(
+        "id" to "e1",
+        "time" to "1792500475",
+        "payload" to """{"t":"permission","m":"Claude needs your permission to use Bash","p":"mon-projet","s":"abcdef12","a":"MacBook"}""",
+    )
+    private val cloudPush = mapOf(
+        "id" to "e2",
+        "time" to "1792500490",
+        "payload" to """{"t":"done","m":"ok","p":"mon-depot","s":"7652430b","a":"Cloud perso","c":true,"u":"https://claude.ai/code/session_016aBUrCQFd6JdJcmHdCzaBN"}""",
+    )
 
-    private fun event(line: String) = EventParser.toEvent(EventParser.parseLine(line)!!)!!
+    private fun event(data: Map<String, String>) = EventParser.fromPush(data)!!
 
-    private fun message(payload: String) = NtfyMessage(id = "id1", time = 1_760_000_000, event = "message", message = payload)
+    private fun message(payload: String) = EventParser.toEvent("id1", 1_760_000_000, payload)
 
     @Test
-    fun `lit un evenement du serveur`() {
-        val event = event(permissionLine)
+    fun `lit un push du serveur`() {
+        val event = event(permissionPush)
         assertEquals("e1", event.id)
+        assertEquals(1_792_500_475L, event.time)
         assertEquals(EventType.PERMISSION, event.type)
         assertEquals("mon-projet", event.project)
         assertEquals("abcdef12", event.session)
@@ -33,7 +41,7 @@ class EventParserTest {
 
     @Test
     fun `reconnait une session cloud et son lien`() {
-        val event = event(cloudLine)
+        val event = event(cloudPush)
         assertEquals(EventType.TASK_DONE, event.type)
         assertTrue(event.cloud)
         assertEquals("https://claude.ai/code/session_016aBUrCQFd6JdJcmHdCzaBN", event.url)
@@ -42,13 +50,13 @@ class EventParserTest {
 
     @Test
     fun `ignore un lien qui ne pointe pas vers claude ai`() {
-        assertNull(EventParser.toEvent(message("""{"t":"done","c":true,"u":"https://evil.example/claude.ai/"}"""))!!.url)
+        assertNull(message("""{"t":"done","c":true,"u":"https://evil.example/claude.ai/"}""")!!.url)
     }
 
     @Test
     fun `filtre par ordinateur et par origine`() {
-        val cloud = event(cloudLine)
-        val local = event(permissionLine)
+        val cloud = event(cloudPush)
+        val local = event(permissionPush)
         assertFalse(CompanionSettings().isFiltered(cloud))
         assertTrue(CompanionSettings(cloudSessions = false).isFiltered(cloud))
         assertFalse(CompanionSettings(cloudSessions = false).isFiltered(local))
@@ -58,7 +66,7 @@ class EventParserTest {
 
     @Test
     fun `conserve accents emoji et guillemets`() {
-        val event = EventParser.toEvent(message("""{"t":"done","m":"Accents éàü & emoji ✅ \"guillemets\""}"""))!!
+        val event = message("""{"t":"done","m":"Accents éàü & emoji ✅ \"guillemets\""}""")!!
         assertEquals(EventType.TASK_DONE, event.type)
         assertNull(event.account)
         assertEquals("Accents éàü & emoji ✅ \"guillemets\"", event.message)
@@ -66,24 +74,24 @@ class EventParserTest {
 
     @Test
     fun `type inconnu et message vide`() {
-        val event = EventParser.toEvent(message("""{"t":"nouveau_type","champ_futur":1}"""))!!
+        val event = message("""{"t":"nouveau_type","champ_futur":1}""")!!
         assertEquals(EventType.OTHER, event.type)
         assertEquals(EventType.OTHER.label, event.message)
     }
 
     @Test
     fun `rejette un message illisible`() {
-        assertNull(EventParser.toEvent(message("Claude needs your permission")))
-        assertNull(EventParser.toEvent(message("")))
-        assertNull(EventParser.toEvent(message("""{"m":"sans type"}""")))
+        assertNull(message("Claude needs your permission"))
+        assertNull(message(""))
+        assertNull(message("""{"m":"sans type"}"""))
     }
 
     @Test
-    fun `ignore les evenements keepalive et open`() {
-        assertNull(EventParser.parseLine("""{"id":"x","time":1,"event":"keepalive","topic":"t"}"""))
-        assertNull(EventParser.parseLine("""{"id":"x","time":1,"event":"open","topic":"t"}"""))
-        assertNull(EventParser.parseLine("pas du json"))
-        assertEquals("id9", EventParser.parseLine("""{"id":"id9","time":1,"event":"message","topic":"t","message":"m"}""")?.id)
+    fun `rejette un push incomplet`() {
+        assertNull(EventParser.fromPush(permissionPush - "id"))
+        assertNull(EventParser.fromPush(permissionPush + ("time" to "hier")))
+        assertNull(EventParser.fromPush(permissionPush - "payload"))
+        assertNull(EventParser.fromPush(emptyMap()))
     }
 
     @Test

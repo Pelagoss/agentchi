@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"io"
@@ -9,19 +8,84 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
-	"time"
 )
 
-func newTestServer(t *testing.T, dataFile string) (*httptest.Server, *Store) {
+// fakePusher enregistre les pushs au lieu de les envoyer à Firebase.
+type fakePusher struct {
+	mu     sync.Mutex
+	sent   map[string][]Push // par jeton FCM
+	reject map[string]bool   // jetons refusés (UNREGISTERED)
+}
+
+func (f *fakePusher) Send(_ context.Context, token string, p Push) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.reject[token] {
+		return errUnregistered
+	}
+	if f.sent == nil {
+		f.sent = map[string][]Push{}
+	}
+	f.sent[token] = append(f.sent[token], p)
+	return nil
+}
+
+func (f *fakePusher) payloads(t *testing.T, token string) []Payload {
+	t.Helper()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []Payload
+	for _, p := range f.sent[token] {
+		var pl Payload
+		if err := json.Unmarshal([]byte(p.Payload), &pl); err != nil {
+			t.Fatalf("payload invalide %q", p.Payload)
+		}
+		if p.ID == "" || p.Time == 0 {
+			t.Fatalf("push sans id ni date : %+v", p)
+		}
+		out = append(out, pl)
+	}
+	return out
+}
+
+type testEnv struct {
+	url    string
+	srv    *Server
+	pusher *fakePusher
+}
+
+func newTestEnv(t *testing.T, dataFile string) *testEnv {
 	t.Helper()
 	store, err := OpenStore(dataFile)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts := httptest.NewServer(NewServer(Config{MaxDevices: 10}, store))
+	pusher := &fakePusher{reject: map[string]bool{}}
+	srv := NewServer(Config{MaxDevices: 10}, store, pusher)
+	ts := httptest.NewServer(srv)
 	t.Cleanup(ts.Close)
-	return ts, store
+	return &testEnv{url: ts.URL, srv: srv, pusher: pusher}
+}
+
+// hook envoie un événement comme le ferait Claude Code, puis attend la fin du push.
+func (e *testEnv) hook(t *testing.T, code, body string, headers ...string) *http.Response {
+	t.Helper()
+	req, _ := http.NewRequest("POST", e.url+"/h", strings.NewReader(body))
+	if code != "" {
+		req.Header.Set("Authorization", "Bearer "+code)
+	}
+	for i := 0; i+1 < len(headers); i += 2 {
+		req.Header.Set(headers[i], headers[i+1])
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	e.srv.sending.Wait()
+	return resp
 }
 
 func call(t *testing.T, method, url, token, body string) (*http.Response, string) {
@@ -40,9 +104,9 @@ func call(t *testing.T, method, url, token, body string) (*http.Response, string
 	return resp, string(b)
 }
 
-func register(t *testing.T, base string) (id, token string) {
+func register(t *testing.T, base, pushToken string) (id, token string) {
 	t.Helper()
-	resp, body := call(t, "POST", base+"/v1/devices", "", `{"name":"Galaxy Watch"}`)
+	resp, body := call(t, "POST", base+"/v1/devices", "", `{"name":"Galaxy Watch","push_token":"`+pushToken+`"}`)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("enregistrement : %d %s", resp.StatusCode, body)
 	}
@@ -62,67 +126,29 @@ func newCode(t *testing.T, base, device, label string) codeView {
 	return c
 }
 
-func poll(t *testing.T, base, id, token, since string) []ntfyLine {
-	t.Helper()
-	resp, body := call(t, "GET", base+"/"+id+"/json?poll=1&since="+since, token, "")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("sondage : %d %s", resp.StatusCode, body)
-	}
-	var lines []ntfyLine
-	for _, l := range strings.Split(strings.TrimSpace(body), "\n") {
-		if l == "" {
-			continue
-		}
-		var n ntfyLine
-		if err := json.Unmarshal([]byte(l), &n); err != nil {
-			t.Fatalf("ligne invalide %q", l)
-		}
-		lines = append(lines, n)
-	}
-	return lines
-}
-
-func payloadOf(t *testing.T, l ntfyLine) Payload {
-	t.Helper()
-	var p Payload
-	if err := json.Unmarshal([]byte(l.Message), &p); err != nil {
-		t.Fatalf("message invalide %q", l.Message)
-	}
-	return p
-}
-
 func TestParcoursComplet(t *testing.T) {
-	ts, _ := newTestServer(t, "")
-	id, token := register(t, ts.URL)
-	c := newCode(t, ts.URL, token, "MacBook")
+	e := newTestEnv(t, "")
+	_, token := register(t, e.url, "fcm-A")
+	c := newCode(t, e.url, token, "MacBook")
 	if !strings.Contains(c.Code, "-") || len(normalizeCode(c.Code)) != 12 {
 		t.Fatalf("code inattendu %q", c.Code)
 	}
 
-	// Le code se saisit en minuscules, sans tirets, avec des espaces : peu importe.
+	// Le code se saisit en minuscules, sans tirets, avec des espaces : peu importe. « //h » aussi.
 	sloppy := strings.ToLower(strings.ReplaceAll(c.Code, "-", " "))
-	resp, body := call(t, "POST", ts.URL+"//h", sloppy, `{"hook_event_name":"Notification","notification_type":"permission_prompt","message":"Claude needs your permission to use Bash","cwd":"/home/cyril/mon-projet","session_id":"abcdef1234567890"}`)
+	resp, body := call(t, "POST", e.url+"//h", sloppy, `{"hook_event_name":"Notification","notification_type":"permission_prompt","message":"Claude needs your permission to use Bash","cwd":"/home/cyril/mon-projet","session_id":"abcdef1234567890"}`)
+	e.srv.sending.Wait()
 	if resp.StatusCode != http.StatusNoContent || body != "" {
 		t.Fatalf("hook : %d %q", resp.StatusCode, body)
 	}
-
-	lines := poll(t, ts.URL, id, token, "all")
-	if len(lines) != 1 || lines[0].Event != "message" || lines[0].Topic != id {
-		t.Fatalf("événements : %+v", lines)
-	}
-	p := payloadOf(t, lines[0])
+	got := e.pusher.payloads(t, "fcm-A")
 	want := Payload{Type: "permission", Message: "Claude needs your permission to use Bash", Project: "mon-projet", Session: "abcdef12", Account: "MacBook"}
-	if p != want {
-		t.Fatalf("payload %+v, attendu %+v", p, want)
-	}
-
-	// since = dernier id reçu : plus rien
-	if got := poll(t, ts.URL, id, token, lines[0].ID); len(got) != 0 {
-		t.Fatalf("attendu aucun événement après %s, reçu %+v", lines[0].ID, got)
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("pushs %+v, attendu %+v", got, want)
 	}
 
 	// La montre voit l'utilisation du code
-	_, body = call(t, "GET", ts.URL+"/v1/codes", token, "")
+	_, body = call(t, "GET", e.url+"/v1/codes", token, "")
 	var codes []codeView
 	_ = json.Unmarshal([]byte(body), &codes)
 	if len(codes) != 1 || codes[0].LastUsed == nil || codes[0].LastProject != "mon-projet" || codes[0].Code != "" {
@@ -130,114 +156,97 @@ func TestParcoursComplet(t *testing.T) {
 	}
 
 	// Révocation
-	if resp, _ := call(t, "DELETE", ts.URL+"/v1/codes/"+c.ID, token, ""); resp.StatusCode != http.StatusNoContent {
+	if resp, _ := call(t, "DELETE", e.url+"/v1/codes/"+c.ID, token, ""); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("révocation : %d", resp.StatusCode)
 	}
-	if resp, _ := call(t, "POST", ts.URL+"/h", c.Code, `{"hook_event_name":"Stop"}`); resp.StatusCode != http.StatusUnauthorized {
+	if resp := e.hook(t, c.Code, `{"hook_event_name":"Stop"}`); resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("code révoqué accepté : %d", resp.StatusCode)
+	}
+	if n := len(e.pusher.payloads(t, "fcm-A")); n != 1 {
+		t.Fatalf("%d pushs après révocation", n)
 	}
 }
 
 func TestIsolationEntreMontres(t *testing.T) {
-	ts, _ := newTestServer(t, "")
-	idA, tokA := register(t, ts.URL)
-	idB, tokB := register(t, ts.URL)
-	codeA := newCode(t, ts.URL, tokA, "A")
+	e := newTestEnv(t, "")
+	_, tokA := register(t, e.url, "fcm-A")
+	_, tokB := register(t, e.url, "fcm-B")
+	codeA := newCode(t, e.url, tokA, "A")
 
-	call(t, "POST", ts.URL+"/h", codeA.Code, `{"hook_event_name":"Stop","last_assistant_message":"fini"}`)
+	e.hook(t, codeA.Code, `{"hook_event_name":"Stop","last_assistant_message":"fini"}`)
 
-	if got := poll(t, ts.URL, idB, tokB, "all"); len(got) != 0 {
+	if got := e.pusher.payloads(t, "fcm-B"); len(got) != 0 {
 		t.Fatalf("B reçoit les événements de A : %+v", got)
 	}
-	if resp, _ := call(t, "GET", ts.URL+"/"+idA+"/json?poll=1", tokB, ""); resp.StatusCode != http.StatusForbidden {
-		t.Fatalf("B lit le flux de A : %d", resp.StatusCode)
+	if got := e.pusher.payloads(t, "fcm-A"); len(got) != 1 || got[0].Message != "fini" {
+		t.Fatalf("A : %+v", got)
 	}
-	if resp, _ := call(t, "DELETE", ts.URL+"/v1/codes/"+codeA.ID, tokB, ""); resp.StatusCode != http.StatusNotFound {
+	if resp, _ := call(t, "DELETE", e.url+"/v1/codes/"+codeA.ID, tokB, ""); resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("B révoque le code de A : %d", resp.StatusCode)
 	}
-	if resp, _ := call(t, "GET", ts.URL+"/v1/codes", "ccd_faux", ""); resp.StatusCode != http.StatusUnauthorized {
+	if resp, _ := call(t, "GET", e.url+"/v1/codes", "ccd_faux", ""); resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("jeton invalide accepté : %d", resp.StatusCode)
-	}
-	if got := poll(t, ts.URL, idA, tokA, "all"); len(got) != 1 || payloadOf(t, got[0]).Message != "fini" {
-		t.Fatalf("A : %+v", got)
 	}
 }
 
 func TestHookSansCodeEtSessionCloud(t *testing.T) {
-	ts, _ := newTestServer(t, "")
-	id, token := register(t, ts.URL)
-	c := newCode(t, ts.URL, token, "Cloud perso")
+	e := newTestEnv(t, "")
+	_, token := register(t, e.url, "fcm-A")
+	c := newCode(t, e.url, token, "Cloud perso")
 
 	// Hook versionné dans un dépôt, variable non définie : « Bearer » vide, ignoré sans erreur.
-	if resp, _ := call(t, "POST", ts.URL+"/h", "", `{"hook_event_name":"Stop"}`); resp.StatusCode != http.StatusNoContent {
+	if resp := e.hook(t, "", `{"hook_event_name":"Stop"}`); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("hook sans code : %d", resp.StatusCode)
 	}
-
-	req, _ := http.NewRequest("POST", ts.URL+"/h", strings.NewReader(`{"hook_event_name":"Stop","cwd":"/home/user/mon-depot","last_assistant_message":"PR prête"}`))
-	req.Header.Set("Authorization", "Bearer "+c.Code)
-	req.Header.Set("X-Claude-Remote-Session", "cse_016aBUrCQFd6JdJcmHdCzaBN")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("hook cloud : %v %v", err, resp)
-	}
-	lines := poll(t, ts.URL, id, token, "")
-	p := payloadOf(t, lines[len(lines)-1])
-	if !p.Cloud || p.URL != "https://claude.ai/code/session_016aBUrCQFd6JdJcmHdCzaBN" || p.Project != "mon-depot" {
-		t.Fatalf("payload cloud %+v", p)
+	e.hook(t, c.Code, `{"hook_event_name":"Stop","cwd":"/home/user/mon-depot","last_assistant_message":"PR prête"}`,
+		"X-Claude-Remote-Session", "cse_016aBUrCQFd6JdJcmHdCzaBN")
+	got := e.pusher.payloads(t, "fcm-A")
+	if len(got) != 1 || !got[0].Cloud || got[0].URL != "https://claude.ai/code/session_016aBUrCQFd6JdJcmHdCzaBN" || got[0].Project != "mon-depot" {
+		t.Fatalf("payload cloud %+v", got)
 	}
 }
 
-func TestFluxInstantane(t *testing.T) {
-	ts, _ := newTestServer(t, "")
-	id, token := register(t, ts.URL)
-	c := newCode(t, ts.URL, token, "PC")
-	call(t, "POST", ts.URL+"/h", c.Code, `{"hook_event_name":"Stop","last_assistant_message":"un"}`)
+func TestJetonFCM(t *testing.T) {
+	e := newTestEnv(t, "")
+	_, token := register(t, e.url, "")
+	c := newCode(t, e.url, token, "PC")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, "GET", ts.URL+"/"+id+"/json?since=all", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
+	// Pas encore de jeton FCM : le test le signale à la montre.
+	resp, body := call(t, "POST", e.url+"/v1/test", token, "")
+	if resp.StatusCode != http.StatusBadGateway || !strings.Contains(body, "jeton FCM") {
+		t.Fatalf("test sans jeton : %d %s", resp.StatusCode, body)
 	}
-	defer resp.Body.Close()
-	sc := bufio.NewScanner(resp.Body)
-	next := func() ntfyLine {
-		if !sc.Scan() {
-			t.Fatalf("flux fermé : %v", sc.Err())
-		}
-		var l ntfyLine
-		_ = json.Unmarshal(sc.Bytes(), &l)
-		return l
+	if resp, _ := call(t, "PUT", e.url+"/v1/device/push", token, `{"token":"fcm-1"}`); resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("enregistrement du jeton : %d", resp.StatusCode)
 	}
-	if l := next(); l.Event != "open" {
-		t.Fatalf("attendu open, reçu %+v", l)
+	if resp, _ := call(t, "POST", e.url+"/v1/test", token, ""); resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("test : %d", resp.StatusCode)
 	}
-	if l := next(); payloadOf(t, l).Message != "un" {
-		t.Fatalf("attendu l'arriéré, reçu %+v", l)
+	if got := e.pusher.payloads(t, "fcm-1"); len(got) != 1 || got[0].Account != "Serveur" {
+		t.Fatalf("push de test : %+v", got)
 	}
-	call(t, "POST", ts.URL+"/h", c.Code, `{"hook_event_name":"Notification","notification_type":"idle_prompt","message":"Claude is waiting for your input"}`)
-	if l := next(); payloadOf(t, l).Type != "input" {
-		t.Fatalf("attendu l'événement en direct, reçu %+v", l)
+
+	// Firebase refuse le jeton (appli réinstallée) : le serveur l'oublie.
+	e.pusher.mu.Lock()
+	e.pusher.reject["fcm-1"] = true
+	e.pusher.mu.Unlock()
+	e.hook(t, c.Code, `{"hook_event_name":"Stop"}`)
+	_, body = call(t, "GET", e.url+"/v1/device", token, "")
+	if !strings.Contains(body, `"push":false`) {
+		t.Fatalf("jeton refusé conservé : %s", body)
 	}
 }
 
 func TestPersistance(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "state.json")
-	ts, _ := newTestServer(t, file)
-	id, token := register(t, ts.URL)
-	c := newCode(t, ts.URL, token, "PC")
-	call(t, "POST", ts.URL+"/h", c.Code, `{"hook_event_name":"SessionEnd","reason":"logout"}`)
-	ts.Close()
+	e := newTestEnv(t, file)
+	_, token := register(t, e.url, "fcm-A")
+	c := newCode(t, e.url, token, "PC")
 
-	ts2, _ := newTestServer(t, file)
-	lines := poll(t, ts2.URL, id, token, "all")
-	if len(lines) != 1 || payloadOf(t, lines[0]).Message != "Session terminée (logout)" {
-		t.Fatalf("après redémarrage : %+v", lines)
-	}
-	if resp, _ := call(t, "POST", ts2.URL+"/h", c.Code, `{"hook_event_name":"Stop"}`); resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("code perdu au redémarrage : %d", resp.StatusCode)
+	e2 := newTestEnv(t, file)
+	e2.hook(t, c.Code, `{"hook_event_name":"SessionEnd","reason":"logout"}`)
+	if got := e2.pusher.payloads(t, "fcm-A"); len(got) != 1 || got[0].Message != "Session terminée (logout)" {
+		t.Fatalf("après redémarrage : %+v", got)
 	}
 }
 

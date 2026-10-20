@@ -24,7 +24,7 @@ type HookInput struct {
 	ErrorDetails         string `json:"error_details"`
 }
 
-// Payload : ce que lit la montre (voir app/.../net/NtfyMessage.kt, HookPayload).
+// Payload : ce que lit la montre (voir app/.../net/HookPayload.kt).
 type Payload struct {
 	Type    string `json:"t"`
 	Message string `json:"m,omitempty"`

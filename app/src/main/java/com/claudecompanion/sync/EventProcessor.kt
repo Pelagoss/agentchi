@@ -2,8 +2,6 @@ package com.claudecompanion.sync
 
 import com.claudecompanion.data.ClaudeEvent
 import com.claudecompanion.data.CompanionStore
-import com.claudecompanion.net.EventParser
-import com.claudecompanion.net.NtfyMessage
 import com.claudecompanion.notify.EventNotifier
 import com.claudecompanion.pet.PetLogic
 import kotlinx.coroutines.flow.first
@@ -11,31 +9,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Calendar
 
-/** Point d'entrée unique des messages reçus (sondage ou flux instantané). */
+/** Point d'entrée unique des événements reçus. */
 class EventProcessor(
     private val store: CompanionStore,
     private val notifier: EventNotifier,
 ) {
     private val mutex = Mutex()
 
-    suspend fun process(messages: List<NtfyMessage>) = mutex.withLock {
-        val settings = store.settings.first()
-        messages.sortedBy { it.time }.forEach { msg ->
-            // Message illisible (version du serveur plus récente…) : ignoré.
-            val event = EventParser.toEvent(msg)
-            event?.account?.let { store.addKnownAccount(it) }
-            if (event == null || settings.isFiltered(event)) {
-                store.setSince(msg.id)
-            } else {
-                handle(event)
-            }
-        }
-    }
-
-    suspend fun process(message: NtfyMessage) = process(listOf(message))
-
-    /** Notification de l'appli Claude relayée par le téléphone. */
-    suspend fun processRelayed(event: ClaudeEvent) = mutex.withLock {
+    /** Événement reçu par push FCM. */
+    suspend fun process(event: ClaudeEvent) = mutex.withLock {
+        event.account?.let { store.addKnownAccount(it) }
         if (!store.settings.first().isFiltered(event)) handle(event)
     }
 

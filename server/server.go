@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"html/template"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -23,9 +25,12 @@ type Config struct {
 }
 
 type Server struct {
-	cfg   Config
-	store *Store
-	mux   *http.ServeMux
+	cfg    Config
+	store  *Store
+	pusher Pusher
+	mux    *http.ServeMux
+	// Envois FCM en cours : le hook répond sans attendre Firebase.
+	sending sync.WaitGroup
 
 	registerLimit *limiter // création de montres, par IP
 	hookLimit     *limiter // événements, par code
@@ -33,12 +38,13 @@ type Server struct {
 	apiLimit      *limiter // API de la montre, par IP
 }
 
-const keepAliveInterval = 45 * time.Second
+const pushTimeout = 15 * time.Second
 
-func NewServer(cfg Config, store *Store) *Server {
+func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 	s := &Server{
 		cfg:           cfg,
 		store:         store,
+		pusher:        pusher,
 		mux:           http.NewServeMux(),
 		registerLimit: newLimiter(2, 5),
 		hookLimit:     newLimiter(120, 60),
@@ -55,13 +61,12 @@ func NewServer(cfg Config, store *Store) *Server {
 	// API de la montre
 	s.mux.HandleFunc("POST /v1/devices", s.handleRegister)
 	s.mux.HandleFunc("GET /v1/device", s.device(s.handleGetDevice))
+	s.mux.HandleFunc("PUT /v1/device/push", s.device(s.handleSetPush))
 	s.mux.HandleFunc("DELETE /v1/device", s.device(s.handleDeleteDevice))
 	s.mux.HandleFunc("POST /v1/codes", s.device(s.handleCreateCode))
 	s.mux.HandleFunc("GET /v1/codes", s.device(s.handleListCodes))
 	s.mux.HandleFunc("DELETE /v1/codes/{id}", s.device(s.handleDeleteCode))
 	s.mux.HandleFunc("POST /v1/test", s.device(s.handleTest))
-	// Abonnement au format ntfy (https://docs.ntfy.sh/subscribe/api/) : la montre réutilise son client.
-	s.mux.HandleFunc("GET /{device}/json", s.device(s.handleSubscribe))
 	return s
 }
 
@@ -103,15 +108,36 @@ func (s *Server) handleHook(w http.ResponseWriter, r *http.Request) {
 	}
 	payload, show := ToPayload(in, c.Label, r.Header.Get("X-Claude-Remote-Session"))
 	if show {
-		if _, err := s.store.Publish(c.DeviceID, payload.JSON()); err != nil && !errors.Is(err, errNotFound) {
-			log.Printf("publication : %v", err)
-		}
+		s.sending.Add(1)
+		go func() {
+			defer s.sending.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), pushTimeout)
+			defer cancel()
+			if err := s.push(ctx, c.DeviceID, payload); err != nil {
+				log.Printf("push vers %s : %v", c.DeviceID, err)
+			}
+		}()
 	}
 	// Corps vide : Claude Code n'en tire aucune décision ni aucun contexte.
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // --- API de la montre ---
+
+// push envoie un événement à la montre par FCM. Un jeton refusé par Firebase est oublié.
+func (s *Server) push(ctx context.Context, deviceID string, p Payload) error {
+	token := s.store.PushToken(deviceID)
+	if token == "" {
+		return errNoPushToken
+	}
+	err := s.pusher.Send(ctx, token, Push{ID: "e" + randomToken(12), Time: time.Now().Unix(), Payload: p.JSON()})
+	if errors.Is(err, errUnregistered) {
+		_ = s.store.ForgetPushToken(deviceID, token)
+	}
+	return err
+}
+
+var errNoPushToken = errors.New("la montre n'a pas encore transmis son jeton FCM")
 
 func (s *Server) device(next func(http.ResponseWriter, *http.Request, *Device)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +151,7 @@ func (s *Server) device(next func(http.ResponseWriter, *http.Request, *Device)) 
 			s.authFailed(w, ip, "jeton de montre invalide")
 			return
 		}
-		next(w, r, d)
+		next(w, r, &d)
 	}
 }
 
@@ -135,14 +161,15 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name string `json:"name"`
+		Name      string `json:"name"`
+		PushToken string `json:"push_token"`
 	}
-	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body)
+	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body)
 	if s.cfg.MaxDevices > 0 && s.store.DeviceCount() >= s.cfg.MaxDevices {
 		httpError(w, http.StatusForbidden, "ce serveur n'accepte plus de nouvelles montres")
 		return
 	}
-	d, token, err := s.store.CreateDevice(cleanLabel(body.Name, "Montre"))
+	d, token, err := s.store.CreateDevice(cleanLabel(body.Name, "Montre"), strings.TrimSpace(body.PushToken))
 	if err != nil {
 		serverError(w, err)
 		return
@@ -151,7 +178,22 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetDevice(w http.ResponseWriter, _ *http.Request, d *Device) {
-	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created})
+	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != ""})
+}
+
+func (s *Server) handleSetPush(w http.ResponseWriter, r *http.Request, d *Device) {
+	var body struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil || strings.TrimSpace(body.Token) == "" {
+		httpError(w, http.StatusBadRequest, "jeton FCM manquant")
+		return
+	}
+	if err := s.store.SetPushToken(d.ID, strings.TrimSpace(body.Token)); err != nil {
+		serverError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) handleDeleteDevice(w http.ResponseWriter, _ *http.Request, d *Device) {
@@ -211,81 +253,17 @@ func (s *Server) handleDeleteCode(w http.ResponseWriter, r *http.Request, d *Dev
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) handleTest(w http.ResponseWriter, _ *http.Request, d *Device) {
-	p := Payload{Type: "done", Message: "Connexion au serveur réussie 🎉", Account: "Serveur"}
-	if _, err := s.store.Publish(d.ID, p.JSON()); err != nil {
-		serverError(w, err)
+// handleTest envoie un push de test et attend la réponse de Firebase, pour afficher l'erreur sur la montre.
+func (s *Server) handleTest(w http.ResponseWriter, r *http.Request, d *Device) {
+	p := Payload{Type: "done", Message: "Push FCM reçu : tout fonctionne 🎉", Account: "Serveur"}
+	ctx, cancel := context.WithTimeout(r.Context(), pushTimeout)
+	defer cancel()
+	if err := s.push(ctx, d.ID, p); err != nil {
+		log.Printf("test vers %s : %v", d.ID, err)
+		httpError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-type ntfyLine struct {
-	ID      string `json:"id"`
-	Time    int64  `json:"time"`
-	Event   string `json:"event"`
-	Topic   string `json:"topic"`
-	Message string `json:"message,omitempty"`
-}
-
-func (s *Server) handleSubscribe(w http.ResponseWriter, r *http.Request, d *Device) {
-	if r.PathValue("device") != d.ID {
-		httpError(w, http.StatusForbidden, "cette montre ne peut pas lire ce flux")
-		return
-	}
-	since := r.URL.Query().Get("since")
-	w.Header().Set("Content-Type", "application/x-ndjson; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	enc := json.NewEncoder(w)
-	write := func(ev Event) error {
-		return enc.Encode(ntfyLine{ID: ev.ID, Time: ev.Time, Event: "message", Topic: d.ID, Message: ev.Message})
-	}
-
-	if q := r.URL.Query().Get("poll"); q == "1" || q == "true" {
-		for _, ev := range s.store.Since(d.ID, since) {
-			if write(ev) != nil {
-				return
-			}
-		}
-		return
-	}
-
-	// Flux : connexion gardée ouverte, comme ntfy (mode instantané de la montre).
-	flusher, _ := w.(http.Flusher)
-	flush := func() {
-		if flusher != nil {
-			flusher.Flush()
-		}
-	}
-	backlog, ch, cancel := s.store.Subscribe(d.ID, since)
-	defer cancel()
-	_ = enc.Encode(ntfyLine{ID: randomToken(12), Time: time.Now().Unix(), Event: "open", Topic: d.ID})
-	for _, ev := range backlog {
-		if write(ev) != nil {
-			return
-		}
-	}
-	flush()
-	ticker := time.NewTicker(keepAliveInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-r.Context().Done():
-			return
-		case ev, ok := <-ch:
-			if !ok { // montre supprimée
-				return
-			}
-			if write(ev) != nil {
-				return
-			}
-		case <-ticker.C:
-			if enc.Encode(ntfyLine{ID: randomToken(12), Time: time.Now().Unix(), Event: "keepalive", Topic: d.ID}) != nil {
-				return
-			}
-		}
-		flush()
-	}
 }
 
 // --- Pages d'aide ---

@@ -47,9 +47,10 @@ class EventNotifier(private val context: Context) {
                 channel(CH_INFO, "Activité des sessions", NotificationManager.IMPORTANCE_DEFAULT, false),
                 channel(CH_INFO_SOUND, "Activité des sessions (son)", NotificationManager.IMPORTANCE_DEFAULT, true),
                 channel(CH_SILENT, "Notifications discrètes", NotificationManager.IMPORTANCE_LOW, false),
-                channel(CH_SERVICE, "Connexion instantanée", NotificationManager.IMPORTANCE_MIN, false),
             ),
         )
+        // Ancien mode instantané (connexion permanente), remplacé par le push FCM.
+        nm.deleteNotificationChannel(OLD_CH_SERVICE)
     }
 
     fun notify(event: ClaudeEvent, settings: CompanionSettings, muted: Boolean = false) {
@@ -112,15 +113,6 @@ class EventNotifier(private val context: Context) {
 
     fun cancel(notificationId: Int) = NotificationManagerCompat.from(context).cancel(notificationId)
 
-    fun serviceNotification() = NotificationCompat.Builder(context, CH_SERVICE)
-        .setSmallIcon(R.drawable.ic_stat_claude)
-        .setContentTitle("Claude Companion")
-        .setContentText("À l'écoute des sessions Claude")
-        .setOngoing(true)
-        .setPriority(NotificationCompat.PRIORITY_MIN)
-        .setContentIntent(openAppIntent())
-        .build()
-
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
         context,
         0,
@@ -138,8 +130,7 @@ class EventNotifier(private val context: Context) {
         const val CH_INFO = "claude_info"
         const val CH_INFO_SOUND = "claude_info_sound"
         const val CH_SILENT = "claude_silent"
-        const val CH_SERVICE = "claude_service"
-        const val SERVICE_NOTIFICATION_ID = 1
+        private const val OLD_CH_SERVICE = "claude_service"
         private const val GROUP = "claude_events"
     }
 }

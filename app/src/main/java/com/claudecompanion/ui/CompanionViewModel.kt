@@ -12,8 +12,7 @@ import com.claudecompanion.data.VibrationPattern
 import com.claudecompanion.net.PairingCode
 import com.claudecompanion.pet.PetLogic
 import com.claudecompanion.pet.PetState
-import com.claudecompanion.sync.InstantSyncService
-import com.claudecompanion.sync.PollWorker
+import com.claudecompanion.push.Push
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -70,12 +69,12 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         _pairing.value = PairingUi()
     }
 
-    /** Enregistre la montre sur le serveur configuré. */
+    /** Enregistre la montre sur le serveur configuré, avec son jeton FCM. */
     fun connect() = serverCall {
         val settings = store.settings.first()
-        val device = app.api.register(settings.serverUrl, Build.MODEL ?: "Montre")
+        val pushToken = Push.token()
+        val device = app.api.register(settings.serverUrl, Build.MODEL ?: "Montre", pushToken)
         store.saveDevice(settings.serverUrl, device.id, device.token)
-        PollWorker.syncNow(app)
         val codes = app.api.codes(store.settings.first())
         _pairing.update { it.copy(codes = codes) }
     }
@@ -101,10 +100,20 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         _pairing.update { it.copy(codes = codes) }
     }
 
-    /** Le serveur envoie un événement de test, récupéré aussitôt. */
+    /** Le serveur envoie un push de test : s'il arrive, toute la chaîne fonctionne. */
     fun testServer() = serverCall(requireConnected = true) {
-        app.api.test(store.settings.first())
-        PollWorker.syncNow(app)
+        val settings = store.settings.first()
+        app.api.setPushToken(settings, Push.token())
+        app.api.test(settings)
+    }
+
+    /**
+     * Retransmet le jeton FCM au serveur à chaque ouverture de l'appli, au cas où un
+     * renouvellement (onNewToken) n'aurait pas pu être transmis. Silencieux en cas d'échec.
+     */
+    fun refreshPushToken() = viewModelScope.launch {
+        val settings = store.settings.first()
+        if (settings.isConnected && Push.isConfigured) runCatching { app.api.setPushToken(settings, Push.token()) }
     }
 
     /** Supprime la montre du serveur : tous ses codes sont révoqués. */
@@ -126,6 +135,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
             if (error.status == 401) "La montre n'est plus reconnue par le serveur : reconnecte-la." else error.message.orEmpty()
         is java.net.UnknownHostException -> "Serveur introuvable : vérifie l'adresse."
         is java.io.IOException -> "Serveur injoignable."
+        is IllegalStateException -> error.message ?: "Push FCM indisponible"
         else -> error.message ?: "Erreur inattendue"
     }
 
@@ -145,13 +155,6 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateSettings(transform: (CompanionSettings) -> CompanionSettings) {
         viewModelScope.launch { store.updateSettings(transform) }
     }
-
-    fun setInstantMode(enabled: Boolean) {
-        updateSettings { it.copy(instantMode = enabled) }
-        if (enabled) InstantSyncService.start(app) else InstantSyncService.stop(app)
-    }
-
-    fun syncNow() = PollWorker.syncNow(app)
 
     fun previewVibration(pattern: VibrationPattern) = app.notifier.vibrate(pattern)
 

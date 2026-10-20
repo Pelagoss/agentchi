@@ -29,9 +29,7 @@ class CompanionStore(context: Context) {
         val mutedAccounts = stringSetPreferencesKey("muted_accounts")
         val knownAccounts = stringSetPreferencesKey("known_accounts")
         val localSessions = booleanPreferencesKey("local_sessions")
-        val phoneNotifications = booleanPreferencesKey("phone_notifications")
         val cloudSessions = booleanPreferencesKey("cloud_sessions")
-        val instant = booleanPreferencesKey("instant")
         val events = stringSetPreferencesKey("events")
         val urgentStyle = stringPreferencesKey("urgent_style")
         val urgentVibration = stringPreferencesKey("urgent_vibration")
@@ -46,7 +44,6 @@ class CompanionStore(context: Context) {
 
         val pet = stringPreferencesKey("pet")
         val history = stringPreferencesKey("history")
-        val since = stringPreferencesKey("since")
     }
 
     val settings: Flow<CompanionSettings> = store.data.map { p ->
@@ -58,9 +55,7 @@ class CompanionStore(context: Context) {
             deviceToken = p[Keys.deviceToken] ?: d.deviceToken,
             mutedAccounts = p[Keys.mutedAccounts] ?: d.mutedAccounts,
             localSessions = p[Keys.localSessions] ?: d.localSessions,
-            phoneNotifications = p[Keys.phoneNotifications] ?: d.phoneNotifications,
             cloudSessions = p[Keys.cloudSessions] ?: d.cloudSessions,
-            instantMode = p[Keys.instant] ?: d.instantMode,
             enabledEvents = p[Keys.events]?.map { EventType.fromKey(it) }?.toSet() ?: d.enabledEvents,
             urgentStyle = enumOr(p[Keys.urgentStyle], d.urgentStyle),
             urgentVibration = enumOr(p[Keys.urgentVibration], d.urgentVibration),
@@ -83,9 +78,7 @@ class CompanionStore(context: Context) {
             p[Keys.deviceToken] = s.deviceToken
             p[Keys.mutedAccounts] = s.mutedAccounts
             p[Keys.localSessions] = s.localSessions
-            p[Keys.phoneNotifications] = s.phoneNotifications
             p[Keys.cloudSessions] = s.cloudSessions
-            p[Keys.instant] = s.instantMode
             p[Keys.events] = s.enabledEvents.map { it.key }.toSet()
             p[Keys.urgentStyle] = s.urgentStyle.name
             p[Keys.urgentVibration] = s.urgentVibration.name
@@ -100,13 +93,12 @@ class CompanionStore(context: Context) {
         }
     }
 
-    /** Enregistre la montre sur [serverUrl]. Les événements reprennent à partir de maintenant. */
+    /** Enregistre la montre sur [serverUrl]. */
     suspend fun saveDevice(serverUrl: String, id: String, token: String) {
         store.edit { p ->
             p[Keys.server] = serverUrl.trim().trimEnd('/')
             p[Keys.deviceId] = id
             p[Keys.deviceToken] = token
-            p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
         }
     }
 
@@ -167,7 +159,6 @@ class CompanionStore(context: Context) {
                 val next = (listOf(event) + list).take(MAX_HISTORY)
                 p[Keys.history] = EventParser.json.encodeToString(HISTORY_SERIALIZER, next)
             }
-            p[Keys.since] = event.id
         }
         return added
     }
@@ -175,14 +166,6 @@ class CompanionStore(context: Context) {
     suspend fun clearHistory() {
         store.edit { it.remove(Keys.history) }
     }
-
-    suspend fun setSince(id: String) {
-        store.edit { it[Keys.since] = id }
-    }
-
-    /** Valeur du paramètre `since` du flux : dernier id reçu, ou horodatage. */
-    suspend fun since(): String =
-        store.data.first()[Keys.since] ?: (System.currentTimeMillis() / 1000).toString()
 
     private fun decodeHistory(raw: String?): List<ClaudeEvent> =
         raw?.let { runCatching { EventParser.json.decodeFromString(HISTORY_SERIALIZER, it) }.getOrNull() }

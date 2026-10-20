@@ -37,6 +37,7 @@ import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import com.claudecompanion.net.PairingCode
+import com.claudecompanion.push.Push
 import com.claudecompanion.ui.CompanionViewModel
 import com.claudecompanion.ui.common.rememberTextInput
 import com.google.zxing.BarcodeFormat
@@ -86,6 +87,10 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                     item { Action("🌐 Adresse du serveur", "Non configurée", onClick = editServer) }
                 }
 
+                !Push.isConfigured -> {
+                    hint("Cette version de l'appli a été compilée sans projet Firebase : la montre ne peut pas recevoir de push. Voir le README, section « Firebase ».")
+                }
+
                 !settings.isConnected -> {
                     hint("Connecte la montre à ${host(settings.serverUrl)} pour appairer tes ordinateurs.")
                     item { Action(if (ui.busy) "Connexion…" else "🔗 Connecter la montre", null, primary = true) { if (!ui.busy) viewModel.connect() } }
@@ -130,7 +135,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                         }
                     }
                     item {
-                        Action("📡 Tester le serveur", "Envoie une notification à la montre") {
+                        Action("📡 Tester le push", "Le serveur envoie une notification") {
                             viewModel.testServer()
                             Toast.makeText(context, "Test envoyé…", Toast.LENGTH_SHORT).show()
                         }

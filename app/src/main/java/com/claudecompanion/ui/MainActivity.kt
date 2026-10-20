@@ -9,19 +9,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import com.claudecompanion.CompanionApp
 import com.claudecompanion.ui.history.HistoryScreen
 import com.claudecompanion.ui.pairing.PairingScreen
 import com.claudecompanion.ui.pet.PetScreen
 import com.claudecompanion.ui.settings.SettingsScreen
 import com.claudecompanion.ui.theme.CompanionTheme
-import com.claudecompanion.sync.InstantSyncService
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val viewModel: CompanionViewModel by viewModels()
@@ -60,11 +55,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.syncNow()
-        lifecycleScope.launch {
-            if ((application as CompanionApp).store.settings.first().instantMode) {
-                InstantSyncService.start(this@MainActivity)
-            }
-        }
+        viewModel.refreshPushToken()
     }
 }

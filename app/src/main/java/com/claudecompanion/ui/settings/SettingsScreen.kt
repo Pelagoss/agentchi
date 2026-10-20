@@ -55,11 +55,6 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
             // --- Sources ---
             section("Sources")
             item {
-                Toggle("📱 Appli Claude", "Relayées par le téléphone", settings.phoneNotifications) { on ->
-                    update { it.copy(phoneNotifications = on) }
-                }
-            }
-            item {
                 Toggle("💻 Ordinateurs", "Plugin Claude Code", settings.localSessions) { on ->
                     update { it.copy(localSessions = on) }
                 }
@@ -149,20 +144,6 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                 )
             }
             item { Setting("Serveur", settings.serverUrl.ifBlank { "Non configuré" }, onClick = editServer) }
-            item {
-                Toggle(
-                    "⚡ Mode instantané",
-                    if (settings.instantMode) "Connexion permanente (+ batterie)" else "Vérification toutes les 15 min",
-                    settings.instantMode,
-                    onChange = viewModel::setInstantMode,
-                )
-            }
-            item {
-                Setting("🔄 Synchroniser", "Récupérer maintenant") {
-                    viewModel.syncNow()
-                    toast("Synchronisation…")
-                }
-            }
 
             // --- Mascotte & tests ---
             section("Mascotte")

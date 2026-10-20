@@ -8,20 +8,19 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
-// Une montre. Elle lit ses événements avec son jeton.
+// Une montre. Elle gère ses codes avec son jeton et reçoit ses événements par FCM.
 type Device struct {
 	ID        string    `json:"id"`
 	TokenHash string    `json:"token_hash"`
 	Name      string    `json:"name"`
 	Created   time.Time `json:"created"`
-	Seq       int64     `json:"seq"`
-	Events    []Event   `json:"events"`
+	// Jeton d'enregistrement Firebase Cloud Messaging de la montre.
+	PushToken string `json:"push_token,omitempty"`
 }
 
 // Un code d'appairage, saisi sur un ordinateur ou dans un environnement cloud.
@@ -36,23 +35,12 @@ type Code struct {
 	LastProject string     `json:"last_project,omitempty"`
 }
 
-// Événement prêt pour la montre, au format de l'API d'abonnement de ntfy.
-type Event struct {
-	ID      string `json:"id"`
-	Time    int64  `json:"time"`
-	Message string `json:"message"`
-}
-
 var (
 	errNotFound    = errors.New("introuvable")
 	errTooManyCode = errors.New("trop de codes pour cette montre")
 )
 
-const (
-	maxEventsPerDevice = 200
-	eventRetention     = 48 * time.Hour
-	maxCodesPerDevice  = 50
-)
+const maxCodesPerDevice = 50
 
 type state struct {
 	Devices map[string]*Device `json:"devices"`
@@ -68,7 +56,6 @@ type Store struct {
 	// Index : empreinte du jeton → id
 	deviceByToken map[string]string
 	codeByHash    map[string]string
-	subs          map[string]map[chan Event]struct{}
 }
 
 func OpenStore(path string) (*Store, error) {
@@ -77,7 +64,6 @@ func OpenStore(path string) (*Store, error) {
 		st:            state{Devices: map[string]*Device{}, Codes: map[string]*Code{}},
 		deviceByToken: map[string]string{},
 		codeByHash:    map[string]string{},
-		subs:          map[string]map[chan Event]struct{}{},
 	}
 	if path != "" {
 		data, err := os.ReadFile(path)
@@ -124,9 +110,9 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
-func (s *Store) CreateDevice(name string) (*Device, string, error) {
+func (s *Store) CreateDevice(name, pushToken string) (*Device, string, error) {
 	token := "ccd_" + randomToken(32)
-	d := &Device{ID: "w" + randomToken(15), TokenHash: hashToken(token), Name: name, Created: time.Now().UTC()}
+	d := &Device{ID: "w" + randomToken(15), TokenHash: hashToken(token), Name: name, Created: time.Now().UTC(), PushToken: pushToken}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.st.Devices[d.ID] = d
@@ -140,14 +126,52 @@ func (s *Store) DeviceCount() int {
 	return len(s.st.Devices)
 }
 
-func (s *Store) DeviceByToken(token string) (*Device, bool) {
+// DeviceByToken retourne une copie de la montre authentifiée par token.
+func (s *Store) DeviceByToken(token string) (Device, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	id, ok := s.deviceByToken[hashToken(token)]
 	if !ok {
-		return nil, false
+		return Device{}, false
 	}
-	return s.st.Devices[id], true
+	return *s.st.Devices[id], true
+}
+
+// PushToken retourne le jeton FCM de la montre, vide si elle n'en a pas.
+func (s *Store) PushToken(deviceID string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if d, ok := s.st.Devices[deviceID]; ok {
+		return d.PushToken
+	}
+	return ""
+}
+
+// SetPushToken enregistre le jeton FCM (Firebase le renouvelle de temps en temps).
+func (s *Store) SetPushToken(deviceID, pushToken string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d, ok := s.st.Devices[deviceID]
+	if !ok {
+		return errNotFound
+	}
+	if d.PushToken == pushToken {
+		return nil
+	}
+	d.PushToken = pushToken
+	return s.save()
+}
+
+// ForgetPushToken oublie un jeton refusé par Firebase, s'il n'a pas été remplacé entre-temps.
+func (s *Store) ForgetPushToken(deviceID, pushToken string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d, ok := s.st.Devices[deviceID]
+	if !ok || d.PushToken != pushToken {
+		return nil
+	}
+	d.PushToken = ""
+	return s.save()
 }
 
 func (s *Store) DeleteDevice(id string) error {
@@ -165,10 +189,6 @@ func (s *Store) DeleteDevice(id string) error {
 			delete(s.st.Codes, cid)
 		}
 	}
-	for ch := range s.subs[id] {
-		close(ch)
-	}
-	delete(s.subs, id)
 	return s.save()
 }
 
@@ -233,94 +253,6 @@ func (s *Store) UseCode(plain, project string) (Code, bool) {
 	return *c, true
 }
 
-// Publish ajoute un événement à la file de la montre et le pousse aux connexions ouvertes.
-func (s *Store) Publish(deviceID, message string) (Event, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	d, ok := s.st.Devices[deviceID]
-	if !ok {
-		return Event{}, errNotFound
-	}
-	d.Seq++
-	now := time.Now()
-	// Suffixe aléatoire : la montre déduplique par id, y compris après un réenregistrement.
-	ev := Event{ID: "e" + strconv.FormatInt(d.Seq, 36) + randomToken(6), Time: now.Unix(), Message: message}
-	d.Events = append(d.Events, ev)
-	d.Events = prune(d.Events, now)
-	for ch := range s.subs[deviceID] {
-		select {
-		case ch <- ev:
-		default: // abonné trop lent : il rattrapera au prochain sondage
-		}
-	}
-	return ev, s.save()
-}
-
-func prune(events []Event, now time.Time) []Event {
-	cutoff := now.Add(-eventRetention).Unix()
-	i := 0
-	for i < len(events) && (events[i].Time < cutoff || len(events)-i > maxEventsPerDevice) {
-		i++
-	}
-	return events[i:]
-}
-
-// Since retourne les événements postérieurs à since : un id d'événement, un horodatage Unix ou « all ».
-// Un id inconnu (événement expiré) renvoie tout ce qui reste, pour ne rien perdre.
-func (s *Store) Since(deviceID, since string) []Event {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.sinceLocked(deviceID, since)
-}
-
-func (s *Store) sinceLocked(deviceID, since string) []Event {
-	d, ok := s.st.Devices[deviceID]
-	if !ok {
-		return nil
-	}
-	events := d.Events
-	switch {
-	case since == "" || since == "all":
-		// tout
-	case isDigits(since):
-		ts, _ := strconv.ParseInt(since, 10, 64)
-		i := 0
-		for i < len(events) && events[i].Time <= ts {
-			i++
-		}
-		events = events[i:]
-	default:
-		for i, ev := range events {
-			if ev.ID == since {
-				events = events[i+1:]
-				break
-			}
-		}
-	}
-	return append([]Event(nil), events...)
-}
-
-// Subscribe retourne les événements en attente et un canal pour les suivants, sans trou entre les deux.
-func (s *Store) Subscribe(deviceID, since string) ([]Event, chan Event, func()) {
-	ch := make(chan Event, 32)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	backlog := s.sinceLocked(deviceID, since)
-	if s.subs[deviceID] == nil {
-		s.subs[deviceID] = map[chan Event]struct{}{}
-	}
-	s.subs[deviceID][ch] = struct{}{}
-	cancel := func() {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		if _, ok := s.subs[deviceID][ch]; ok {
-			delete(s.subs[deviceID], ch)
-			close(ch)
-		}
-	}
-	return backlog, ch, cancel
-}
-
 // --- Jetons et codes ---
 
 // Sans I, L, O, 0 ni 1 : rien à confondre en recopiant depuis la montre.
@@ -369,13 +301,4 @@ func randomChars(alphabet string, n int) string {
 		}
 	}
 	return string(out)
-}
-
-func isDigits(s string) bool {
-	for _, r := range s {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return s != ""
 }
