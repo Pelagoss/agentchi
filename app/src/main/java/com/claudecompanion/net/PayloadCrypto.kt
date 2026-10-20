@@ -21,6 +21,10 @@ import javax.crypto.spec.SecretKeySpec
 object PayloadCrypto {
     private const val VERSION = "v1"
 
+    /** Sujet ntfy déduit de la clé : le code d'appairage n'a besoin que de la clé. */
+    fun topicFor(secret: String): String =
+        "cc-" + MessageDigest.getInstance("SHA-256").digest("claude-companion/topic:$secret".toByteArray()).toHex().take(24)
+
     fun encKey(secret: String): ByteArray =
         MessageDigest.getInstance("SHA-256").digest("claude-companion/enc:$secret".toByteArray())
 

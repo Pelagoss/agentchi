@@ -116,9 +116,14 @@ class EventParserTest {
     }
 
     @Test
-    fun `code d'appairage`() {
+    fun `code d'appairage court et sujet deduit de la cle`() {
+        val secret = "abcdefghijkmnpqrstuvwxy23"
+        // Valeur calculée par le hook avec openssl
+        assertEquals("cc-850575ba611417664f58e1ce", PayloadCrypto.topicFor(secret))
+        val s = CompanionSettings(topic = PayloadCrypto.topicFor(secret), secret = secret)
+        assertEquals("abcde-fghij-kmnpq-rstuv-wxy23", s.pairingCode)
+        // Ancien appairage : format « sujet.clé » conservé
         assertEquals("claude-companion-ab12.$key", CompanionSettings(topic = "claude-companion-ab12", secret = key).pairingCode)
-        assertTrue(CompanionSettings.TOPIC_REGEX.matches("claude-companion-ab12_x"))
-        assertFalse(CompanionSettings.TOPIC_REGEX.matches("a/b"))
+        assertTrue(CompanionSettings.TOPIC_REGEX.matches(PayloadCrypto.topicFor(secret)))
     }
 }

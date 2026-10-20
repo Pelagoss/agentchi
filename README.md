@@ -39,51 +39,54 @@ Claude Code déclenche des [hooks](https://docs.claude.com/en/docs/claude-code/h
    adb connect <ip>:<port>
    adb install app-debug.apk
    ```
-4. Ouvre **Claude Companion** et accepte les notifications. Va dans **Paramètres → 🔗 Appairer un ordinateur** : la montre affiche un **code d'appairage** (et son QR code) de la forme `claude-companion-k7m2xq9pza.4hx…`.
+4. Ouvre **Claude Companion** et accepte les notifications. Va dans **Paramètres → 🔗 Appairer un ordinateur** : la montre affiche un **code d'appairage** (et son QR code) de la forme `k7m2x-q9pza-4hxbc-wn3ra-e8tfy`.
 
-### 2. Claude Code (sur ton ordinateur)
+### 2. Le hook Claude Code
 
-`jq`, `curl` et `openssl` sont requis.
+**Le principe :** un seul code d'appairage, le même partout.
+
+| Où | Combien de fois | Comment |
+|---|---|---|
+| 💻 Ton ordinateur | **1 fois par ordinateur**, pour tous tes projets | `install.sh` |
+| ☁️ Sessions cloud | **1 fois par dépôt GitHub** | `install.sh` commite le hook dans le dépôt |
+| ☁️ Environnement cloud | **1 fois** | variable `CLAUDE_COMPANION_PAIRING` + domaine `ntfy.sh` autorisé |
+
+Les sessions cloud n'exécutent que les hooks **commités dans le dépôt** : ni le `~/.claude` de ton ordinateur ni un script de configuration de l'environnement n'y sont pris en compte. D'où une installation par dépôt, que le script fait pour toi. Le hook commité ne contient aucun secret. Il ne fait rien en local (pas de doublon avec celui de ton ordinateur), ni chez un collaborateur qui n'a pas la variable.
+
+Sur ton ordinateur (`jq`, `curl`, `openssl` et `git` requis, `gh` conseillé) :
 
 ```bash
 git clone https://github.com/Pelagoss/claude-companion && cd claude-companion
-./hooks/install.sh <code-appairage>
+./hooks/install.sh
+```
+
+Le mode guidé demande le code affiché sur la montre, installe le hook pour tous tes projets et envoie une notification de test. Il propose ensuite d'équiper tes dépôts GitHub pour le cloud : il ajoute `.claude/` à chacun, puis fait le commit et le push. Si la branche est protégée, il pousse sur une branche `claude-companion` à fusionner.
+
+Sans le mode guidé :
+
+```bash
+./hooks/install.sh abcde-fghij-kmnpq-rstuv-wxy23                 # ordinateur
+./hooks/install.sh --repo moi/projet-a --repo moi/projet-b       # dépôts (cloud)
+./hooks/install.sh --project ~/code/projet                       # dépôt local, sans commit
 # options : --account "Pro"  --server https://ntfy.mondomaine.fr  --token tk_xxx
 ```
 
-Le script copie le hook dans `~/.claude/hooks/`, enregistre ta configuration dans `~/.claude/claude-companion.env` et ajoute les hooks à `~/.claude/settings.json`. Tes autres réglages et hooks sont conservés, et une sauvegarde est créée. Pour une configuration manuelle, voir `hooks/settings.example.json`.
+Enfin, **une seule fois**, dans les paramètres de l'environnement cloud (claude.ai/code → menu de l'environnement dans la barre de titre → **Modifier**) :
 
-Pour tester :
+1. **Accès réseau** : ajoute `ntfy.sh` aux **domaines autorisés** (par défaut il est bloqué).
+2. **Variables d'environnement** : `CLAUDE_COMPANION_PAIRING=<code-appairage>`.
 
-```bash
-~/.claude/hooks/claude-companion-notify.sh done "Bonjour depuis Claude Code 👋"
-```
+Sur la montre, les événements cloud sont marqués ☁️, avec un bouton **📱 Ouvrir sur le téléphone** qui ouvre directement la session claude.ai/code pour répondre à Claude. **Paramètres → Comptes Claude** permet de couper séparément les sessions locales 💻 et les sessions cloud ☁️.
 
-Puis, sur la montre, ouvre l'appli ou appuie sur **Paramètres → Synchroniser**.
-
-### 3. Les sessions cloud (claude.ai/code, appli Claude)
-
-Les sessions cloud tournent dans un conteneur éphémère : le `~/.claude` de ton ordinateur n'y est pas. Trois réglages sont nécessaires. Ils se font dans les paramètres de l'**environnement cloud** : sur claude.ai/code, menu de l'environnement dans la barre de titre de la session, puis **Modifier**.
-
-1. **Accès réseau** : ajoute `ntfy.sh` aux **domaines autorisés** (ou ton serveur ntfy). Laisse cochée la case des gestionnaires de paquets. Par défaut, ntfy.sh est bloqué.
-2. **Variables d'environnement** : `CLAUDE_COMPANION_PAIRING=<code-appairage>`. Ajoute aussi `CLAUDE_COMPANION_SERVER` et `CLAUDE_COMPANION_TOKEN` si tu utilises ton propre serveur.
-3. **Le hook**, au choix (**pas les deux**, sinon chaque notification arrive en double) :
-   - **Option A, par dépôt** : sur ton ordinateur, lance `./hooks/install.sh --project <chemin-du-dépôt>`, puis commite le dossier `.claude/` du dépôt. Aucun secret n'y est écrit : le code est lu dans la variable d'environnement. Le hook ne fait rien en local (`--cloud-only`, donc pas de doublon avec celui de `~/.claude`), ni chez quelqu'un qui n'a pas la variable. Ce dépôt l'utilise déjà.
-   - **Option B, pour tous les dépôts de l'environnement** : dans le **script de configuration** de l'environnement, ajoute :
-     ```bash
-     git clone --depth 1 https://github.com/Pelagoss/claude-companion /tmp/claude-companion \
-       && /tmp/claude-companion/hooks/install.sh --cloud
-     ```
-
-Sur la montre, les événements cloud sont marqués ☁️, avec un bouton **📱 Ouvrir sur le téléphone** qui ouvre directement la session claude.ai/code pour répondre à Claude. Le compte affiché est celui de la session. **Paramètres → Comptes Claude** permet de couper séparément les sessions locales 💻 et les sessions cloud ☁️.
+> Une session cloud qui ouvre **plusieurs dépôts** à la fois n'exécute aucun hook de dépôt : elle ne notifiera pas la montre.
 
 ## Plusieurs comptes, plusieurs personnes
 
-**Chaque montre a son propre code d'appairage**, généré au hasard au premier lancement. Il contient un sujet ntfy et une **clé secrète de 130 bits**.
+**Chaque montre a son propre code d'appairage**, généré au hasard au premier lancement. C'est une **clé secrète de 125 bits**, dont est déduit le sujet ntfy.
 
 - **Plusieurs personnes** : chacune installe l'appli sur sa montre et lance `install.sh` avec *son* code. Les événements sont chiffrés et signés avec la clé de la montre destinataire. Une montre ignore tout message qu'elle ne peut pas vérifier : celui d'une autre personne, un message forgé par un tiers qui connaîtrait le sujet, ou un message lié à un ancien code.
 - **Plusieurs comptes Claude** (perso / pro, plusieurs ordinateurs, sessions cloud) : utilise le même code partout. Chaque événement porte le compte Claude connecté (l'e-mail lu dans `~/.claude.json`, ou le nom passé avec `--account`). Dans **Paramètres → Comptes Claude**, la montre liste les comptes vus, et tu choisis ceux dont tu veux les notifications.
-- **Révoquer** : *Appairer un ordinateur → Nouveau code* change le sujet et la clé. Les ordinateurs déjà appairés ne peuvent plus rien envoyer tant que tu ne relances pas `install.sh` avec le nouveau code.
+- **Révoquer** : *Appairer un ordinateur → Nouveau code* change la clé (et donc le sujet). Plus rien n'arrive tant que tu n'as pas relancé `install.sh` sur tes ordinateurs et mis à jour la variable de l'environnement cloud. Les dépôts n'ont pas besoin d'être modifiés.
 
 ## Délai de réception
 

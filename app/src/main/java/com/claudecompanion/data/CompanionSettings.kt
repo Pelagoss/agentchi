@@ -1,5 +1,7 @@
 package com.claudecompanion.data
 
+import com.claudecompanion.net.PayloadCrypto
+
 enum class AlertStyle(val label: String) {
     FULL_SCREEN("Plein écran"),
     HEADS_UP("Notification"),
@@ -42,8 +44,12 @@ data class CompanionSettings(
         (event.account != null && event.account in mutedAccounts) ||
             (if (event.cloud) !cloudSessions else !localSessions)
 
-    /** Code à saisir dans `hooks/install.sh` : « sujet.clé ». */
-    val pairingCode: String get() = "$topic.$secret"
+    /**
+     * Code à saisir dans `hooks/install.sh` : la clé, par groupes de 5 (« k7m2x-q9pza-… »).
+     * Le sujet ntfy en est déduit. Un ancien appairage (sujet aléatoire) garde le format « sujet.clé ».
+     */
+    val pairingCode: String
+        get() = if (topic == PayloadCrypto.topicFor(secret)) secret.chunked(5).joinToString("-") else "$topic.$secret"
 
     fun styleFor(type: EventType) = if (type.urgent) urgentStyle else infoStyle
     fun vibrationFor(type: EventType) = if (type.urgent) urgentVibration else infoVibration

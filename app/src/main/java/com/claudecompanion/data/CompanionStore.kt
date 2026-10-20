@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.claudecompanion.net.EventParser
+import com.claudecompanion.net.PayloadCrypto
 import com.claudecompanion.pet.PetState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -102,21 +103,25 @@ class CompanionStore(context: Context) {
     /** Génère le sujet ntfy et la clé secrète au premier lancement. */
     suspend fun ensurePairing() {
         store.edit { p ->
-            if (p[Keys.topic].isNullOrBlank()) {
-                p[Keys.topic] = randomTopic()
-                p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
+            val secret = p[Keys.secret]
+            if (secret.isNullOrBlank()) {
+                newPairing(p)
+            } else if (p[Keys.topic].isNullOrBlank()) {
+                p[Keys.topic] = PayloadCrypto.topicFor(secret)
             }
-            if (p[Keys.secret].isNullOrBlank()) p[Keys.secret] = randomString(SECRET_LENGTH)
         }
     }
 
     /** Nouveau sujet + nouvelle clé : les ordinateurs déjà appairés ne peuvent plus notifier. */
     suspend fun regeneratePairing() {
-        store.edit { p ->
-            p[Keys.topic] = randomTopic()
-            p[Keys.secret] = randomString(SECRET_LENGTH)
-            p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
-        }
+        store.edit { newPairing(it) }
+    }
+
+    private fun newPairing(p: androidx.datastore.preferences.core.MutablePreferences) {
+        val secret = randomString(SECRET_LENGTH)
+        p[Keys.secret] = secret
+        p[Keys.topic] = PayloadCrypto.topicFor(secret)
+        p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
     }
 
     // --- Comptes Claude vus par la montre ---
@@ -194,12 +199,10 @@ class CompanionStore(context: Context) {
 
     companion object {
         private const val MAX_HISTORY = 30
-        private const val SECRET_LENGTH = 26 // 26 × 5 bits = 130 bits
+        private const val SECRET_LENGTH = 25 // 25 × 5 bits = 125 bits
         private const val ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
         private val random = SecureRandom()
         private val HISTORY_SERIALIZER = kotlinx.serialization.builtins.ListSerializer(ClaudeEvent.serializer())
-
-        fun randomTopic(): String = "claude-companion-" + randomString(10)
 
         fun randomString(length: Int): String =
             (1..length).map { ALPHABET[random.nextInt(ALPHABET.length)] }.joinToString("")

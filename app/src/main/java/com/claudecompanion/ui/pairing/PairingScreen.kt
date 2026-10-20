@@ -75,7 +75,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
             }
             item {
                 Text(
-                    "Sur l'ordinateur où tourne Claude Code :\n./hooks/install.sh <code>",
+                    "Sur ton ordinateur : ./hooks/install.sh\nPour le cloud : variable CLAUDE_COMPANION_PAIRING",
                     style = MaterialTheme.typography.caption3,
                     color = MaterialTheme.colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,

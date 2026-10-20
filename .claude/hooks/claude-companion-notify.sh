@@ -8,10 +8,8 @@
 #
 # Configuration (écrite par install.sh dans ~/.claude/claude-companion.env,
 # ou variables d'environnement, par ex. celles d'un environnement cloud) :
-#   CLAUDE_COMPANION_PAIRING  code d'appairage « sujet.clé » (Paramètres > Appairer)
-#     ou bien séparément :
-#   CLAUDE_COMPANION_TOPIC    sujet ntfy de la montre
-#   CLAUDE_COMPANION_KEY      clé secrète de la montre
+#   CLAUDE_COMPANION_PAIRING  code d'appairage affiché sur la montre (Paramètres > Appairer),
+#                             par ex. « k7m2x-q9pza-4hxbc-wn3ra-e8tfy ». Le sujet ntfy en est déduit.
 #   CLAUDE_COMPANION_SERVER   facultatif, défaut : https://ntfy.sh
 #   CLAUDE_COMPANION_TOKEN    facultatif, jeton d'accès pour un serveur ntfy protégé
 #   CLAUDE_COMPANION_ACCOUNT  facultatif, nom du compte affiché sur la montre
@@ -31,19 +29,26 @@ CONFIG="${CLAUDE_COMPANION_CONFIG:-$HOME/.claude/claude-companion.env}"
 [ -f "$CONFIG" ] && . "$CONFIG"
 
 SERVER="${CLAUDE_COMPANION_SERVER:-https://ntfy.sh}"
-TOPIC="${CLAUDE_COMPANION_TOPIC:-}"
 TOKEN="${CLAUDE_COMPANION_TOKEN:-}"
-KEY="${CLAUDE_COMPANION_KEY:-}"
 ACCOUNT="${CLAUDE_COMPANION_ACCOUNT:-}"
 PAIRING="${CLAUDE_COMPANION_PAIRING:-}"
-if [ -n "$PAIRING" ] && [ "${PAIRING#*.}" != "$PAIRING" ]; then
-  TOPIC="${PAIRING%%.*}"
-  KEY="${PAIRING#*.}"
-fi
 
 # Ne jamais bloquer ni faire échouer Claude Code.
-[ -n "$TOPIC" ] && [ -n "$KEY" ] || exit 0
+[ -n "$PAIRING" ] || exit 0
 for bin in curl jq openssl; do command -v "$bin" >/dev/null 2>&1 || exit 0; done
+
+hex_digest() { openssl dgst -sha256 "$@" | awk '{print $NF}'; }
+
+# Code d'appairage → clé (minuscules, sans tirets ni espaces) et sujet ntfy déduit de la clé.
+# L'ancien format « sujet.clé » reste accepté.
+PAIRING="$(printf '%s' "$PAIRING" | tr '[:upper:]' '[:lower:]' | tr -d ' -')"
+if [ "${PAIRING#*.}" != "$PAIRING" ]; then
+  TOPIC="${PAIRING%%.*}"
+  KEY="${PAIRING#*.}"
+else
+  KEY="$PAIRING"
+  TOPIC="cc-$(printf '%s' "claude-companion/topic:$KEY" | hex_digest | cut -c1-24)"
+fi
 
 INPUT='{}'
 TYPE=other
@@ -125,7 +130,6 @@ PLAIN="$(jq -cn --arg t "$TYPE" --arg m "$MESSAGE" --arg p "$PROJECT" --arg s "$
   '{t: $t, m: $m, p: $p, s: $s, a: $a, u: $u, c: $c} | with_entries(select(.value != "" and .value != false))')"
 
 # Chiffrement v1 — voir app/.../net/PayloadCrypto.kt
-hex_digest() { openssl dgst -sha256 "$@" | awk '{print $NF}'; }
 ENC_KEY="$(printf '%s' "claude-companion/enc:$KEY" | hex_digest)"
 IV="$(openssl rand -hex 16)"
 CIPHER="$(printf '%s' "$PLAIN" | openssl enc -aes-256-cbc -K "$ENC_KEY" -iv "$IV" | openssl base64 -A)"

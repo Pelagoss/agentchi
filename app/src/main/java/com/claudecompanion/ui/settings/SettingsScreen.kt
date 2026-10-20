@@ -24,7 +24,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import com.claudecompanion.BuildConfig
-import com.claudecompanion.data.CompanionSettings
 import com.claudecompanion.data.EventType
 import com.claudecompanion.data.next
 import com.claudecompanion.ui.CompanionViewModel
@@ -44,10 +43,6 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
     val editServer = rememberTextInput("URL du serveur ntfy") { url ->
         if (url.startsWith("https://") || url.startsWith("http://")) update { it.copy(serverUrl = url) }
         else toast("L'URL doit commencer par https://")
-    }
-    val editTopic = rememberTextInput("Sujet ntfy") { topic ->
-        if (CompanionSettings.TOPIC_REGEX.matches(topic)) update { it.copy(topic = topic) }
-        else toast("Lettres, chiffres, - et _ uniquement")
     }
     val editToken = rememberTextInput("Jeton d'accès (facultatif)") { token -> update { it.copy(token = token) } }
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
@@ -160,7 +155,6 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
 
             // --- Connexion ---
             section("Connexion")
-            item { Setting("Sujet", settings.topic.ifBlank { "—" }, onClick = editTopic) }
             item { Setting("Serveur", settings.serverUrl, onClick = editServer) }
             item { Setting("Jeton", if (settings.token.isBlank()) "Aucun" else "••••••", onClick = editToken) }
             item {
