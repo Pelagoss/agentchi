@@ -1,0 +1,89 @@
+# Serveur Claude Companion (server/Dockerfile) : reçoit les hooks Claude Code
+# et les pousse aux montres par FCM. L'état (montres, codes d'appairage) est un
+# fichier JSON sur un volume persistant : une seule réplique, et `Recreate`
+# pour que deux pods n'écrivent jamais le même fichier.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  namespace: claude-companion
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      securityContext:
+        # Image distroless `nonroot` (uid 65532) : le volume doit lui appartenir.
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: server
+          image: harbor.codingpacer.fr/prod/claude-companion-server:_GITHUB_INJECTED
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: server-config
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: firebase
+              mountPath: /secrets
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: server-data
+        - name: firebase
+          secret:
+            secretName: firebase-service-account
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: server-data
+  namespace: claude-companion
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server
+  namespace: claude-companion
+spec:
+  selector:
+    app: server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

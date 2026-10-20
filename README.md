@@ -40,34 +40,61 @@ Le push passe par Firebase Cloud Messaging, gratuit.
 1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `com.claudecompanion`.
 2. Télécharge `google-services.json`. Il ne sert qu'à lire quatre valeurs, il ne se versionne pas :
 
-   | Variable du dépôt GitHub (ou propriété Gradle) | Champ de `google-services.json` |
+   | Variable (ou propriété Gradle) | Champ de `google-services.json` |
    |---|---|
    | `FIREBASE_APP_ID` (`-PfirebaseAppId`) | `client[0].client_info.mobilesdk_app_id` |
    | `FIREBASE_API_KEY` (`-PfirebaseApiKey`) | `client[0].api_key[0].current_key` |
    | `FIREBASE_PROJECT_ID` (`-PfirebaseProjectId`) | `project_info.project_id` |
    | `FIREBASE_SENDER_ID` (`-PfirebaseSenderId`) | `project_info.project_number` |
 
-   Ajoute-les dans **GitHub › Settings › Secrets and variables › Actions › Variables**, avec `COMPANION_SERVER=https://cc.example.fr` : la CI produira un APK prêt à l'emploi. Ces valeurs finissent dans l'APK, elles ne sont pas secrètes.
-3. **Paramètres du projet › Comptes de service › Générer une nouvelle clé privée** : c'est le fichier que le serveur utilise pour envoyer les pushs. Celui-là est **secret**.
+   Reporte-les, avec `COMPANION_SERVER`, dans `app/build.secrets.env`, chiffré avec [sops](https://github.com/getsops/sops) :
+
+   ```bash
+   sops edit app/build.secrets.env
+   ```
+
+   La CI le déchiffre avant de compiler la montre : elle produit un APK prêt à l'emploi. Une valeur laissée à `A_REMPLACER` est ignorée.
+3. **Paramètres du projet › Comptes de service › Générer une nouvelle clé privée** : c'est la clé que le serveur utilise pour envoyer les pushs. Colle son contenu JSON à la place de l'exemple dans `k8s/0.secrets.yaml`, lui aussi chiffré :
+
+   ```bash
+   sops edit k8s/0.secrets.yaml
+   ```
+
+**sops** : les deux fichiers sont chiffrés pour la clé age de `.sops.yaml`, la même que Pelagoss/chess-analyzer. Pour les éditer, il faut la clé privée correspondante en local (`~/.config/sops/age/keys.txt` ou `SOPS_AGE_KEY`), et dans le dépôt GitHub le secret **`DECRYPTING_KEY`** pour que la CI puisse les lire.
 
 ### 2. Le serveur
+
+#### Kubernetes (déploiement par défaut)
+
+Même chaîne que Pelagoss/chess-analyzer : le workflow **Deploy** construit l'image `server/Dockerfile`, la pousse sur `harbor.codingpacer.fr/prod/claude-companion-server`, déchiffre `k8s/*.secrets.yaml` avec sops puis applique `k8s/` dans le namespace `claude-companion`. Il part à chaque tag `X.Y.Z`, ou à la main (*Actions › Deploy › Run workflow*).
+
+| Fichier | Contenu |
+|---|---|
+| `k8s/0.secrets.yaml` | Secret `firebase-service-account` (chiffré sops), monté en `/secrets/firebase-service-account.json` |
+| `k8s/config.yaml` | Configuration du serveur, dont `CC_PUBLIC_URL` |
+| `k8s/server.yaml` | Deployment (une réplique), volume persistant pour `state.json`, Service |
+| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `claude-companion.codingpacer.fr` |
+
+Secrets GitHub du dépôt nécessaires : `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `KUBE_CONFIG` et `DECRYPTING_KEY`. Pour un autre domaine, change-le dans `k8s/ingress.yaml`, `k8s/config.yaml` et `app/build.secrets.env`.
+
+Ouvre `https://claude-companion.codingpacer.fr` : la page d'accueil donne les commandes prêtes à copier, avec l'adresse du serveur.
+
+#### Docker Compose (autre serveur)
 
 Il faut un nom de domaine qui pointe vers ton serveur, avec les ports 80 et 443 ouverts. Caddy obtient le certificat HTTPS tout seul.
 
 ```bash
-git clone https://github.com/Pelagoss/claude-companion && cd claude-companion/server
-cp ~/Téléchargements/<projet>-firebase-adminsdk-<…>.json firebase-service-account.json
-chmod 644 firebase-service-account.json    # lisible par le conteneur
-CC_DOMAIN=cc.example.fr docker compose up -d
+git clone https://github.com/Pelagoss/claude-companion && cd claude-companion
+sops decrypt --extract '["stringData"]["firebase-service-account.json"]' k8s/0.secrets.yaml > server/firebase-service-account.json
+chmod 644 server/firebase-service-account.json    # lisible par le conteneur
+cd server && CC_DOMAIN=cc.example.fr docker compose up -d
 ```
-
-Ouvre `https://cc.example.fr` : la page d'accueil donne les commandes prêtes à copier, avec ton adresse.
 
 Sans Docker : `go build` dans `server/`, puis lance le binaire derrière ton reverse proxy. Variables : `CC_FCM_CREDENTIALS` (chemin de la clé du compte de service, **obligatoire** pour les pushs), `CC_ADDR` (défaut `:8080`), `CC_DATA` (défaut `data/state.json`), `CC_PUBLIC_URL`, `CC_TRUST_PROXY=true` derrière un proxy, `CC_MAX_DEVICES` (défaut 1000).
 
 ### 3. La montre
 
-Onglet **Actions** du dépôt → dernier build vert → artefact `claude-companion-debug`, qui contient `claude-companion-montre.apk` (compilé avec les variables Firebase de l'étape 1) :
+Onglet **Actions** du dépôt → dernier build vert → artefact `claude-companion-debug`, qui contient `claude-companion-montre.apk` (compilé avec les valeurs Firebase de l'étape 1) :
 
 ```bash
 gh run download -R Pelagoss/claude-companion -n claude-companion-debug
@@ -84,7 +111,7 @@ gh run download -R Pelagoss/claude-companion -n claude-companion-debug
 
 La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
 
-Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://cc.example.fr -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
+Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://claude-companion.codingpacer.fr -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
 
 ### 4. Chaque ordinateur
 
@@ -92,7 +119,7 @@ Sur la montre : **Ordinateurs et cloud › Nouveau code**, nomme l'ordinateur et
 
 ```bash
 claude plugin install watch-companion --marketplace Pelagoss/claude-companion \
-  --config server_url=https://cc.example.fr --config code=XXXX-XXXX-XXXX
+  --config server_url=https://claude-companion.codingpacer.fr --config code=XXXX-XXXX-XXXX
 ```
 
 C'est tout, pour tous tes projets. Le code est rangé dans le trousseau du système, pas dans `settings.json`. Sans `--config`, Claude Code demande les deux valeurs (`/plugin` › watch-companion › *Configure options*). Le plugin couvre aussi les sessions locales que tu suis en **Remote Control** depuis claude.ai/code ou l'appli mobile.
@@ -103,11 +130,11 @@ Tu peux aussi ajouter la marketplace `Pelagoss/claude-companion` dans **claude.a
 
 Les sessions cloud ne chargent pas les plugins, mais elles exécutent les hooks du dépôt :
 
-1. Ajoute à `.claude/settings.json` du dépôt le bloc que donne `https://cc.example.fr/v1/cloud-settings.json`. C'est un hook `http` qui envoie `Authorization: Bearer $CLAUDE_COMPANION_CODE`.
+1. Ajoute à `.claude/settings.json` du dépôt le bloc que donne `https://claude-companion.codingpacer.fr/v1/cloud-settings.json`. C'est un hook `http` qui envoie `Authorization: Bearer $CLAUDE_COMPANION_CODE`.
 2. Sur la montre, crée un code pour cet environnement cloud.
 3. Dans les paramètres de l'environnement cloud sur claude.ai/code :
    - variable d'environnement `CLAUDE_COMPANION_CODE=XXXX-XXXX-XXXX` ;
-   - accès réseau **personnalisé** qui autorise `cc.example.fr`.
+   - accès réseau **personnalisé** qui autorise `claude-companion.codingpacer.fr`.
 
 Chaque personne qui travaille sur le dépôt met **son propre code** dans **son** environnement. Sans code, le hook ne fait rien et n'affiche pas d'erreur. Sur un ordinateur, la variable n'est pas définie, donc pas de doublon avec le plugin.
 
