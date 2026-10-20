@@ -13,6 +13,7 @@ import kotlinx.coroutines.tasks.await
 object Relay {
     private const val PREFS = "relay"
     private const val ENABLED = "enabled"
+    private const val HIDE_ON_PHONE = "hide_on_phone"
     private const val MAX = 50
 
     data class LogEntry(val time: Long, val title: String, val text: String, val delivered: Int)
@@ -29,6 +30,17 @@ object Relay {
 
     fun setEnabled(context: Context, enabled: Boolean) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(ENABLED, enabled).apply()
+
+    fun hideOnPhone(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(HIDE_ON_PHONE, false)
+
+    fun setHideOnPhone(context: Context, hide: Boolean) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(HIDE_ON_PHONE, hide).apply()
+
+    /** La dernière notification relayée a-t-elle atteint une montre ? */
+    @Volatile
+    var lastDeliveryOk = false
+        private set
 
     @Synchronized
     fun remember(key: String, intent: PendingIntent?) {
@@ -57,6 +69,7 @@ object Relay {
             log.add(0, LogEntry(n.time, n.title.orEmpty(), n.text.orEmpty(), delivered))
             while (log.size > 20) log.removeAt(log.lastIndex)
         }
+        lastDeliveryOk = delivered > 0
         return delivered
     }
 

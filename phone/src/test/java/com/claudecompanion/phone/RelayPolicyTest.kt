@@ -29,4 +29,11 @@ class RelayPolicyTest {
         val json = relayJson.encodeToString(RelayedNotification.serializer(), n)
         assertEquals("""{"key":"0|com.anthropic.claude|1|null|10","title":"Session","text":"Fini","time":5}""", json)
     }
+
+    @Test
+    fun `ne masque sur le telephone que si la montre a recu la notification`() {
+        assertTrue(RelayPolicy.shouldHideOnPhone(hideEnabled = true, deliveredToWatches = 1))
+        assertFalse(RelayPolicy.shouldHideOnPhone(hideEnabled = true, deliveredToWatches = 0))
+        assertFalse(RelayPolicy.shouldHideOnPhone(hideEnabled = false, deliveredToWatches = 1))
+    }
 }

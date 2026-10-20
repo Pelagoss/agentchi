@@ -34,6 +34,13 @@ object RelayPolicy {
     fun shouldRelay(packageName: String, ongoing: Boolean, groupSummary: Boolean, hasContent: Boolean): Boolean =
         packageName == CLAUDE_PACKAGE && !ongoing && !groupSummary && hasContent
 
+    /**
+     * Retirer la notification du téléphone ? Seulement si l'option est active et que la montre
+     * l'a bien reçue : si la montre est injoignable, la notification reste sur le téléphone.
+     */
+    fun shouldHideOnPhone(hideEnabled: Boolean, deliveredToWatches: Int): Boolean =
+        hideEnabled && deliveredToWatches > 0
+
     /** Empreinte pour ne pas renvoyer une notification simplement mise à jour à l'identique. */
     fun fingerprint(n: RelayedNotification): String = listOf(n.key, n.title, n.text, n.conversation).joinToString("\u0000")
 }

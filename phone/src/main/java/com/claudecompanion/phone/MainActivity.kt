@@ -67,6 +67,7 @@ private fun RelayScreen() {
     var accessGranted by remember { mutableStateOf(false) }
     var watches by remember { mutableStateOf<List<String>?>(null) }
     var enabled by remember { mutableStateOf(Relay.isEnabled(context)) }
+    var hideOnPhone by remember { mutableStateOf(Relay.hideOnPhone(context)) }
     var testResult by remember { mutableStateOf<String?>(null) }
     var refresh by remember { mutableIntStateOf(0) }
 
@@ -123,6 +124,17 @@ private fun RelayScreen() {
             }
         }
         item {
+            Step(
+                done = hideOnPhone,
+                title = "4. Seulement sur la montre",
+                detail = "Retire la notification Claude du téléphone dès que la montre l'a reçue. " +
+                    "Si la montre est injoignable, elle reste sur le téléphone.\n" +
+                    "Pour que le téléphone ne sonne pas non plus : Paramètres Android › Notifications › Claude › Silencieux (sans désactiver).",
+            ) {
+                Switch(checked = hideOnPhone, onCheckedChange = { hideOnPhone = it; Relay.setHideOnPhone(context, it) })
+            }
+        }
+        item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
@@ -138,10 +150,6 @@ private fun RelayScreen() {
                         }
                     }) { Text("Envoyer un test à la montre") }
                     testResult?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    Text(
-                        "Astuce : dans Galaxy Wearable › Notifications, désactive l'appli Claude pour ne pas recevoir chaque notification en double.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                 }
             }
         }

@@ -25,13 +25,22 @@ class ClaudeNotificationListener : NotificationListenerService() {
             ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
             ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
 
+        val groupSummary = n.flags and Notification.FLAG_GROUP_SUMMARY != 0
         val relay = RelayPolicy.shouldRelay(
             packageName = sbn.packageName,
             ongoing = n.flags and Notification.FLAG_ONGOING_EVENT != 0,
-            groupSummary = n.flags and Notification.FLAG_GROUP_SUMMARY != 0,
+            groupSummary = groupSummary,
             hasContent = !title.isNullOrBlank() || !text.isNullOrBlank(),
         )
-        if (!relay) return
+        if (!relay) {
+            // Le résumé de groupe de l'appli Claude disparaît avec ses notifications masquées.
+            if (groupSummary && sbn.packageName == RelayPolicy.CLAUDE_PACKAGE &&
+                RelayPolicy.shouldHideOnPhone(Relay.hideOnPhone(this), if (Relay.lastDeliveryOk) 1 else 0)
+            ) {
+                cancelNotification(sbn.key)
+            }
+            return
+        }
 
         val relayed = RelayedNotification(
             key = sbn.key,
@@ -44,7 +53,12 @@ class ClaudeNotificationListener : NotificationListenerService() {
         )
         Relay.remember(sbn.key, n.contentIntent)
         if (!Relay.markSent(relayed)) return
-        scope.launch { Relay.send(applicationContext, relayed) }
+        scope.launch {
+            val delivered = Relay.send(applicationContext, relayed)
+            if (RelayPolicy.shouldHideOnPhone(Relay.hideOnPhone(applicationContext), delivered)) {
+                cancelNotification(sbn.key)
+            }
+        }
     }
 
     override fun onDestroy() {

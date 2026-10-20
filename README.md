@@ -46,7 +46,9 @@ Ouvre **Claude Companion** sur le téléphone :
 2. Vérifie que **Montre connectée** affiche ta Galaxy Watch.
 3. Touche **Envoyer un test à la montre**.
 
-Pour éviter les doublons, désactive l'appli **Claude** dans **Galaxy Wearable → Notifications** : sinon la montre affiche aussi la copie standard de chaque notification.
+**Notifications seulement sur la montre** : active **4. Seulement sur la montre**. Le relais retire alors la notification Claude du téléphone dès que la montre l'a reçue ; si la montre est injoignable, elle reste sur le téléphone. Pour que le téléphone ne sonne pas non plus, règle les notifications de l'appli Claude sur **Silencieux** dans les paramètres Android. Ne les **désactive pas** : le relais ne les verrait plus.
+
+Pour éviter les doublons sur la montre, désactive l'appli **Claude** dans **Galaxy Wearable → Notifications**.
 
 ### 3. Montre
 
