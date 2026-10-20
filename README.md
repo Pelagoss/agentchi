@@ -11,7 +11,7 @@ Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pend
 ## Comment ça marche
 
 ```
-Claude Code ──hook──▶ claude-companion-notify.sh ──HTTPS──▶ ntfy (sujet privé) ──▶ Galaxy Watch
+Claude Code ──hook──▶ claude-companion-notify.sh ──chiffré──▶ ntfy ──▶ Galaxy Watch (déchiffre + vérifie)
 ```
 
 Claude Code déclenche des [hooks](https://docs.claude.com/en/docs/claude-code/hooks) à chaque événement de session. Le script `hooks/claude-companion-notify.sh` publie l'événement sur un sujet [ntfy](https://ntfy.sh) (service de notifications push gratuit, open source et auto-hébergeable). La montre est abonnée à ce sujet. Aucun compte n'est nécessaire, et aucune application téléphone non plus : la montre se connecte directement en Wi-Fi ou LTE, ou via le Bluetooth du téléphone.
@@ -39,15 +39,16 @@ Claude Code déclenche des [hooks](https://docs.claude.com/en/docs/claude-code/h
    adb connect <ip>:<port>
    adb install app-debug.apk
    ```
-4. Ouvre **Claude Companion** et accepte les notifications. Dans **Paramètres → Connexion → Sujet**, note le sujet généré (par ex. `claude-companion-k7m2xq9pza`).
+4. Ouvre **Claude Companion** et accepte les notifications. Va dans **Paramètres → 🔗 Appairer un ordinateur** : la montre affiche un **code d'appairage** (et son QR code) de la forme `claude-companion-k7m2xq9pza.4hx…`.
 
 ### 2. Claude Code (sur ton ordinateur)
 
-`jq` et `curl` sont requis.
+`jq`, `curl` et `openssl` sont requis.
 
 ```bash
-git clone <ce dépôt> && cd claude-companion
-./hooks/install.sh claude-companion-k7m2xq9pza
+git clone https://github.com/Pelagoss/claude-companion && cd claude-companion
+./hooks/install.sh <code-appairage>
+# options : --account "Pro"  --server https://ntfy.mondomaine.fr  --token tk_xxx
 ```
 
 Le script copie le hook dans `~/.claude/hooks/`, enregistre ta configuration dans `~/.claude/claude-companion.env` et ajoute les hooks à `~/.claude/settings.json`. Tes autres réglages et hooks sont conservés, et une sauvegarde est créée. Pour une configuration manuelle, voir `hooks/settings.example.json`.
@@ -60,6 +61,14 @@ Pour tester :
 
 Puis, sur la montre, ouvre l'appli ou appuie sur **Paramètres → Synchroniser**.
 
+## Plusieurs comptes, plusieurs personnes
+
+**Chaque montre a son propre code d'appairage**, généré au hasard au premier lancement. Il contient un sujet ntfy et une **clé secrète de 130 bits**.
+
+- **Plusieurs personnes** : chacune installe l'appli sur sa montre et lance `install.sh` avec *son* code. Les événements sont chiffrés et signés avec la clé de la montre destinataire. Une montre ignore tout message qu'elle ne peut pas vérifier : celui d'une autre personne, un message forgé par un tiers qui connaîtrait le sujet, ou un message lié à un ancien code.
+- **Plusieurs comptes Claude** (perso / pro, plusieurs ordinateurs) : lance `install.sh` avec le même code sur chaque ordinateur. Chaque événement porte le compte Claude connecté (l'e-mail lu dans `~/.claude.json`, ou le nom passé avec `--account`). Dans **Paramètres → Comptes Claude**, la montre liste les comptes vus, et tu choisis ceux dont tu veux les notifications.
+- **Révoquer** : *Appairer un ordinateur → Nouveau code* change le sujet et la clé. Les ordinateurs déjà appairés ne peuvent plus rien envoyer tant que tu ne relances pas `install.sh` avec le nouveau code.
+
 ## Délai de réception
 
 | Mode | Délai | Batterie |
@@ -71,9 +80,10 @@ Le mode instantané s'active dans **Paramètres → Connexion**. Il est surtout 
 
 ## Confidentialité
 
-- Sur `ntfy.sh`, **le sujet fait office de mot de passe** : quiconque le connaît peut lire tes notifications. Le sujet généré est aléatoire. Ne le partage pas.
-- Les messages contiennent le nom du dossier du projet et un extrait (300 caractères max) du dernier message de Claude. Désactive **Aperçu du message** pour masquer le texte sur la montre.
-- Pour garder le contrôle total, [auto-héberge ntfy](https://docs.ntfy.sh/install/) avec contrôle d'accès, puis renseigne le **Serveur** et le **Jeton** sur la montre et dans `install.sh <sujet> <serveur> <jeton>`.
+- **Chiffrement de bout en bout** (AES-256-CBC + HMAC-SHA256, encrypt-then-MAC) : le serveur ntfy ne voit qu'un bloc chiffré. Le projet, le compte et le message de Claude ne sont lisibles que par la montre.
+- Le code d'appairage est secret : il est stocké sur la montre et dans `~/.claude/claude-companion.env` (lisible par toi seul). Il n'est **jamais** dans ce dépôt, qui peut donc rester public.
+- Désactive **Aperçu du message** pour masquer le texte sur l'écran de la montre.
+- Pour garder le contrôle total, [auto-héberge ntfy](https://docs.ntfy.sh/install/) avec contrôle d'accès, puis renseigne le **Serveur** et le **Jeton** sur la montre et dans `install.sh <code> --server … --token …`.
 
 ## La mascotte
 
@@ -89,16 +99,16 @@ Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niv
 
 - Kotlin, Jetpack Compose pour Wear OS (Material), DataStore, WorkManager, OkHttp, kotlinx.serialization
 - `minSdk 30` (Wear OS 3), `targetSdk 34`
-- `./gradlew testDebugUnitTest` lance les tests de la logique de la mascotte, du parsing et des heures calmes.
+- `./gradlew testDebugUnitTest` lance les tests : mascotte, heures calmes, et déchiffrement de vrais messages produits par le hook avec `openssl`.
 
 ```
 app/src/main/java/com/claudecompanion/
 ├── data/      modèle d'événements, paramètres, persistance DataStore
-├── net/       client ntfy (sondage + flux) et parsing
+├── net/       client ntfy (sondage + flux), parsing, chiffrement
 ├── notify/    canaux, notifications, vibrations
 ├── pet/       logique du tamagotchi (pure Kotlin, testée)
 ├── sync/      WorkManager (15 min), service instantané, redémarrage
-└── ui/        écrans Compose : mascotte, paramètres, historique, alerte plein écran
+└── ui/        écrans Compose : mascotte, paramètres, appairage (QR), historique, alerte
 hooks/         script de hook Claude Code + installateur
 ```
 
