@@ -5,10 +5,16 @@
 # Utilisation manuelle :  claude-companion-notify.sh <type> "<message>"
 #   types : permission | input | done | subagent | session_start | session_end | compact | error | other
 #
-# Variables d'environnement :
-#   CLAUDE_COMPANION_TOPIC   (obligatoire) sujet affiché dans Paramètres > Connexion sur la montre
-#   CLAUDE_COMPANION_SERVER  (facultatif)  défaut : https://ntfy.sh
-#   CLAUDE_COMPANION_TOKEN   (facultatif)  jeton d'accès pour un serveur ntfy protégé
+# Configuration (écrite par install.sh dans ~/.claude/claude-companion.env) :
+#   CLAUDE_COMPANION_TOPIC    sujet ntfy de la montre        ┐ donnés par le code d'appairage
+#   CLAUDE_COMPANION_KEY      clé secrète de la montre       ┘ (Paramètres > Appairer)
+#   CLAUDE_COMPANION_SERVER   facultatif, défaut : https://ntfy.sh
+#   CLAUDE_COMPANION_TOKEN    facultatif, jeton d'accès pour un serveur ntfy protégé
+#   CLAUDE_COMPANION_ACCOUNT  facultatif, nom du compte affiché sur la montre
+#                             (par défaut : e-mail du compte Claude connecté)
+#
+# Le contenu est chiffré (AES-256-CBC + HMAC-SHA256) : le serveur ntfy ne voit rien,
+# et la montre ignore tout message qui n'a pas été produit avec sa clé.
 set -uo pipefail
 
 CONFIG="${CLAUDE_COMPANION_CONFIG:-$HOME/.claude/claude-companion.env}"
@@ -18,11 +24,12 @@ CONFIG="${CLAUDE_COMPANION_CONFIG:-$HOME/.claude/claude-companion.env}"
 SERVER="${CLAUDE_COMPANION_SERVER:-https://ntfy.sh}"
 TOPIC="${CLAUDE_COMPANION_TOPIC:-}"
 TOKEN="${CLAUDE_COMPANION_TOKEN:-}"
+KEY="${CLAUDE_COMPANION_KEY:-}"
+ACCOUNT="${CLAUDE_COMPANION_ACCOUNT:-}"
 
 # Ne jamais bloquer ni faire échouer Claude Code.
-[ -n "$TOPIC" ] || exit 0
-command -v curl >/dev/null 2>&1 || exit 0
-command -v jq >/dev/null 2>&1 || exit 0
+[ -n "$TOPIC" ] && [ -n "$KEY" ] || exit 0
+for bin in curl jq openssl; do command -v "$bin" >/dev/null 2>&1 || exit 0; done
 
 INPUT='{}'
 TYPE=other
@@ -56,7 +63,7 @@ case "$(field .hook_event_name)" in
     esac
     ;;
   Stop)
-    TYPE=done
+    TYPE="done"
     MESSAGE="$(field .last_assistant_message)"
     TRANSCRIPT="$(field .transcript_path)"
     if [ -z "$MESSAGE" ] && [ -f "$TRANSCRIPT" ]; then
@@ -83,14 +90,25 @@ esac
 MESSAGE="$(tr '\n\r\t' '   ' <<<"$MESSAGE" | sed 's/  */ /g; s/^ //; s/ $//' | cut -c1-300)"
 [ -n "$MESSAGE" ] || MESSAGE="Événement Claude ($TYPE)"
 
-PAYLOAD="$(jq -n \
-  --arg topic "$TOPIC" \
-  --arg title "$PROJECT" \
-  --arg message "$MESSAGE" \
-  --arg type "cc-$TYPE" \
-  --arg session "ccs-${SESSION:-manual}" \
-  --argjson priority "$PRIORITY" \
-  '{topic: $topic, title: $title, message: $message, tags: [$type, $session], priority: $priority}')"
+# Compte Claude connecté, pour pouvoir filtrer par compte sur la montre
+if [ -z "$ACCOUNT" ]; then
+  CLAUDE_JSON="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
+  [ -f "$CLAUDE_JSON" ] && ACCOUNT="$(jq -r '.oauthAccount.emailAddress // empty' "$CLAUDE_JSON" 2>/dev/null)"
+fi
+
+PLAIN="$(jq -cn --arg t "$TYPE" --arg m "$MESSAGE" --arg p "$PROJECT" --arg s "$SESSION" --arg a "$ACCOUNT" \
+  '{t: $t, m: $m, p: $p, s: $s, a: $a} | with_entries(select(.value != ""))')"
+
+# Chiffrement v1 — voir app/.../net/PayloadCrypto.kt
+hex_digest() { openssl dgst -sha256 "$@" | awk '{print $NF}'; }
+ENC_KEY="$(printf '%s' "claude-companion/enc:$KEY" | hex_digest)"
+IV="$(openssl rand -hex 16)"
+CIPHER="$(printf '%s' "$PLAIN" | openssl enc -aes-256-cbc -K "$ENC_KEY" -iv "$IV" | openssl base64 -A)"
+HEAD="v1.$IV.$CIPHER"
+MAC="$(printf '%s' "$HEAD" | hex_digest -hmac "claude-companion/mac:$KEY")"
+
+PAYLOAD="$(jq -n --arg topic "$TOPIC" --arg message "$HEAD.$MAC" --argjson priority "$PRIORITY" \
+  '{topic: $topic, message: $message, priority: $priority}')"
 
 ARGS=(-fsS -m 10 -H "Content-Type: application/json" -d "$PAYLOAD")
 [ -n "$TOKEN" ] && ARGS+=(-H "Authorization: Bearer $TOKEN")

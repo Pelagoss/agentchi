@@ -18,6 +18,10 @@ data class CompanionSettings(
     val serverUrl: String = DEFAULT_SERVER,
     val topic: String = "",
     val token: String = "",
+    /** Clé secrète partagée avec les ordinateurs appairés (chiffrement + signature). */
+    val secret: String = "",
+    /** Comptes Claude dont on ignore les événements. */
+    val mutedAccounts: Set<String> = emptySet(),
     val instantMode: Boolean = false,
     val enabledEvents: Set<EventType> = EventType.entries.filter { it.defaultEnabled }.toSet(),
     val urgentStyle: AlertStyle = AlertStyle.FULL_SCREEN,
@@ -31,6 +35,9 @@ data class CompanionSettings(
     val quietEnd: Int = 7,
     val quietAllowsUrgent: Boolean = true,
 ) {
+    /** Code à saisir dans `hooks/install.sh` : « sujet.clé ». */
+    val pairingCode: String get() = "$topic.$secret"
+
     fun styleFor(type: EventType) = if (type.urgent) urgentStyle else infoStyle
     fun vibrationFor(type: EventType) = if (type.urgent) urgentVibration else infoVibration
 

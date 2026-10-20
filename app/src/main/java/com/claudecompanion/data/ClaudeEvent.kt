@@ -35,6 +35,8 @@ data class ClaudeEvent(
     val message: String,
     val project: String? = null,
     val session: String? = null,
+    /** Compte Claude (e-mail) ou libellé choisi sur l'ordinateur. */
+    val account: String? = null,
     /** Horodatage Unix en secondes. */
     val time: Long,
 ) {

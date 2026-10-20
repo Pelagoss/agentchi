@@ -1,18 +1,37 @@
 #!/usr/bin/env bash
 # Installe le hook Claude Companion dans ~/.claude (Linux / macOS / WSL).
-#   ./hooks/install.sh <sujet> [serveur] [jeton]
+#
+#   ./hooks/install.sh <code-appairage> [options]
+#
+# Le code d'appairage est affiché sur la montre : Paramètres > Appairer un ordinateur.
+# Options :
+#   --account <nom>    nom du compte affiché sur la montre (défaut : e-mail du compte Claude)
+#   --server <url>     serveur ntfy (défaut : https://ntfy.sh)
+#   --token <jeton>    jeton d'accès pour un serveur ntfy protégé
 set -euo pipefail
 
-TOPIC="${1:-}"
-SERVER="${2:-https://ntfy.sh}"
-TOKEN="${3:-}"
+usage() { sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-if [ -z "$TOPIC" ]; then
-  echo "Usage : $0 <sujet> [serveur] [jeton]"
-  echo "Le sujet est affiché sur la montre : Paramètres > Connexion > Sujet."
+CODE="${1:-}"
+[ -n "$CODE" ] && [ "${CODE#-}" = "$CODE" ] || usage
+shift
+SERVER="https://ntfy.sh"; TOKEN=""; ACCOUNT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --server) SERVER="$2"; shift 2 ;;
+    --token) TOKEN="$2"; shift 2 ;;
+    --account) ACCOUNT="$2"; shift 2 ;;
+    *) usage ;;
+  esac
+done
+
+TOPIC="${CODE%%.*}"
+KEY="${CODE#*.}"
+if [ "$TOPIC" = "$CODE" ] || ! [[ "$TOPIC" =~ ^[-_A-Za-z0-9]{1,64}$ ]] || ! [[ "$KEY" =~ ^[a-z0-9]{20,}$ ]]; then
+  echo "Code d'appairage invalide. Format attendu : <sujet>.<clé> (voir la montre)."
   exit 1
 fi
-for bin in jq curl; do
+for bin in jq curl openssl; do
   command -v "$bin" >/dev/null || { echo "« $bin » est requis."; exit 1; }
 done
 
@@ -25,12 +44,16 @@ mkdir -p "$CLAUDE_DIR/hooks"
 cp "$DIR/claude-companion-notify.sh" "$HOOK"
 chmod +x "$HOOK"
 
-umask 077
-cat > "$CLAUDE_DIR/claude-companion.env" <<CONF
+# La clé est secrète : fichier lisible uniquement par toi.
+( umask 077
+  cat > "$CLAUDE_DIR/claude-companion.env" <<CONF
 CLAUDE_COMPANION_TOPIC=$TOPIC
+CLAUDE_COMPANION_KEY=$KEY
 CLAUDE_COMPANION_SERVER=$SERVER
 CLAUDE_COMPANION_TOKEN=$TOKEN
+CLAUDE_COMPANION_ACCOUNT=$ACCOUNT
 CONF
+)
 
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 cp "$SETTINGS" "$SETTINGS.bak.$(date +%s)"

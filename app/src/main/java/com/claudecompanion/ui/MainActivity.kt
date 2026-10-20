@@ -15,6 +15,7 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.claudecompanion.CompanionApp
 import com.claudecompanion.ui.history.HistoryScreen
+import com.claudecompanion.ui.pairing.PairingScreen
 import com.claudecompanion.ui.pet.PetScreen
 import com.claudecompanion.ui.settings.SettingsScreen
 import com.claudecompanion.ui.theme.CompanionTheme
@@ -47,8 +48,11 @@ class MainActivity : ComponentActivity() {
                             onOpenHistory = { navController.navigate("history") },
                         )
                     }
-                    composable("settings") { SettingsScreen(viewModel) }
+                    composable("settings") {
+                        SettingsScreen(viewModel, onOpenPairing = { navController.navigate("pairing") })
+                    }
                     composable("history") { HistoryScreen(viewModel) }
+                    composable("pairing") { PairingScreen(viewModel) }
                 }
             }
         }

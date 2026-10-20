@@ -27,6 +27,9 @@ class CompanionStore(context: Context) {
         val server = stringPreferencesKey("server")
         val topic = stringPreferencesKey("topic")
         val token = stringPreferencesKey("token")
+        val secret = stringPreferencesKey("secret")
+        val mutedAccounts = stringSetPreferencesKey("muted_accounts")
+        val knownAccounts = stringSetPreferencesKey("known_accounts")
         val instant = booleanPreferencesKey("instant")
         val events = stringSetPreferencesKey("events")
         val urgentStyle = stringPreferencesKey("urgent_style")
@@ -51,6 +54,8 @@ class CompanionStore(context: Context) {
             serverUrl = p[Keys.server] ?: d.serverUrl,
             topic = p[Keys.topic] ?: d.topic,
             token = p[Keys.token] ?: d.token,
+            secret = p[Keys.secret] ?: d.secret,
+            mutedAccounts = p[Keys.mutedAccounts] ?: d.mutedAccounts,
             instantMode = p[Keys.instant] ?: d.instantMode,
             enabledEvents = p[Keys.events]?.map { EventType.fromKey(it) }?.toSet() ?: d.enabledEvents,
             urgentStyle = enumOr(p[Keys.urgentStyle], d.urgentStyle),
@@ -72,6 +77,7 @@ class CompanionStore(context: Context) {
             p[Keys.server] = s.serverUrl.trim().trimEnd('/')
             p[Keys.topic] = s.topic
             p[Keys.token] = s.token
+            p[Keys.mutedAccounts] = s.mutedAccounts
             p[Keys.instant] = s.instantMode
             p[Keys.events] = s.enabledEvents.map { it.key }.toSet()
             p[Keys.urgentStyle] = s.urgentStyle.name
@@ -87,13 +93,42 @@ class CompanionStore(context: Context) {
         }
     }
 
-    /** Génère un sujet ntfy aléatoire au premier lancement (difficile à deviner). */
-    suspend fun ensureTopic() {
+    /** Génère le sujet ntfy et la clé secrète au premier lancement. */
+    suspend fun ensurePairing() {
         store.edit { p ->
             if (p[Keys.topic].isNullOrBlank()) {
                 p[Keys.topic] = randomTopic()
                 p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
             }
+            if (p[Keys.secret].isNullOrBlank()) p[Keys.secret] = randomString(SECRET_LENGTH)
+        }
+    }
+
+    /** Nouveau sujet + nouvelle clé : les ordinateurs déjà appairés ne peuvent plus notifier. */
+    suspend fun regeneratePairing() {
+        store.edit { p ->
+            p[Keys.topic] = randomTopic()
+            p[Keys.secret] = randomString(SECRET_LENGTH)
+            p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
+        }
+    }
+
+    // --- Comptes Claude vus par la montre ---
+
+    val knownAccounts: Flow<Set<String>> = store.data.map { it[Keys.knownAccounts] ?: emptySet() }
+        .distinctUntilChanged()
+
+    suspend fun addKnownAccount(account: String) {
+        store.edit { p ->
+            val known = p[Keys.knownAccounts] ?: emptySet()
+            if (account !in known) p[Keys.knownAccounts] = known + account
+        }
+    }
+
+    suspend fun forgetAccount(account: String) {
+        store.edit { p ->
+            p[Keys.knownAccounts] = (p[Keys.knownAccounts] ?: emptySet()) - account
+            p[Keys.mutedAccounts] = (p[Keys.mutedAccounts] ?: emptySet()) - account
         }
     }
 
@@ -136,6 +171,10 @@ class CompanionStore(context: Context) {
         store.edit { it.remove(Keys.history) }
     }
 
+    suspend fun setSince(id: String) {
+        store.edit { it[Keys.since] = id }
+    }
+
     /** Valeur du paramètre `since` de ntfy : dernier id reçu, ou horodatage. */
     suspend fun since(): String =
         store.data.first()[Keys.since] ?: (System.currentTimeMillis() / 1000).toString()
@@ -149,12 +188,14 @@ class CompanionStore(context: Context) {
 
     companion object {
         private const val MAX_HISTORY = 30
+        private const val SECRET_LENGTH = 26 // 26 × 5 bits = 130 bits
+        private const val ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
+        private val random = SecureRandom()
         private val HISTORY_SERIALIZER = kotlinx.serialization.builtins.ListSerializer(ClaudeEvent.serializer())
 
-        fun randomTopic(): String {
-            val alphabet = "abcdefghijkmnpqrstuvwxyz23456789"
-            val rnd = SecureRandom()
-            return "claude-companion-" + (1..10).map { alphabet[rnd.nextInt(alphabet.length)] }.joinToString("")
-        }
+        fun randomTopic(): String = "claude-companion-" + randomString(10)
+
+        fun randomString(length: Int): String =
+            (1..length).map { ALPHABET[random.nextInt(ALPHABET.length)] }.joinToString("")
     }
 }

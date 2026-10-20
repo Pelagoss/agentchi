@@ -38,6 +38,17 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     val settings: StateFlow<CompanionSettings> =
         store.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CompanionSettings())
 
+    val knownAccounts: StateFlow<Set<String>> =
+        store.knownAccounts.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    fun setAccountEnabled(account: String, enabled: Boolean) = updateSettings {
+        it.copy(mutedAccounts = if (enabled) it.mutedAccounts - account else it.mutedAccounts + account)
+    }
+
+    fun regeneratePairing() {
+        viewModelScope.launch { store.regeneratePairing() }
+    }
+
     val history: StateFlow<List<ClaudeEvent>> =
         store.history.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

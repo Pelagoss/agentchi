@@ -68,7 +68,7 @@ class EventNotifier(private val context: Context) {
             .setColor(ContextCompat.getColor(context, R.color.claude_orange))
             .setContentTitle(event.title)
             .setContentText(text)
-            .setSubText(event.project)
+            .setSubText(listOfNotNull(event.project, event.account?.substringBefore('@')).joinToString(" · ").ifEmpty { null })
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setWhen(event.time * 1000)
             .setShowWhen(true)

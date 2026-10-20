@@ -26,7 +26,7 @@ class CompanionApp : Application() {
         store = CompanionStore(this)
         notifier = EventNotifier(this).also { it.createChannels() }
         processor = EventProcessor(store, notifier)
-        appScope.launch { store.ensureTopic() }
+        appScope.launch { store.ensurePairing() }
         PollWorker.schedule(this)
     }
 }

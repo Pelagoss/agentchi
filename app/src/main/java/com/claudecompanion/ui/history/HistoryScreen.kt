@@ -54,6 +54,7 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     event.project?.let { Text("📁 $it", style = MaterialTheme.typography.caption3) }
+                    event.account?.let { Text("👤 $it", style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     Text(event.message, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
             }

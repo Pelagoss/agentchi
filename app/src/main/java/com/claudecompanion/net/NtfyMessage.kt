@@ -18,10 +18,21 @@ data class NtfyMessage(
     val priority: Int? = null,
 )
 
-object EventParser {
-    private const val TYPE_PREFIX = "cc-"
-    private const val SESSION_PREFIX = "ccs-"
+/** Contenu chiffré publié par le hook. */
+@Serializable
+data class SecurePayload(
+    /** Type d'événement (clé de [EventType]). */
+    val t: String,
+    val m: String = "",
+    /** Projet (nom du dossier). */
+    val p: String? = null,
+    /** Session (8 premiers caractères de l'id). */
+    val s: String? = null,
+    /** Compte Claude. */
+    val a: String? = null,
+)
 
+object EventParser {
     val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
     /** Parse une ligne du flux JSON ntfy ; null si invalide ou si ce n'est pas un message. */
@@ -31,18 +42,21 @@ object EventParser {
         return msg.takeIf { it.event == "message" }
     }
 
-    fun toEvent(msg: NtfyMessage): ClaudeEvent {
-        val tags = msg.tags.orEmpty()
-        val typeKey = tags.firstOrNull { it.startsWith(TYPE_PREFIX) && !it.startsWith(SESSION_PREFIX) }
-            ?.removePrefix(TYPE_PREFIX)
-        val session = tags.firstOrNull { it.startsWith(SESSION_PREFIX) }?.removePrefix(SESSION_PREFIX)
-        val type = EventType.fromKey(typeKey)
+    /**
+     * Déchiffre un message publié par le hook avec la clé [secret] de la montre.
+     * Retourne null pour tout message qui ne vient pas d'un ordinateur appairé.
+     */
+    fun toEvent(msg: NtfyMessage, secret: String): ClaudeEvent? {
+        val plain = PayloadCrypto.decrypt(msg.message.orEmpty(), secret) ?: return null
+        val payload = runCatching { json.decodeFromString<SecurePayload>(plain) }.getOrNull() ?: return null
+        val type = EventType.fromKey(payload.t)
         return ClaudeEvent(
             id = msg.id,
             type = type,
-            message = msg.message?.takeIf { it.isNotBlank() && it != "triggered" } ?: type.label,
-            project = msg.title?.takeIf { it.isNotBlank() },
-            session = session?.takeIf { it.isNotBlank() },
+            message = payload.m.ifBlank { type.label },
+            project = payload.p?.takeIf { it.isNotBlank() },
+            session = payload.s?.takeIf { it.isNotBlank() },
+            account = payload.a?.takeIf { it.isNotBlank() },
             time = msg.time,
         )
     }

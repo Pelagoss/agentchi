@@ -31,9 +31,10 @@ import com.claudecompanion.ui.CompanionViewModel
 import com.claudecompanion.ui.common.rememberTextInput
 
 @Composable
-fun SettingsScreen(viewModel: CompanionViewModel) {
+fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val (pet, _) = viewModel.pet.collectAsStateWithLifecycle().value
+    val accounts by viewModel.knownAccounts.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val listState = rememberScalingLazyListState()
     val update = viewModel::updateSettings
@@ -57,6 +58,36 @@ fun SettingsScreen(viewModel: CompanionViewModel) {
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("Paramètres") } }
+            item {
+                Chip(
+                    onClick = onOpenPairing,
+                    label = { Text("Appairer un ordinateur") },
+                    secondaryLabel = { Text("Code et QR code") },
+                    icon = { Text("🔗") },
+                    colors = ChipDefaults.primaryChipColors(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            // --- Comptes ---
+            section("Comptes Claude")
+            if (accounts.isEmpty()) {
+                item {
+                    Text(
+                        "Les comptes apparaîtront ici dès leur premier événement.",
+                        style = MaterialTheme.typography.caption3,
+                        color = MaterialTheme.colors.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            accounts.sorted().forEach { account ->
+                item {
+                    Toggle("👤 $account", null, account !in settings.mutedAccounts) { on ->
+                        viewModel.setAccountEnabled(account, on)
+                    }
+                }
+            }
 
             // --- Événements ---
             section("Me notifier quand…")
