@@ -24,6 +24,9 @@ data class CompanionSettings(
     val secret: String = "",
     /** Comptes Claude dont on ignore les événements. */
     val mutedAccounts: Set<String> = emptySet(),
+    /** Notifications de l'appli Claude relayées par le téléphone. */
+    val phoneNotifications: Boolean = true,
+    /** Événements du hook Claude Code (terminal). */
     val localSessions: Boolean = true,
     val cloudSessions: Boolean = true,
     val instantMode: Boolean = false,
@@ -42,7 +45,11 @@ data class CompanionSettings(
     /** Faut-il ignorer complètement cet événement (compte ou origine filtrés) ? */
     fun isFiltered(event: ClaudeEvent): Boolean =
         (event.account != null && event.account in mutedAccounts) ||
-            (if (event.cloud) !cloudSessions else !localSessions)
+            when {
+                event.fromPhone -> !phoneNotifications
+                event.cloud -> !cloudSessions
+                else -> !localSessions
+            }
 
     /**
      * Code à saisir dans `hooks/install.sh` : la clé, par groupes de 5 (« k7m2x-q9pza-… »).

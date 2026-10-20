@@ -34,6 +34,11 @@ class EventProcessor(
 
     suspend fun process(message: NtfyMessage) = process(listOf(message))
 
+    /** Notification de l'appli Claude relayée par le téléphone. */
+    suspend fun processRelayed(event: ClaudeEvent) = mutex.withLock {
+        if (!store.settings.first().isFiltered(event)) handle(event)
+    }
+
     /** Simule un événement (bouton « tester » des paramètres). */
     suspend fun test(event: ClaudeEvent) = mutex.withLock { handle(event, record = false) }
 

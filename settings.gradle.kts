@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "claude-companion"
 include(":app")
+include(":phone")

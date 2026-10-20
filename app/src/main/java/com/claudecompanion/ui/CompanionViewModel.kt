@@ -89,8 +89,6 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
                 else -> "J'ai fini de refactorer le module d'authentification."
             },
             project = "demo",
-            cloud = type == EventType.TASK_DONE,
-            url = if (type == EventType.TASK_DONE) "https://claude.ai/code" else null,
             time = System.currentTimeMillis() / 1000,
         )
         viewModelScope.launch { app.processor.test(event) }

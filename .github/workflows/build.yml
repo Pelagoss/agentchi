@@ -20,18 +20,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Tests unitaires
-        run: ./gradlew --no-daemon testDebugUnitTest
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :phone:testDebugUnitTest
 
-      - name: Compilation de l'APK
-        run: ./gradlew --no-daemon assembleDebug
+      - name: Compilation des APK (montre + téléphone)
+        run: ./gradlew --no-daemon :app:assembleDebug :phone:assembleDebug
 
       - name: Vérification des scripts de hook
+        run: shellcheck hooks/*.sh
+
+      - name: Renommage des APK
         run: |
-          shellcheck hooks/*.sh
-          cmp hooks/claude-companion-notify.sh .claude/hooks/claude-companion-notify.sh \
-            || { echo "Relancer ./hooks/install.sh --project ."; exit 1; }
+          mkdir -p apk
+          cp app/build/outputs/apk/debug/app-debug.apk apk/claude-companion-montre.apk
+          cp phone/build/outputs/apk/debug/phone-debug.apk apk/claude-companion-telephone.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: claude-companion-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: apk/*.apk

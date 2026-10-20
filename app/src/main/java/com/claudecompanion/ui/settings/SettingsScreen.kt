@@ -53,37 +53,16 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("Paramètres") } }
+            // --- Sources ---
+            section("Sources")
             item {
-                Chip(
-                    onClick = onOpenPairing,
-                    label = { Text("Appairer un ordinateur") },
-                    secondaryLabel = { Text("Code et QR code") },
-                    icon = { Text("🔗") },
-                    colors = ChipDefaults.primaryChipColors(),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            // --- Comptes ---
-            section("Comptes Claude")
-            if (accounts.isEmpty()) {
-                item {
-                    Text(
-                        "Les comptes apparaîtront ici dès leur premier événement.",
-                        style = MaterialTheme.typography.caption3,
-                        color = MaterialTheme.colors.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
+                Toggle("📱 Appli Claude", "Relayées par le téléphone", settings.phoneNotifications) { on ->
+                    update { it.copy(phoneNotifications = on) }
                 }
             }
             item {
-                Toggle("💻 Sessions locales", "Claude Code sur tes ordinateurs", settings.localSessions) { on ->
+                Toggle("💻 Hook Claude Code", "Terminal sur ordinateur", settings.localSessions) { on ->
                     update { it.copy(localSessions = on) }
-                }
-            }
-            item {
-                Toggle("☁️ Sessions cloud", "claude.ai/code", settings.cloudSessions) { on ->
-                    update { it.copy(cloudSessions = on) }
                 }
             }
             accounts.sorted().forEach { account ->
@@ -154,7 +133,17 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
             }
 
             // --- Connexion ---
-            section("Connexion")
+            section("Hook Claude Code (facultatif)")
+            item {
+                Chip(
+                    onClick = onOpenPairing,
+                    label = { Text("Hook Claude Code") },
+                    secondaryLabel = { Text("Facultatif : terminal sur ordinateur") },
+                    icon = { Text("🔗") },
+                    colors = ChipDefaults.secondaryChipColors(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             item { Setting("Serveur", settings.serverUrl, onClick = editServer) }
             item { Setting("Jeton", if (settings.token.isBlank()) "Aucun" else "••••••", onClick = editToken) }
             item {

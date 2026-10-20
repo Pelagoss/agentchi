@@ -46,7 +46,7 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
             }
             items(history, key = { it.id }) { event ->
                 TitleCard(
-                    onClick = { event.url?.let { PhoneLink.open(context, it) } },
+                    onClick = { if (event.openableOnPhone) PhoneLink.open(context, event) },
                     title = { Text(event.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     time = {
                         Text(
@@ -56,9 +56,8 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    event.project?.let { Text((if (event.cloud) "☁️ " else "📁 ") + it, style = MaterialTheme.typography.caption3) }
-                    event.account?.let { Text("👤 $it", style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                    if (event.url != null) Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                    Text(event.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (event.openableOnPhone) Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
                     Text(event.message, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
             }

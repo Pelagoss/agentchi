@@ -61,7 +61,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { ListHeader { Text("Appairage") } }
+            item { ListHeader { Text("Hook Claude Code") } }
             item {
                 if (matrix != null) QrCode(matrix, Modifier.size(128.dp))
             }
@@ -75,7 +75,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
             }
             item {
                 Text(
-                    "Sur ton ordinateur : ./hooks/install.sh\nPour le cloud : variable CLAUDE_COMPANION_PAIRING",
+                    "Facultatif, pour Claude Code dans un terminal.\nSur l'ordinateur : ./hooks/install.sh",
                     style = MaterialTheme.typography.caption3,
                     color = MaterialTheme.colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,

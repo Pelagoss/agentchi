@@ -61,10 +61,10 @@ class AlertActivity : ComponentActivity() {
                         overflow = TextOverflow.Ellipsis,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        event.url?.let { url ->
+                        if (event.openableOnPhone) {
                             Button(
                                 onClick = {
-                                    PhoneLink.open(this@AlertActivity, url)
+                                    PhoneLink.open(this@AlertActivity, event)
                                     NotificationManagerCompat.from(this@AlertActivity).cancel(notificationId)
                                     finish()
                                 },

@@ -11,3 +11,4 @@ build/
 *.aab
 *.jks
 *.keystore
+!keystore/debug.keystore

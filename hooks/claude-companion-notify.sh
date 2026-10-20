@@ -4,7 +4,6 @@
 # Utilisation en hook Claude Code : l'événement JSON arrive sur stdin.
 # Utilisation manuelle :  claude-companion-notify.sh <type> "<message>"
 #   types : permission | input | done | subagent | session_start | session_end | compact | error | other
-# Option --cloud-only (en premier) : ne fait rien hors d'une session cloud claude.ai/code.
 #
 # Configuration (écrite par install.sh dans ~/.claude/claude-companion.env,
 # ou variables d'environnement, par ex. celles d'un environnement cloud) :
@@ -18,11 +17,6 @@
 # Le contenu est chiffré (AES-256-CBC + HMAC-SHA256) : le serveur ntfy ne voit rien,
 # et la montre ignore tout message qui n'a pas été produit avec sa clé.
 set -uo pipefail
-
-if [ "${1:-}" = "--cloud-only" ]; then
-  shift
-  [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
-fi
 
 CONFIG="${CLAUDE_COMPANION_CONFIG:-$HOME/.claude/claude-companion.env}"
 # shellcheck disable=SC1090

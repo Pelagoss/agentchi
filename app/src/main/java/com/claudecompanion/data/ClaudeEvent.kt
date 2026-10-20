@@ -41,13 +41,21 @@ data class ClaudeEvent(
     val cloud: Boolean = false,
     /** Lien de la session cloud, ouvrable sur le téléphone. */
     val url: String? = null,
+    /** Notification de l'appli Claude relayée par le téléphone. */
+    val fromPhone: Boolean = false,
+    /** Clé de la notification d'origine sur le téléphone, pour l'y ouvrir. */
+    val phoneKey: String? = null,
     /** Horodatage Unix en secondes. */
     val time: Long,
 ) {
-    val title: String get() = "${type.emoji} ${type.label}"
+    val title: String
+        get() = if (fromPhone && type == EventType.OTHER) "💬 ${project ?: "Claude"}" else "${type.emoji} ${type.label}"
+
+    /** Peut-on ouvrir l'événement sur le téléphone ? */
+    val openableOnPhone: Boolean get() = url != null || phoneKey != null
 
     /** « ☁️ projet · compte » : d'où vient l'événement. */
     val origin: String
-        get() = (if (cloud) "☁️ " else "") +
+        get() = (if (fromPhone) "📱 " else if (cloud) "☁️ " else "") +
             listOfNotNull(project, account?.substringBefore('@')).joinToString(" · ").ifEmpty { if (cloud) "Cloud" else "Claude" }
 }

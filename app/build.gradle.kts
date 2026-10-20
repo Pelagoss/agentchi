@@ -18,6 +18,16 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        // Clé partagée avec l'appli téléphone : obligatoire pour la Wearable Data Layer.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -58,6 +68,8 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.wear.remote.interactions)
     implementation(libs.listenablefuture)
+    implementation(libs.play.services.wearable)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)

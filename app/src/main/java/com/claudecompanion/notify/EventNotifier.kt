@@ -84,8 +84,8 @@ class EventNotifier(private val context: Context) {
             .setContentIntent(openAppIntent())
             .setGroup(GROUP)
 
-        event.url?.let { url ->
-            builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, url, notificationId))
+        if (event.openableOnPhone) {
+            builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, event, notificationId))
         }
 
         if (style == AlertStyle.FULL_SCREEN) {
