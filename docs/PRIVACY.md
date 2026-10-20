@@ -10,7 +10,7 @@ Claude Companion est une application non officielle, sans lien avec Anthropic. E
 
 **Appli montre.** Elle affiche ces notifications et conserve sur la montre un historique des 30 dernières, ainsi que l'état de la mascotte et tes réglages.
 
-**Hook Claude Code (facultatif).** Si tu installes le hook sur ton ordinateur, les événements de tes sessions Claude Code (nom du dossier, extrait du dernier message, adresse e-mail du compte Claude) sont **chiffrés de bout en bout** (AES-256 + HMAC-SHA256) avant d'être publiés sur le service ntfy (ntfy.sh par défaut, ou ton propre serveur). Seule ta montre possède la clé pour les déchiffrer.
+**Serveur Claude Companion.** La montre se connecte au serveur dont tu lui donnes l'adresse, en général le tien (dossier `server/` du projet). Les hooks Claude Code de tes ordinateurs et de tes sessions cloud y envoient leurs événements : nom du dossier, identifiant court de session, nom donné à l'ordinateur, 300 premiers caractères du dernier message de Claude. Le serveur les garde 48 heures au plus et ne les transmet qu'à ta montre. Il ne conserve qu'une empreinte des codes d'appairage et du jeton de la montre. *Ordinateurs et cloud › Déconnecter la montre* supprime la montre, ses codes et ses événements du serveur.
 
 ## Ce que nous ne faisons pas
 
@@ -20,7 +20,7 @@ Claude Companion est une application non officielle, sans lien avec Anthropic. E
 
 ## Conservation et suppression
 
-Toutes les données restent sur tes appareils. *Historique → Tout effacer* vide l'historique de la montre. Désinstaller les applis supprime l'ensemble des données. Tu peux retirer l'accès aux notifications à tout moment dans les paramètres Android.
+Les données restent sur tes appareils et sur le serveur que tu as choisi. *Historique → Tout effacer* vide l'historique de la montre. Désinstaller les applis supprime l'ensemble des données. Tu peux retirer l'accès aux notifications à tout moment dans les paramètres Android.
 
 ## Contact
 

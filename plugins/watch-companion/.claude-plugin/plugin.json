@@ -1,0 +1,26 @@
+{
+  "name": "watch-companion",
+  "displayName": "Claude Companion (montre)",
+  "version": "0.1.0",
+  "description": "Envoie les événements de Claude Code à ta montre Claude Companion, via ton serveur Claude Companion.",
+  "author": { "name": "Pelagoss" },
+  "homepage": "https://github.com/Pelagoss/claude-companion",
+  "repository": "https://github.com/Pelagoss/claude-companion",
+  "license": "MIT",
+  "keywords": ["wear-os", "notifications", "montre"],
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "Adresse du serveur",
+      "description": "Serveur Claude Companion, par ex. https://cc.example.fr (affiché sur la montre)",
+      "required": true
+    },
+    "code": {
+      "type": "string",
+      "title": "Code d'appairage",
+      "description": "Montre › Paramètres › Ordinateurs et cloud › Nouveau code (XXXX-XXXX-XXXX)",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

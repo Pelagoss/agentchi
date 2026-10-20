@@ -1,0 +1,6 @@
+{$CC_DOMAIN} {
+	# flush_interval -1 : le flux du mode instantané part sans tampon.
+	reverse_proxy companion:8080 {
+		flush_interval -1
+	}
+}

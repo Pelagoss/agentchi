@@ -11,7 +11,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.claudecompanion.CompanionApp
-import com.claudecompanion.data.CompanionSettings
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -21,7 +20,7 @@ class PollWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
     override suspend fun doWork(): Result {
         val app = applicationContext as CompanionApp
         val settings = app.store.settings.first()
-        if (!CompanionSettings.TOPIC_REGEX.matches(settings.topic)) return Result.success()
+        if (!settings.isConnected) return Result.success()
         return runCatching {
             app.processor.process(app.ntfy.poll(settings, app.store.since()))
         }.fold(onSuccess = { Result.success() }, onFailure = { Result.retry() })

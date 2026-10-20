@@ -5,7 +5,10 @@ import com.claudecompanion.data.EventType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** Message tel que renvoyé par l'API JSON de ntfy (https://docs.ntfy.sh/subscribe/api/). */
+/**
+ * Ligne du flux du serveur Claude Companion. Le format est celui de l'API d'abonnement
+ * de ntfy (https://docs.ntfy.sh/subscribe/api/).
+ */
 @Serializable
 data class NtfyMessage(
     val id: String,
@@ -18,9 +21,9 @@ data class NtfyMessage(
     val priority: Int? = null,
 )
 
-/** Contenu chiffré publié par le hook. */
+/** Événement de hook mis en forme par le serveur (voir server/hook.go, Payload). */
 @Serializable
-data class SecurePayload(
+data class HookPayload(
     /** Type d'événement (clé de [EventType]). */
     val t: String,
     val m: String = "",
@@ -28,7 +31,7 @@ data class SecurePayload(
     val p: String? = null,
     /** Session (8 premiers caractères de l'id). */
     val s: String? = null,
-    /** Compte Claude. */
+    /** Nom donné au code d'appairage (ordinateur, environnement cloud). */
     val a: String? = null,
     /** Session cloud. */
     val c: Boolean = false,
@@ -39,7 +42,7 @@ data class SecurePayload(
 object EventParser {
     val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    /** Parse une ligne du flux JSON ntfy ; null si invalide ou si ce n'est pas un message. */
+    /** Parse une ligne du flux JSON ; null si invalide ou si ce n'est pas un message. */
     fun parseLine(line: String): NtfyMessage? {
         if (line.isBlank()) return null
         val msg = runCatching { json.decodeFromString<NtfyMessage>(line) }.getOrNull() ?: return null
@@ -47,12 +50,11 @@ object EventParser {
     }
 
     /**
-     * Déchiffre un message publié par le hook avec la clé [secret] de la montre.
-     * Retourne null pour tout message qui ne vient pas d'un ordinateur appairé.
+     * Événement contenu dans un message du serveur. Le flux n'est lisible qu'avec le jeton
+     * de la montre : seuls les ordinateurs appairés avec elle y publient.
      */
-    fun toEvent(msg: NtfyMessage, secret: String): ClaudeEvent? {
-        val plain = PayloadCrypto.decrypt(msg.message.orEmpty(), secret) ?: return null
-        val payload = runCatching { json.decodeFromString<SecurePayload>(plain) }.getOrNull() ?: return null
+    fun toEvent(msg: NtfyMessage): ClaudeEvent? {
+        val payload = runCatching { json.decodeFromString<HookPayload>(msg.message.orEmpty()) }.getOrNull() ?: return null
         val type = EventType.fromKey(payload.t)
         return ClaudeEvent(
             id = msg.id,

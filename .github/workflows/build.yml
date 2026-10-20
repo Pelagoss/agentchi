@@ -28,8 +28,8 @@ jobs:
       - name: Build de publication (AAB non signés, vérifie R8)
         run: ./gradlew --no-daemon :app:bundleRelease :phone:bundleRelease
 
-      - name: Vérification des scripts de hook
-        run: shellcheck hooks/*.sh
+      - name: Vérification du plugin Claude Code
+        run: jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/*/hooks/hooks.json
 
       - name: Renommage des APK
         run: |
@@ -41,3 +41,26 @@ jobs:
         with:
           name: claude-companion-debug
           path: apk/*.apk
+
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet et tests
+        run: |
+          go vet ./...
+          go test -race ./...
+
+      - name: Image Docker
+        run: docker build -t claude-companion-server .

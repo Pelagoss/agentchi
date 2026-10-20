@@ -10,13 +10,11 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.claudecompanion.net.EventParser
-import com.claudecompanion.net.PayloadCrypto
 import com.claudecompanion.pet.PetState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.security.SecureRandom
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "companion")
 
@@ -26,9 +24,8 @@ class CompanionStore(context: Context) {
 
     private object Keys {
         val server = stringPreferencesKey("server")
-        val topic = stringPreferencesKey("topic")
-        val token = stringPreferencesKey("token")
-        val secret = stringPreferencesKey("secret")
+        val deviceId = stringPreferencesKey("device_id")
+        val deviceToken = stringPreferencesKey("device_token")
         val mutedAccounts = stringSetPreferencesKey("muted_accounts")
         val knownAccounts = stringSetPreferencesKey("known_accounts")
         val localSessions = booleanPreferencesKey("local_sessions")
@@ -55,10 +52,10 @@ class CompanionStore(context: Context) {
     val settings: Flow<CompanionSettings> = store.data.map { p ->
         val d = CompanionSettings()
         CompanionSettings(
-            serverUrl = p[Keys.server] ?: d.serverUrl,
-            topic = p[Keys.topic] ?: d.topic,
-            token = p[Keys.token] ?: d.token,
-            secret = p[Keys.secret] ?: d.secret,
+            // L'ancien hook passait par ntfy.sh : ce n'est pas un serveur Claude Companion.
+            serverUrl = p[Keys.server]?.takeUnless { it == LEGACY_NTFY } ?: d.serverUrl,
+            deviceId = p[Keys.deviceId] ?: d.deviceId,
+            deviceToken = p[Keys.deviceToken] ?: d.deviceToken,
             mutedAccounts = p[Keys.mutedAccounts] ?: d.mutedAccounts,
             localSessions = p[Keys.localSessions] ?: d.localSessions,
             phoneNotifications = p[Keys.phoneNotifications] ?: d.phoneNotifications,
@@ -82,8 +79,8 @@ class CompanionStore(context: Context) {
         store.edit { p ->
             val s = transform(settings.first())
             p[Keys.server] = s.serverUrl.trim().trimEnd('/')
-            p[Keys.topic] = s.topic
-            p[Keys.token] = s.token
+            p[Keys.deviceId] = s.deviceId
+            p[Keys.deviceToken] = s.deviceToken
             p[Keys.mutedAccounts] = s.mutedAccounts
             p[Keys.localSessions] = s.localSessions
             p[Keys.phoneNotifications] = s.phoneNotifications
@@ -103,28 +100,22 @@ class CompanionStore(context: Context) {
         }
     }
 
-    /** Génère le sujet ntfy et la clé secrète au premier lancement. */
-    suspend fun ensurePairing() {
+    /** Enregistre la montre sur [serverUrl]. Les événements reprennent à partir de maintenant. */
+    suspend fun saveDevice(serverUrl: String, id: String, token: String) {
         store.edit { p ->
-            val secret = p[Keys.secret]
-            if (secret.isNullOrBlank()) {
-                newPairing(p)
-            } else if (p[Keys.topic].isNullOrBlank()) {
-                p[Keys.topic] = PayloadCrypto.topicFor(secret)
-            }
+            p[Keys.server] = serverUrl.trim().trimEnd('/')
+            p[Keys.deviceId] = id
+            p[Keys.deviceToken] = token
+            p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
         }
     }
 
-    /** Nouveau sujet + nouvelle clé : les ordinateurs déjà appairés ne peuvent plus notifier. */
-    suspend fun regeneratePairing() {
-        store.edit { newPairing(it) }
-    }
-
-    private fun newPairing(p: androidx.datastore.preferences.core.MutablePreferences) {
-        val secret = randomString(SECRET_LENGTH)
-        p[Keys.secret] = secret
-        p[Keys.topic] = PayloadCrypto.topicFor(secret)
-        p[Keys.since] = (System.currentTimeMillis() / 1000).toString()
+    /** Oublie l'enregistrement (changement de serveur, déconnexion). */
+    suspend fun clearDevice() {
+        store.edit { p ->
+            p.remove(Keys.deviceId)
+            p.remove(Keys.deviceToken)
+        }
     }
 
     // --- Comptes Claude vus par la montre ---
@@ -189,7 +180,7 @@ class CompanionStore(context: Context) {
         store.edit { it[Keys.since] = id }
     }
 
-    /** Valeur du paramètre `since` de ntfy : dernier id reçu, ou horodatage. */
+    /** Valeur du paramètre `since` du flux : dernier id reçu, ou horodatage. */
     suspend fun since(): String =
         store.data.first()[Keys.since] ?: (System.currentTimeMillis() / 1000).toString()
 
@@ -202,12 +193,7 @@ class CompanionStore(context: Context) {
 
     companion object {
         private const val MAX_HISTORY = 30
-        private const val SECRET_LENGTH = 25 // 25 × 5 bits = 125 bits
-        private const val ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
-        private val random = SecureRandom()
+        private const val LEGACY_NTFY = "https://ntfy.sh"
         private val HISTORY_SERIALIZER = kotlinx.serialization.builtins.ListSerializer(ClaudeEvent.serializer())
-
-        fun randomString(length: Int): String =
-            (1..length).map { ALPHABET[random.nextInt(ALPHABET.length)] }.joinToString("")
     }
 }

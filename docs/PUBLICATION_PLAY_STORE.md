@@ -164,11 +164,11 @@ Réponds selon ce que fait réellement l'appli. Pour la version actuelle :
 
 - **L'appli collecte-t-elle ou partage-t-elle des données ?**
   - Le **relais téléphone → montre** reste entre les appareils de l'utilisateur : ce n'est **ni une collecte ni un partage** au sens de Google.
-  - Le **hook facultatif** envoie des données chiffrées de bout en bout à ntfy.sh, un service tiers. Par prudence, déclare : *Messages → Autres messages intégrés à l'appli → **Partagées** → Fonctionnalité de l'appli*, avec *« Données chiffrées en transit »* = **Oui** et *« Suppression possible »* = **Oui**.
+  - La montre lit les événements Claude Code sur un **serveur Claude Companion** choisi par l'utilisateur (auto-hébergé). Par prudence, déclare : *Messages → Autres messages intégrés à l'appli → **Collectées** → Fonctionnalité de l'appli*, avec *« Données chiffrées en transit »* = **Oui** (HTTPS) et *« Suppression possible »* = **Oui** (*Déconnecter la montre*).
 - **Données chiffrées en transit** : Oui.
 - **Possibilité de demander la suppression** : Oui (désinstallation, « Tout effacer »).
 
-> Si tu retires le hook de la version Play Store, tu peux répondre « Aucune donnée collectée ni partagée ».
+> Le serveur appartient à l'utilisateur, pas au développeur : si Google l'accepte, la réponse « Aucune donnée collectée ni partagée » est défendable. En cas de doute, garde la déclaration ci-dessus.
 
 ---
 

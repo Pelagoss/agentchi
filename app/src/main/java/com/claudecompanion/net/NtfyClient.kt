@@ -11,11 +11,11 @@ import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** Abonnement à un sujet ntfy (https://ntfy.sh ou serveur auto-hébergé). */
+/** Abonnement au flux de la montre sur le serveur Claude Companion (format ntfy). */
 class NtfyClient(
     private val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
-        // ntfy envoie un « keepalive » toutes les 45 s sur les connexions ouvertes
+        // Le serveur envoie un « keepalive » toutes les 45 s sur les connexions ouvertes
         .readTimeout(90, TimeUnit.SECONDS)
         .build(),
 ) {
@@ -23,7 +23,7 @@ class NtfyClient(
     suspend fun poll(settings: CompanionSettings, since: String): List<NtfyMessage> = withContext(Dispatchers.IO) {
         val request = request(settings, "poll=1&since=$since")
         http.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("ntfy HTTP ${response.code}")
+            if (!response.isSuccessful) throw IOException("Serveur HTTP ${response.code}")
             response.body?.string().orEmpty().lineSequence().mapNotNull(EventParser::parseLine).toList()
         }
     }
@@ -40,7 +40,7 @@ class NtfyClient(
         val call = http.newCall(request(settings, "since=$since"))
         currentCoroutineContext()[Job]?.invokeOnCompletion { call.cancel() }
         call.execute().use { response ->
-            if (!response.isSuccessful) throw IOException("ntfy HTTP ${response.code}")
+            if (!response.isSuccessful) throw IOException("Serveur HTTP ${response.code}")
             val source = response.body?.source() ?: return@use
             while (true) {
                 currentCoroutineContext().ensureActive()
@@ -51,10 +51,8 @@ class NtfyClient(
     }
 
     private fun request(settings: CompanionSettings, query: String): Request {
-        require(CompanionSettings.TOPIC_REGEX.matches(settings.topic)) { "Sujet ntfy invalide" }
-        val url = "${settings.serverUrl.trimEnd('/')}/${settings.topic}/json?$query"
-        return Request.Builder().url(url).apply {
-            if (settings.token.isNotBlank()) header("Authorization", "Bearer ${settings.token}")
-        }.build()
+        require(settings.isConnected) { "Montre non connectée au serveur" }
+        val url = "${settings.serverUrl.trimEnd('/')}/${settings.deviceId}/json?$query"
+        return Request.Builder().url(url).header("Authorization", "Bearer ${settings.deviceToken}").build()
     }
 }

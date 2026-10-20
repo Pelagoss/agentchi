@@ -27,6 +27,11 @@ android {
         // Montre et téléphone partagent la fiche Play Store : codes de version distincts.
         versionCode = 2_000_001
         versionName = "0.1.0"
+
+        // Serveur Claude Companion proposé par défaut (modifiable sur la montre) :
+        // ./gradlew -PcompanionServer=https://cc.example.fr … ou variable COMPANION_SERVER.
+        val companionServer = (findProperty("companionServer") as String?) ?: System.getenv("COMPANION_SERVER") ?: ""
+        buildConfigField("String", "COMPANION_SERVER", "\"${companionServer.trimEnd('/')}\"")
     }
 
     signingConfigs {

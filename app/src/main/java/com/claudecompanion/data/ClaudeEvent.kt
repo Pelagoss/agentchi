@@ -3,8 +3,8 @@ package com.claudecompanion.data
 import kotlinx.serialization.Serializable
 
 /**
- * Types d'événements envoyés par le hook Claude Code.
- * La clé correspond au tag `cc-<clé>` publié par `hooks/claude-companion-notify.sh`.
+ * Types d'événements envoyés par les hooks Claude Code.
+ * La clé correspond au champ `t` produit par le serveur (server/hook.go).
  */
 enum class EventType(
     val key: String,
@@ -35,7 +35,7 @@ data class ClaudeEvent(
     val message: String,
     val project: String? = null,
     val session: String? = null,
-    /** Compte Claude (e-mail) ou libellé choisi sur l'ordinateur. */
+    /** Nom de l'ordinateur ou de l'environnement cloud (code d'appairage), ou compte. */
     val account: String? = null,
     /** Session cloud (claude.ai/code) plutôt que locale. */
     val cloud: Boolean = false,

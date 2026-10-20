@@ -21,8 +21,8 @@ class EventProcessor(
     suspend fun process(messages: List<NtfyMessage>) = mutex.withLock {
         val settings = store.settings.first()
         messages.sortedBy { it.time }.forEach { msg ->
-            // Message non signé avec notre clé (autre personne, ancien appairage…) : ignoré.
-            val event = EventParser.toEvent(msg, settings.secret)
+            // Message illisible (version du serveur plus récente…) : ignoré.
+            val event = EventParser.toEvent(msg)
             event?.account?.let { store.addKnownAccount(it) }
             if (event == null || settings.isFiltered(event)) {
                 store.setSince(msg.id)

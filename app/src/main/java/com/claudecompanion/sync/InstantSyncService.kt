@@ -9,7 +9,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.claudecompanion.CompanionApp
-import com.claudecompanion.data.CompanionSettings
 import com.claudecompanion.notify.EventNotifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -18,7 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Mode instantané : garde une connexion ouverte avec ntfy pour recevoir
+ * Mode instantané : garde une connexion ouverte avec le serveur pour recevoir
  * les événements en quelques secondes. Consomme plus de batterie.
  */
 class InstantSyncService : LifecycleService() {
@@ -39,10 +38,10 @@ class InstantSyncService : LifecycleService() {
 
         lifecycleScope.launch {
             app.store.settings
-                .map { Triple(it.instantMode, it, it.serverUrl + it.topic + it.token) }
+                .map { Triple(it.instantMode, it, it.serverUrl + it.deviceId + it.deviceToken) }
                 .distinctUntilChanged { a, b -> a.first == b.first && a.third == b.third }
                 .collectLatest { (instant, settings, _) ->
-                    if (!instant || !CompanionSettings.TOPIC_REGEX.matches(settings.topic)) {
+                    if (!instant || !settings.isConnected) {
                         stopSelf()
                         return@collectLatest
                     }

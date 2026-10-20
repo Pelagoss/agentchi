@@ -1,6 +1,6 @@
 package com.claudecompanion.data
 
-import com.claudecompanion.net.PayloadCrypto
+import com.claudecompanion.BuildConfig
 
 enum class AlertStyle(val label: String) {
     FULL_SCREEN("Plein écran"),
@@ -17,16 +17,16 @@ enum class VibrationPattern(val label: String, val timings: LongArray?) {
 }
 
 data class CompanionSettings(
+    /** Serveur Claude Companion (dossier server/ du dépôt), qui reçoit les hooks. */
     val serverUrl: String = DEFAULT_SERVER,
-    val topic: String = "",
-    val token: String = "",
-    /** Clé secrète partagée avec les ordinateurs appairés (chiffrement + signature). */
-    val secret: String = "",
-    /** Comptes Claude dont on ignore les événements. */
+    /** Identifiant et jeton de la montre sur ce serveur, obtenus à la connexion. */
+    val deviceId: String = "",
+    val deviceToken: String = "",
+    /** Ordinateurs (ou comptes) dont on ignore les événements. */
     val mutedAccounts: Set<String> = emptySet(),
     /** Notifications de l'appli Claude relayées par le téléphone. */
     val phoneNotifications: Boolean = true,
-    /** Événements du hook Claude Code (terminal). */
+    /** Événements du hook Claude Code sur un ordinateur (plugin). */
     val localSessions: Boolean = true,
     val cloudSessions: Boolean = true,
     val instantMode: Boolean = false,
@@ -51,12 +51,9 @@ data class CompanionSettings(
                 else -> !localSessions
             }
 
-    /**
-     * Code à saisir dans `hooks/install.sh` : la clé, par groupes de 5 (« k7m2x-q9pza-… »).
-     * Le sujet ntfy en est déduit. Un ancien appairage (sujet aléatoire) garde le format « sujet.clé ».
-     */
-    val pairingCode: String
-        get() = if (topic == PayloadCrypto.topicFor(secret)) secret.chunked(5).joinToString("-") else "$topic.$secret"
+    /** La montre est-elle enregistrée sur un serveur ? */
+    val isConnected: Boolean
+        get() = serverUrl.isNotBlank() && DEVICE_ID_REGEX.matches(deviceId) && deviceToken.isNotBlank()
 
     fun styleFor(type: EventType) = if (type.urgent) urgentStyle else infoStyle
     fun vibrationFor(type: EventType) = if (type.urgent) urgentVibration else infoVibration
@@ -69,8 +66,9 @@ data class CompanionSettings(
     }
 
     companion object {
-        const val DEFAULT_SERVER = "https://ntfy.sh"
-        val TOPIC_REGEX = Regex("^[-_A-Za-z0-9]{1,64}$")
+        /** Défini à la compilation : -PcompanionServer=https://… ou variable COMPANION_SERVER. */
+        val DEFAULT_SERVER: String = BuildConfig.COMPANION_SERVER
+        val DEVICE_ID_REGEX = Regex("^[-_A-Za-z0-9]{1,64}$")
 
         fun isInQuietHours(hour: Int, start: Int, end: Int): Boolean = when {
             start == end -> false
