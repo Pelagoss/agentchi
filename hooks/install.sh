@@ -13,7 +13,7 @@ set -euo pipefail
 usage() { sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 CODE="${1:-}"
-[ -n "$CODE" ] && [ "${CODE#-}" = "$CODE" ] || usage
+if [ -z "$CODE" ] || [ "${CODE#-}" != "$CODE" ]; then usage; fi
 shift
 SERVER="https://ntfy.sh"; TOKEN=""; ACCOUNT=""
 while [ $# -gt 0 ]; do
