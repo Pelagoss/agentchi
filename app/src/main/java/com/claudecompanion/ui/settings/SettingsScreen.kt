@@ -1,0 +1,189 @@
+package com.claudecompanion.ui.settings
+
+import android.widget.Toast
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.ListHeader
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.PositionIndicator
+import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.Switch
+import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material.ToggleChip
+import com.claudecompanion.BuildConfig
+import com.claudecompanion.data.CompanionSettings
+import com.claudecompanion.data.EventType
+import com.claudecompanion.data.next
+import com.claudecompanion.ui.CompanionViewModel
+import com.claudecompanion.ui.common.rememberTextInput
+
+@Composable
+fun SettingsScreen(viewModel: CompanionViewModel) {
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val (pet, _) = viewModel.pet.collectAsStateWithLifecycle().value
+    val context = LocalContext.current
+    val listState = rememberScalingLazyListState()
+    val update = viewModel::updateSettings
+
+    fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+
+    val editServer = rememberTextInput("URL du serveur ntfy") { url ->
+        if (url.startsWith("https://") || url.startsWith("http://")) update { it.copy(serverUrl = url) }
+        else toast("L'URL doit commencer par https://")
+    }
+    val editTopic = rememberTextInput("Sujet ntfy") { topic ->
+        if (CompanionSettings.TOPIC_REGEX.matches(topic)) update { it.copy(topic = topic) }
+        else toast("Lettres, chiffres, - et _ uniquement")
+    }
+    val editToken = rememberTextInput("Jeton d'accès (facultatif)") { token -> update { it.copy(token = token) } }
+    val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
+
+    Scaffold(
+        timeText = { TimeText() },
+        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
+    ) {
+        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            item { ListHeader { Text("Paramètres") } }
+
+            // --- Événements ---
+            section("Me notifier quand…")
+            EventType.entries.forEach { type ->
+                item {
+                    Toggle(
+                        label = "${type.emoji} ${type.label}",
+                        secondary = if (type.urgent) "Urgent" else null,
+                        checked = type in settings.enabledEvents,
+                    ) { on ->
+                        update { s -> s.copy(enabledEvents = if (on) s.enabledEvents + type else s.enabledEvents - type) }
+                    }
+                }
+            }
+
+            // --- Style ---
+            section("Style des alertes urgentes")
+            item {
+                Setting("Affichage", settings.urgentStyle.label) { update { it.copy(urgentStyle = it.urgentStyle.next()) } }
+            }
+            item {
+                Setting("Vibration", settings.urgentVibration.label) {
+                    update { it.copy(urgentVibration = it.urgentVibration.next()) }
+                    viewModel.previewVibration(settings.urgentVibration.next())
+                }
+            }
+            section("Style des autres notifications")
+            item {
+                Setting("Affichage", settings.infoStyle.label) { update { it.copy(infoStyle = it.infoStyle.next()) } }
+            }
+            item {
+                Setting("Vibration", settings.infoVibration.label) {
+                    update { it.copy(infoVibration = it.infoVibration.next()) }
+                    viewModel.previewVibration(settings.infoVibration.next())
+                }
+            }
+            item { Toggle("🔊 Son", null, settings.sound) { on -> update { it.copy(sound = on) } } }
+            item {
+                Toggle("👁️ Aperçu du message", "Masque le texte si désactivé", settings.showPreview) { on ->
+                    update { it.copy(showPreview = on) }
+                }
+            }
+
+            // --- Ne pas déranger ---
+            section("Ne pas déranger")
+            item {
+                Toggle("🌙 Heures calmes", "${settings.quietStart}h → ${settings.quietEnd}h", settings.quietHoursEnabled) { on ->
+                    update { it.copy(quietHoursEnabled = on) }
+                }
+            }
+            if (settings.quietHoursEnabled) {
+                item { Setting("Début", "${settings.quietStart}h") { update { it.copy(quietStart = (it.quietStart + 1) % 24) } } }
+                item { Setting("Fin", "${settings.quietEnd}h") { update { it.copy(quietEnd = (it.quietEnd + 1) % 24) } } }
+                item {
+                    Toggle("Laisser passer les urgences", null, settings.quietAllowsUrgent) { on ->
+                        update { it.copy(quietAllowsUrgent = on) }
+                    }
+                }
+            }
+
+            // --- Connexion ---
+            section("Connexion")
+            item { Setting("Sujet", settings.topic.ifBlank { "—" }, onClick = editTopic) }
+            item { Setting("Serveur", settings.serverUrl, onClick = editServer) }
+            item { Setting("Jeton", if (settings.token.isBlank()) "Aucun" else "••••••", onClick = editToken) }
+            item {
+                Toggle(
+                    "⚡ Mode instantané",
+                    if (settings.instantMode) "Connexion permanente (+ batterie)" else "Vérification toutes les 15 min",
+                    settings.instantMode,
+                    onChange = viewModel::setInstantMode,
+                )
+            }
+            item {
+                Setting("🔄 Synchroniser", "Récupérer maintenant") {
+                    viewModel.syncNow()
+                    toast("Synchronisation…")
+                }
+            }
+
+            // --- Mascotte & tests ---
+            section("Mascotte")
+            item { Setting("Nom", pet.name, onClick = editName) }
+
+            section("Tester")
+            item { Setting("🔐 Alerte urgente", "Simuler une demande") { viewModel.sendTest(EventType.PERMISSION) } }
+            item { Setting("✅ Tâche terminée", "Simuler une fin de tâche") { viewModel.sendTest(EventType.TASK_DONE) } }
+
+            item {
+                Text(
+                    "Claude Companion ${BuildConfig.VERSION_NAME}\nAppli non officielle",
+                    style = MaterialTheme.typography.caption3,
+                    color = MaterialTheme.colors.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+private fun ScalingLazyListScope.section(title: String) = item {
+    ListHeader { Text(title, color = MaterialTheme.colors.primary) }
+}
+
+@Composable
+private fun Setting(label: String, value: String, onClick: () -> Unit) {
+    Chip(
+        onClick = onClick,
+        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        secondaryLabel = { Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        colors = ChipDefaults.secondaryChipColors(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun Toggle(label: String, secondary: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
+    ToggleChip(
+        checked = checked,
+        onCheckedChange = onChange,
+        label = { Text(label, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        secondaryLabel = if (secondary != null) {
+            { Text(secondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        } else {
+            null
+        },
+        toggleControl = { Switch(checked = checked) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
