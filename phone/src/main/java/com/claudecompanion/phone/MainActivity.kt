@@ -95,7 +95,12 @@ private fun RelayScreen() {
             Step(
                 done = accessGranted,
                 title = "1. Accès aux notifications",
-                detail = if (accessGranted) "Autorisé" else "Nécessaire pour lire les notifications de l'appli Claude.",
+                detail = if (accessGranted) {
+                    "Autorisé"
+                } else {
+                    "Claude Companion lit uniquement les notifications de l'appli Claude, pour les afficher sur ta montre. " +
+                        "Elles ne sont envoyées nulle part ailleurs et rien n'est collecté."
+                },
             ) {
                 if (!accessGranted) {
                     Button(onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }) {

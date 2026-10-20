@@ -84,6 +84,10 @@ Le hook publie les événements **chiffrés de bout en bout** sur [ntfy](https:/
 
 Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niveau tous les 100 XP. Tu peux la renommer dans les paramètres.
 
+## Publier sur le Play Store
+
+Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION_PLAY_STORE.md), et la politique de confidentialité dans [`docs/PRIVACY.md`](docs/PRIVACY.md).
+
 ## Confidentialité
 
 - **Relais téléphone** : seules les notifications de l'appli Claude (`com.anthropic.claude`) sont lues. Elles passent directement du téléphone à la montre par la liaison Wear OS, sans serveur.

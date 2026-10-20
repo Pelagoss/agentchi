@@ -25,6 +25,9 @@ jobs:
       - name: Compilation des APK (montre + téléphone)
         run: ./gradlew --no-daemon :app:assembleDebug :phone:assembleDebug
 
+      - name: Build de publication (AAB non signés, vérifie R8)
+        run: ./gradlew --no-daemon :app:bundleRelease :phone:bundleRelease
+
       - name: Vérification des scripts de hook
         run: shellcheck hooks/*.sh
 

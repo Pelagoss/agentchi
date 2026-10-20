@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// Signature de publication (Play Store) : keystore/release.properties, non versionné,
+// ou variables d'environnement RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD.
+val releaseProps = Properties().apply {
+    rootProject.file("keystore/release.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun releaseProp(name: String): String? =
+    releaseProps.getProperty(name) ?: System.getenv("RELEASE_" + name.replace(Regex("([A-Z])"), "_$1").uppercase())
 
 android {
     namespace = "com.claudecompanion"
@@ -14,7 +24,8 @@ android {
         // Wear OS 3 (Galaxy Watch4 et plus récentes)
         minSdk = 30
         targetSdk = 34
-        versionCode = 1
+        // Montre et téléphone partagent la fiche Play Store : codes de version distincts.
+        versionCode = 2_000_001
         versionName = "0.1.0"
     }
 
@@ -26,10 +37,19 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (releaseProp("storeFile") != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseProp("storeFile")!!)
+                storePassword = releaseProp("storePassword")
+                keyAlias = releaseProp("keyAlias")
+                keyPassword = releaseProp("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
