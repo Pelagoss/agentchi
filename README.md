@@ -2,7 +2,7 @@
 
 Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pendant que Claude travaille :
 
-- 🔔 **Toutes les notifications de l'appli Claude** sur la montre : sessions cloud (claude.ai/code), conversations, Remote Control. Ça marche qu'un dépôt GitHub soit branché ou non.
+- 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone.
 - 🦀 **Une mascotte façon tamagotchi** : nourris-la, joue avec elle, mets-la au lit. Elle réagit en direct : elle fait la fête quand Claude a fini et s'affole quand il t'attend.
 - ⚙️ **Des paramètres** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, heures calmes.
 
@@ -11,46 +11,67 @@ Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pend
 ## Comment ça marche
 
 ```
-Appli Claude (téléphone) ──notification──▶ Claude Companion (téléphone) ──Bluetooth / Wear OS──▶ Claude Companion (montre)
-                                                     ▲                                                   │
-                                                     └──────────── « 📱 Ouvrir sur le téléphone » ◀──────┘
+Claude Code (ordinateur, Remote Control) ──plugin watch-companion──┐
+                                                                    ├──HTTPS──▶ ton serveur ──FCM──▶ montre
+Session cloud claude.ai/code ─────────hook http du dépôt──────────┘   (server/)
 ```
 
-Le projet contient **deux petites applis** portant le même nom :
+Le projet contient :
 
-- **Sur le téléphone**, un relais sans écran à utiliser au quotidien. Il lit les notifications de l'appli Claude (accès aux notifications d'Android) et les transmet à la montre par la liaison Wear OS. Il ne passe par aucun serveur, et il n'y a ni hook, ni compte, ni configuration par projet.
-- **Sur la montre**, l'appli principale : elle reçoit, trie et affiche les notifications, et héberge la mascotte. Le bouton **📱 Ouvrir sur le téléphone** ouvre la notification d'origine dans l'appli Claude, pour répondre.
+- **`server/`** : un petit serveur Go à héberger chez toi. Il reçoit les hooks et les pousse aussitôt à la bonne montre par FCM, sans rien stocker. **Multi-utilisateur** : chaque montre s'y enregistre toute seule et ne reçoit que ses événements.
+- **`plugins/watch-companion/`** : le plugin Claude Code qui envoie les événements au serveur. Un simple `curl` : pas de script, ni `jq` ni `openssl`.
+- **`app/`** : l'appli Wear OS, autonome. Elle reçoit les pushs, les trie et les affiche, crée les codes d'appairage et héberge la mascotte.
 
-Le type de chaque notification (🔐 autorisation, 💬 réponse attendue, ✅ terminé, ⚠️ erreur) est **déduit de son texte**. Ce que la montre reçoit dépend donc de ce que l'appli Claude notifie sur ton téléphone.
+Chaque ordinateur ou environnement cloud est appairé avec **son propre code** (`XXXX-XXXX-XXXX`), créé sur la montre et révocable depuis elle.
+
+| Où tourne Claude | Comment la montre est prévenue |
+|---|---|
+| Terminal, IDE, appli Desktop (local) | Plugin `watch-companion` |
+| Session locale pilotée en **Remote Control** (claude.ai/code, appli mobile) | Plugin : la session tourne sur ton ordinateur |
+| **Session cloud** claude.ai/code | Hook `http` dans le `.claude/settings.json` du dépôt : les sessions cloud ne chargent pas les plugins |
+| Chat claude.ai | Non pris en charge : le chat n'a pas de hooks |
 
 ## Installation
 
-### 1. Récupérer les APK
+### 1. Firebase (une fois)
 
-Onglet **Actions** du dépôt → dernier build vert → artefact `claude-companion-debug`. Il contient `claude-companion-montre.apk` et `claude-companion-telephone.apk`.
+Le push passe par Firebase Cloud Messaging, gratuit.
+
+1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `com.claudecompanion`.
+2. Télécharge `google-services.json`. Il ne sert qu'à lire quatre valeurs, il ne se versionne pas :
+
+   | Variable du dépôt GitHub (ou propriété Gradle) | Champ de `google-services.json` |
+   |---|---|
+   | `FIREBASE_APP_ID` (`-PfirebaseAppId`) | `client[0].client_info.mobilesdk_app_id` |
+   | `FIREBASE_API_KEY` (`-PfirebaseApiKey`) | `client[0].api_key[0].current_key` |
+   | `FIREBASE_PROJECT_ID` (`-PfirebaseProjectId`) | `project_info.project_id` |
+   | `FIREBASE_SENDER_ID` (`-PfirebaseSenderId`) | `project_info.project_number` |
+
+   Ajoute-les dans **GitHub › Settings › Secrets and variables › Actions › Variables**, avec `COMPANION_SERVER=https://cc.example.fr` : la CI produira un APK prêt à l'emploi. Ces valeurs finissent dans l'APK, elles ne sont pas secrètes.
+3. **Paramètres du projet › Comptes de service › Générer une nouvelle clé privée** : c'est le fichier que le serveur utilise pour envoyer les pushs. Celui-là est **secret**.
+
+### 2. Le serveur
+
+Il faut un nom de domaine qui pointe vers ton serveur, avec les ports 80 et 443 ouverts. Caddy obtient le certificat HTTPS tout seul.
+
+```bash
+git clone https://github.com/Pelagoss/claude-companion && cd claude-companion/server
+cp ~/Téléchargements/<projet>-firebase-adminsdk-<…>.json firebase-service-account.json
+chmod 644 firebase-service-account.json    # lisible par le conteneur
+CC_DOMAIN=cc.example.fr docker compose up -d
+```
+
+Ouvre `https://cc.example.fr` : la page d'accueil donne les commandes prêtes à copier, avec ton adresse.
+
+Sans Docker : `go build` dans `server/`, puis lance le binaire derrière ton reverse proxy. Variables : `CC_FCM_CREDENTIALS` (chemin de la clé du compte de service, **obligatoire** pour les pushs), `CC_ADDR` (défaut `:8080`), `CC_DATA` (défaut `data/state.json`), `CC_PUBLIC_URL`, `CC_TRUST_PROXY=true` derrière un proxy, `CC_MAX_DEVICES` (défaut 1000).
+
+### 3. La montre
+
+Onglet **Actions** du dépôt → dernier build vert → artefact `claude-companion-debug`, qui contient `claude-companion-montre.apk` (compilé avec les variables Firebase de l'étape 1) :
 
 ```bash
 gh run download -R Pelagoss/claude-companion -n claude-companion-debug
 ```
-
-Les deux APK sont signés avec la même clé (`keystore/debug.keystore`). C'est une condition imposée par Wear OS pour qu'ils communiquent : installe toujours les deux APK **du même build**.
-
-### 2. Téléphone
-
-```bash
-adb install claude-companion-telephone.apk
-```
-
-Ouvre **Claude Companion** sur le téléphone :
-1. **Accès aux notifications** → *Autoriser*, puis active *Relais Claude Companion*. Si Android affiche « paramètre restreint » : *Paramètres → Applications → Claude Companion → ⋮ → Autoriser les paramètres restreints*, puis recommence.
-2. Vérifie que **Montre connectée** affiche ta Galaxy Watch.
-3. Touche **Envoyer un test à la montre**.
-
-**Notifications seulement sur la montre** : active **4. Seulement sur la montre**. Le relais retire alors la notification Claude du téléphone dès que la montre l'a reçue ; si la montre est injoignable, elle reste sur le téléphone. Pour que le téléphone ne sonne pas non plus, règle les notifications de l'appli Claude sur **Silencieux** dans les paramètres Android. Ne les **désactive pas** : le relais ne les verrait plus.
-
-Pour éviter les doublons sur la montre, désactive l'appli **Claude** dans **Galaxy Wearable → Notifications**.
-
-### 3. Montre
 
 1. Active le débogage : *Paramètres → À propos de la montre → Informations sur le logiciel*, touche 7 fois *Version du logiciel*. Ensuite, dans *Options de développement*, active *Débogage ADB* et *Débogage sans fil* (montre et ordinateur sur le même Wi-Fi).
 2. Installe :
@@ -59,20 +80,40 @@ Pour éviter les doublons sur la montre, désactive l'appli **Claude** dans **Ga
    adb connect <ip>:<port>
    adb install claude-companion-montre.apk
    ```
-3. Ouvre **Claude Companion** sur la montre et accepte les notifications.
+3. Ouvre **Claude Companion** sur la montre, accepte les notifications, puis **Paramètres › Ordinateurs et cloud** : saisis l'adresse du serveur et touche **Connecter la montre**.
 
-C'est tout. Lance une session dans l'appli Claude ou sur claude.ai/code : les notifications que l'appli Claude affiche sur ton téléphone arrivent sur la montre.
+La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
 
-## Option : sessions Claude Code dans un terminal
+Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://cc.example.fr -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
 
-Une session Claude Code lancée dans un terminal ne passe pas par l'appli Claude, sauf avec Remote Control. Pour la recevoir quand même, installe le hook **une fois par ordinateur**, il couvre tous tes projets :
+### 4. Chaque ordinateur
+
+Sur la montre : **Ordinateurs et cloud › Nouveau code**, nomme l'ordinateur et note le code. Puis, sur l'ordinateur :
 
 ```bash
-git clone https://github.com/Pelagoss/claude-companion && cd claude-companion
-./hooks/install.sh      # demande le code affiché sur la montre : Paramètres › Hook Claude Code
+claude plugin install watch-companion --marketplace Pelagoss/claude-companion \
+  --config server_url=https://cc.example.fr --config code=XXXX-XXXX-XXXX
 ```
 
-Le hook publie les événements **chiffrés de bout en bout** sur [ntfy](https://ntfy.sh). La montre les récupère toutes les 15 minutes, à l'ouverture de l'appli, ou en quelques secondes avec **⚡ Mode instantané**. Il faut `jq`, `curl` et `openssl`. Les options `--server` et `--token` permettent d'utiliser un serveur ntfy auto-hébergé, et `--account` de nommer l'ordinateur.
+C'est tout, pour tous tes projets. Le code est rangé dans le trousseau du système, pas dans `settings.json`. Sans `--config`, Claude Code demande les deux valeurs (`/plugin` › watch-companion › *Configure options*). Le plugin couvre aussi les sessions locales que tu suis en **Remote Control** depuis claude.ai/code ou l'appli mobile.
+
+Tu peux aussi ajouter la marketplace `Pelagoss/claude-companion` dans **claude.ai › Personnaliser › Plugins** : le plugin se synchronise alors sur chaque ordinateur où tu te connectes à Claude Code. Il ne reste qu'à saisir le code.
+
+### 5. Sessions cloud (claude.ai/code)
+
+Les sessions cloud ne chargent pas les plugins, mais elles exécutent les hooks du dépôt :
+
+1. Ajoute à `.claude/settings.json` du dépôt le bloc que donne `https://cc.example.fr/v1/cloud-settings.json`. C'est un hook `http` qui envoie `Authorization: Bearer $CLAUDE_COMPANION_CODE`.
+2. Sur la montre, crée un code pour cet environnement cloud.
+3. Dans les paramètres de l'environnement cloud sur claude.ai/code :
+   - variable d'environnement `CLAUDE_COMPANION_CODE=XXXX-XXXX-XXXX` ;
+   - accès réseau **personnalisé** qui autorise `cc.example.fr`.
+
+Chaque personne qui travaille sur le dépôt met **son propre code** dans **son** environnement. Sans code, le hook ne fait rien et n'affiche pas d'erreur. Sur un ordinateur, la variable n'est pas définie, donc pas de doublon avec le plugin.
+
+### Vérifier
+
+**Ordinateurs et cloud › Tester le push** : le serveur envoie une notification par FCM et affiche l'erreur sur la montre si elle ne part pas (clé du compte de service absente, jeton refusé…). Firebase garde un push 24 h si la montre est éteinte ou hors ligne.
 
 ## La mascotte
 
@@ -90,22 +131,25 @@ Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION
 
 ## Confidentialité
 
-- **Relais téléphone** : seules les notifications de l'appli Claude (`com.anthropic.claude`) sont lues. Elles passent directement du téléphone à la montre par la liaison Wear OS, sans serveur.
-- **Hook (facultatif)** : chiffrement AES-256-CBC + HMAC-SHA256. Le serveur ntfy ne voit qu'un bloc chiffré, et la montre rejette tout message qui n'a pas été produit avec sa clé. Le code d'appairage n'est jamais écrit dans ce dépôt.
+- **Serveur** : il est à toi. Il reçoit les événements en HTTPS (nom du dossier, identifiant court de session, 300 premiers caractères du dernier message de Claude) et les transmet aussitôt à Firebase, sans les stocker. Les hooks Claude Code envoient du JSON brut : pas de chiffrement de bout en bout, la confiance repose sur ton serveur et sur Firebase Cloud Messaging (Google), qui achemine le push.
+- **Codes et jetons** : le serveur n'en garde que l'empreinte SHA-256. Chaque montre ne lit que ses événements. Les tentatives avec un code invalide sont limitées.
 
 ## Développement
 
-- Kotlin, Jetpack Compose (Wear OS Material sur la montre, Material 3 sur le téléphone), Wearable Data Layer, DataStore, WorkManager, OkHttp
-- `./gradlew :app:testDebugUnitTest :phone:testDebugUnitTest` : mascotte, déduction du type des notifications, filtres, chiffrement du hook
+- Montre : Kotlin, Jetpack Compose (Wear OS Material), Firebase Cloud Messaging, DataStore, OkHttp
+- Serveur : Go, bibliothèque standard uniquement
+- `./gradlew :app:testDebugUnitTest` : mascotte, lecture des pushs, filtres
+- `cd server && go test ./...` : traduction des hooks, appairage, isolation entre montres, envoi FCM (JWT, OAuth, jeton périmé), persistance
+- `claude plugin validate .` : marketplace et plugin
 
 ```
-app/      appli montre : relay/ (réception téléphone), notify/, pet/, ui/, net/ + sync/ (hook via ntfy)
-phone/    appli téléphone : lecture des notifications de l'appli Claude et relais vers la montre
-hooks/    hook Claude Code facultatif + installateur
-keystore/ clé de debug partagée (requise pour que montre et téléphone communiquent)
+app/              appli Wear OS : push/ (FCM), net/ (API du serveur), notify/, pet/, sync/, ui/
+server/           serveur Go : hooks → FCM, API d'appairage, Docker + Caddy
+plugins/          plugin Claude Code watch-companion (marketplace : .claude-plugin/marketplace.json)
+keystore/         clé de debug (même signature d'un build à l'autre)
 ```
 
 ## Idées pour la suite
 
-- Répondre (*Autoriser / Refuser*) directement depuis la montre via les actions des notifications de l'appli Claude
+- Répondre (*Autoriser / Refuser*) depuis la montre, avec un hook `PermissionRequest` qui attend sa réponse
 - Tuile Wear OS et complication avec l'humeur de la mascotte

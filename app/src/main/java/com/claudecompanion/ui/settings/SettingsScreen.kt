@@ -40,11 +40,10 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
-    val editServer = rememberTextInput("URL du serveur ntfy") { url ->
-        if (url.startsWith("https://") || url.startsWith("http://")) update { it.copy(serverUrl = url) }
-        else toast("L'URL doit commencer par https://")
+    val editServer = rememberTextInput("Adresse du serveur Claude Companion") { url ->
+        if (url.startsWith("https://") || url.startsWith("http://")) viewModel.setServer(url)
+        else toast("L'adresse doit commencer par https://")
     }
-    val editToken = rememberTextInput("Jeton d'accès (facultatif)") { token -> update { it.copy(token = token) } }
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
 
     Scaffold(
@@ -56,13 +55,13 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
             // --- Sources ---
             section("Sources")
             item {
-                Toggle("📱 Appli Claude", "Relayées par le téléphone", settings.phoneNotifications) { on ->
-                    update { it.copy(phoneNotifications = on) }
+                Toggle("💻 Ordinateurs", "Plugin Claude Code", settings.localSessions) { on ->
+                    update { it.copy(localSessions = on) }
                 }
             }
             item {
-                Toggle("💻 Hook Claude Code", "Terminal sur ordinateur", settings.localSessions) { on ->
-                    update { it.copy(localSessions = on) }
+                Toggle("☁️ Sessions cloud", "claude.ai/code", settings.cloudSessions) { on ->
+                    update { it.copy(cloudSessions = on) }
                 }
             }
             accounts.sorted().forEach { account ->
@@ -133,33 +132,18 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
             }
 
             // --- Connexion ---
-            section("Hook Claude Code (facultatif)")
+            section("Serveur Claude Companion")
             item {
                 Chip(
                     onClick = onOpenPairing,
-                    label = { Text("Hook Claude Code") },
-                    secondaryLabel = { Text("Facultatif : terminal sur ordinateur") },
+                    label = { Text("Ordinateurs et cloud") },
+                    secondaryLabel = { Text(if (settings.isConnected) "Codes d'appairage" else "Montre non connectée") },
                     icon = { Text("🔗") },
                     colors = ChipDefaults.secondaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            item { Setting("Serveur", settings.serverUrl, onClick = editServer) }
-            item { Setting("Jeton", if (settings.token.isBlank()) "Aucun" else "••••••", onClick = editToken) }
-            item {
-                Toggle(
-                    "⚡ Mode instantané",
-                    if (settings.instantMode) "Connexion permanente (+ batterie)" else "Vérification toutes les 15 min",
-                    settings.instantMode,
-                    onChange = viewModel::setInstantMode,
-                )
-            }
-            item {
-                Setting("🔄 Synchroniser", "Récupérer maintenant") {
-                    viewModel.syncNow()
-                    toast("Synchronisation…")
-                }
-            }
+            item { Setting("Serveur", settings.serverUrl.ifBlank { "Non configuré" }, onClick = editServer) }
 
             // --- Mascotte & tests ---
             section("Mascotte")

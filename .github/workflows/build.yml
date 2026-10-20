@@ -9,6 +9,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Projet Firebase (push FCM) et serveur par défaut : variables du dépôt
+    # (Settings › Secrets and variables › Actions › Variables). Ces valeurs finissent
+    # dans l'APK, elles ne sont pas secrètes. Sans elles, l'APK ne reçoit aucun push.
+    env:
+      FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
+      FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIREBASE_SENDER_ID: ${{ vars.FIREBASE_SENDER_ID }}
+      COMPANION_SERVER: ${{ vars.COMPANION_SERVER }}
     steps:
       - uses: actions/checkout@v4
 
@@ -20,24 +29,46 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Tests unitaires
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :phone:testDebugUnitTest
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
 
-      - name: Compilation des APK (montre + téléphone)
-        run: ./gradlew --no-daemon :app:assembleDebug :phone:assembleDebug
+      - name: Compilation de l'APK montre
+        run: ./gradlew --no-daemon :app:assembleDebug
 
-      - name: Build de publication (AAB non signés, vérifie R8)
-        run: ./gradlew --no-daemon :app:bundleRelease :phone:bundleRelease
+      - name: Build de publication (AAB non signé, vérifie R8)
+        run: ./gradlew --no-daemon :app:bundleRelease
 
-      - name: Vérification des scripts de hook
-        run: shellcheck hooks/*.sh
+      - name: Vérification du plugin Claude Code
+        run: jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/*/hooks/hooks.json
 
-      - name: Renommage des APK
+      - name: Renommage de l'APK
         run: |
           mkdir -p apk
           cp app/build/outputs/apk/debug/app-debug.apk apk/claude-companion-montre.apk
-          cp phone/build/outputs/apk/debug/phone-debug.apk apk/claude-companion-telephone.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: claude-companion-debug
           path: apk/*.apk
+
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet et tests
+        run: |
+          go vet ./...
+          go test -race ./...
+
+      - name: Image Docker
+        run: docker build -t claude-companion-server .

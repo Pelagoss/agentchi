@@ -13,3 +13,7 @@ build/
 *.keystore
 !keystore/debug.keystore
 keystore/release.properties
+
+# Serveur : état local
+server/data/
+server/firebase-service-account.json

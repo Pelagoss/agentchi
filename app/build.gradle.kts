@@ -27,6 +27,21 @@ android {
         // Montre et téléphone partagent la fiche Play Store : codes de version distincts.
         versionCode = 2_000_001
         versionName = "0.1.0"
+
+        // Serveur Claude Companion proposé par défaut (modifiable sur la montre) :
+        // ./gradlew -PcompanionServer=https://cc.example.fr … ou variable COMPANION_SERVER.
+        val companionServer = (findProperty("companionServer") as String?) ?: System.getenv("COMPANION_SERVER") ?: ""
+        buildConfigField("String", "COMPANION_SERVER", "\"${companionServer.trimEnd('/')}\"")
+
+        // Projet Firebase pour le push FCM (console Firebase › Paramètres du projet › appli Android
+        // « com.claudecompanion »). Valeurs de google-services.json, passées en propriétés Gradle
+        // (-PfirebaseAppId=…) ou en variables d'environnement (FIREBASE_APP_ID…) : rien n'est versionné.
+        fun firebase(property: String, env: String) =
+            "\"${(findProperty(property) as String?) ?: System.getenv(env) ?: ""}\""
+        buildConfigField("String", "FIREBASE_APP_ID", firebase("firebaseAppId", "FIREBASE_APP_ID")) // mobilesdk_app_id
+        buildConfigField("String", "FIREBASE_API_KEY", firebase("firebaseApiKey", "FIREBASE_API_KEY")) // current_key
+        buildConfigField("String", "FIREBASE_PROJECT_ID", firebase("firebaseProjectId", "FIREBASE_PROJECT_ID")) // project_id
+        buildConfigField("String", "FIREBASE_SENDER_ID", firebase("firebaseSenderId", "FIREBASE_SENDER_ID")) // project_number
     }
 
     signingConfigs {
@@ -79,17 +94,16 @@ dependencies {
     implementation(libs.wear.input)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.zxing.core)
     implementation(libs.wear.remote.interactions)
     implementation(libs.listenablefuture)
-    implementation(libs.play.services.wearable)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)

@@ -1,0 +1,12 @@
+{
+  "name": "pelagoss",
+  "owner": { "name": "Pelagoss" },
+  "description": "Plugins de Claude Companion (montre Wear OS)",
+  "plugins": [
+    {
+      "name": "watch-companion",
+      "source": "./plugins/watch-companion",
+      "description": "Envoie les événements de Claude Code (autorisation, réponse attendue, tâche terminée…) à ta montre Claude Companion."
+    }
+  ]
+}

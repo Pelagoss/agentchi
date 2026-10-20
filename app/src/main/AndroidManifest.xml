@@ -9,9 +9,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
 
     <application
         android:name=".CompanionApp"
@@ -25,7 +22,7 @@
             android:name="com.google.android.wearable"
             android:required="false" />
 
-        <!-- Application autonome : fonctionne sans appli téléphone. -->
+        <!-- Application autonome : aucune appli sur le téléphone. -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
@@ -52,35 +49,17 @@
             android:taskAffinity="com.claudecompanion.alert"
             android:theme="@android:style/Theme.DeviceDefault" />
 
+        <!-- Événements poussés par le serveur Claude Companion (Firebase Cloud Messaging). -->
         <service
-            android:name=".sync.InstantSyncService"
-            android:exported="false"
-            android:foregroundServiceType="remoteMessaging" />
-
-        <!-- Notifications de l'appli Claude relayées par le téléphone. -->
-        <service
-            android:name=".relay.PhoneRelayService"
-            android:exported="true">
+            android:name=".push.PushService"
+            android:exported="false">
             <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-                <data
-                    android:host="*"
-                    android:pathPrefix="/claude"
-                    android:scheme="wear" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
         <receiver
             android:name=".notify.OpenOnPhoneReceiver"
             android:exported="false" />
-
-        <receiver
-            android:name=".sync.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

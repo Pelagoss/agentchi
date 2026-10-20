@@ -3,8 +3,8 @@ package com.claudecompanion.data
 import kotlinx.serialization.Serializable
 
 /**
- * Types d'événements envoyés par le hook Claude Code.
- * La clé correspond au tag `cc-<clé>` publié par `hooks/claude-companion-notify.sh`.
+ * Types d'événements envoyés par les hooks Claude Code.
+ * La clé correspond au champ `t` produit par le serveur (server/hook.go).
  */
 enum class EventType(
     val key: String,
@@ -35,27 +35,23 @@ data class ClaudeEvent(
     val message: String,
     val project: String? = null,
     val session: String? = null,
-    /** Compte Claude (e-mail) ou libellé choisi sur l'ordinateur. */
+    /** Nom de l'ordinateur ou de l'environnement cloud (code d'appairage), ou compte. */
     val account: String? = null,
     /** Session cloud (claude.ai/code) plutôt que locale. */
     val cloud: Boolean = false,
     /** Lien de la session cloud, ouvrable sur le téléphone. */
     val url: String? = null,
-    /** Notification de l'appli Claude relayée par le téléphone. */
-    val fromPhone: Boolean = false,
-    /** Clé de la notification d'origine sur le téléphone, pour l'y ouvrir. */
-    val phoneKey: String? = null,
     /** Horodatage Unix en secondes. */
     val time: Long,
 ) {
     val title: String
-        get() = if (fromPhone && type == EventType.OTHER) "💬 ${project ?: "Claude"}" else "${type.emoji} ${type.label}"
+        get() = "${type.emoji} ${type.label}"
 
     /** Peut-on ouvrir l'événement sur le téléphone ? */
-    val openableOnPhone: Boolean get() = url != null || phoneKey != null
+    val openableOnPhone: Boolean get() = url != null
 
     /** « ☁️ projet · compte » : d'où vient l'événement. */
     val origin: String
-        get() = (if (fromPhone) "📱 " else if (cloud) "☁️ " else "") +
+        get() = (if (cloud) "☁️ " else "") +
             listOfNotNull(project, account?.substringBefore('@')).joinToString(" · ").ifEmpty { if (cloud) "Cloud" else "Claude" }
 }

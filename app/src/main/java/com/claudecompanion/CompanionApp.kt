@@ -2,13 +2,12 @@ package com.claudecompanion
 
 import android.app.Application
 import com.claudecompanion.data.CompanionStore
-import com.claudecompanion.net.NtfyClient
+import com.claudecompanion.net.CompanionApi
 import com.claudecompanion.notify.EventNotifier
+import com.claudecompanion.push.Push
 import com.claudecompanion.sync.EventProcessor
-import com.claudecompanion.sync.PollWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 class CompanionApp : Application() {
     val appScope = CoroutineScope(SupervisorJob())
@@ -19,14 +18,13 @@ class CompanionApp : Application() {
         private set
     lateinit var processor: EventProcessor
         private set
-    val ntfy by lazy { NtfyClient() }
+    val api by lazy { CompanionApi() }
 
     override fun onCreate() {
         super.onCreate()
         store = CompanionStore(this)
         notifier = EventNotifier(this).also { it.createChannels() }
         processor = EventProcessor(store, notifier)
-        appScope.launch { store.ensurePairing() }
-        PollWorker.schedule(this)
+        Push.init(this)
     }
 }
