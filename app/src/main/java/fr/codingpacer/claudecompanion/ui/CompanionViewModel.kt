@@ -159,6 +159,13 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun resetQuickReplies() = updateSettings { it.copy(quickReplies = CompanionSettings.DEFAULT_QUICK_REPLIES) }
 
+    /** Supprime la montre du serveur : tous ses codes sont révoqués. */
+    fun disconnect() = serverCall(requireConnected = true) {
+        runCatching { app.api.deleteDevice(store.settings.first()) }
+        store.clearDevice()
+        _pairing.value = PairingUi()
+    }
+
     private fun serverCall(requireConnected: Boolean = false, block: suspend () -> Unit) = viewModelScope.launch {
         if (requireConnected && !store.settings.first().isConnected) return@launch
         _pairing.update { it.copy(busy = true, error = null) }
