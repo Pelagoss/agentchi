@@ -27,6 +27,8 @@ type Push struct {
 	ID      string
 	Time    int64
 	Payload string // JSON lu par la montre (voir Payload)
+	// Durée de vie chez Firebase si la montre est injoignable, 0 pour 24 h.
+	TTL time.Duration
 }
 
 // Pusher envoie un événement à la montre dont le jeton FCM est token.
@@ -117,6 +119,10 @@ func (f *FCM) Send(ctx context.Context, token string, p Push) error {
 	if err != nil {
 		return err
 	}
+	ttl := 24 * time.Hour
+	if p.TTL > 0 {
+		ttl = p.TTL
+	}
 	body, _ := json.Marshal(map[string]any{
 		"message": map[string]any{
 			"token": token,
@@ -126,8 +132,9 @@ func (f *FCM) Send(ctx context.Context, token string, p Push) error {
 				"time":    fmt.Sprint(p.Time),
 				"payload": p.Payload,
 			},
-			// Priorité haute : réveille la montre en veille. Passé 24 h, l'événement n'a plus d'intérêt.
-			"android": map[string]any{"priority": "HIGH", "ttl": "86400s"},
+			// Priorité haute : réveille la montre en veille. Passé 24 h, l'événement n'a plus d'intérêt
+			// (une question, dès que Claude Code ne l'attend plus).
+			"android": map[string]any{"priority": "HIGH", "ttl": fmt.Sprintf("%ds", int64(ttl.Seconds()))},
 		},
 	})
 	req, _ := http.NewRequestWithContext(ctx, "POST", f.sendURL, bytes.NewReader(body))

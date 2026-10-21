@@ -22,6 +22,8 @@ type Config struct {
 	// Faire confiance à X-Forwarded-For / X-Forwarded-Proto (derrière un reverse proxy).
 	TrustProxy bool
 	MaxDevices int
+	// Attente maximale d'une réponse de la montre (défaut 110 s).
+	AskTimeout time.Duration
 }
 
 type Server struct {
@@ -31,6 +33,8 @@ type Server struct {
 	mux    *http.ServeMux
 	// Envois FCM en cours : le hook répond sans attendre Firebase.
 	sending sync.WaitGroup
+	// Questions qui attendent la réponse de la montre (ask.go).
+	asks askRegistry
 
 	registerLimit *limiter // création de montres, par IP
 	hookLimit     *limiter // événements, par code
@@ -50,6 +54,7 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 		hookLimit:     newLimiter(120, 60),
 		authFailLimit: newLimiter(10, 20),
 		apiLimit:      newLimiter(120, 60),
+		asks:          askRegistry{m: map[string]*pendingAsk{}},
 	}
 	s.mux.HandleFunc("GET /{$}", s.handleHome)
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { io.WriteString(w, "ok\n") })
@@ -57,12 +62,16 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 
 	// Hook Claude Code : le code d'appairage sert de jeton.
 	s.mux.HandleFunc("POST /h", s.handleHook)
+	// Hook qui attend la réponse de la montre (autorisation, question, plan, réponse à Claude).
+	s.mux.HandleFunc("POST /ask", s.handleAsk)
 
 	// API de la montre
 	s.mux.HandleFunc("POST /v1/devices", s.handleRegister)
 	s.mux.HandleFunc("GET /v1/device", s.device(s.handleGetDevice))
 	s.mux.HandleFunc("PUT /v1/device/push", s.device(s.handleSetPush))
+	s.mux.HandleFunc("PUT /v1/device/answers", s.device(s.handleSetAnswers))
 	s.mux.HandleFunc("DELETE /v1/device", s.device(s.handleDeleteDevice))
+	s.mux.HandleFunc("POST /v1/asks/{id}", s.device(s.handleAnswer))
 	s.mux.HandleFunc("POST /v1/codes", s.device(s.handleCreateCode))
 	s.mux.HandleFunc("GET /v1/codes", s.device(s.handleListCodes))
 	s.mux.HandleFunc("DELETE /v1/codes/{id}", s.device(s.handleDeleteCode))
@@ -81,56 +90,68 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // --- Hook ---
 
 func (s *Server) handleHook(w http.ResponseWriter, r *http.Request) {
-	code := bearer(r)
-	if code == "" {
-		// Hook versionné dans un dépôt, sans code pour cette personne : rien à faire, sans erreur.
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	ip := s.clientIP(r)
-	var in HookInput
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&in); err != nil {
-		httpError(w, http.StatusBadRequest, "JSON invalide")
-		return
-	}
-	project := ""
-	if in.Cwd != "" {
-		project = path.Base(strings.ReplaceAll(strings.TrimRight(in.Cwd, `/\`), `\`, "/"))
-	}
-	c, ok := s.store.UseCode(code, project)
+	in, c, ok := s.hookRequest(w, r)
 	if !ok {
-		s.authFailed(w, ip, "code d'appairage inconnu ou révoqué")
-		return
-	}
-	if !s.hookLimit.Allow(c.ID) {
-		httpError(w, http.StatusTooManyRequests, "trop d'événements")
 		return
 	}
 	payload, show := ToPayload(in, c.Label, r.Header.Get("X-Claude-Remote-Session"))
 	if show {
-		s.sending.Add(1)
-		go func() {
-			defer s.sending.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), pushTimeout)
-			defer cancel()
-			if err := s.push(ctx, c.DeviceID, payload); err != nil {
-				log.Printf("push vers %s : %v", c.DeviceID, err)
-			}
-		}()
+		s.pushAsync(c.DeviceID, payload)
 	}
 	// Corps vide : Claude Code n'en tire aucune décision ni aucun contexte.
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// hookRequest lit l'événement d'un hook et authentifie son code d'appairage.
+// ok vaut false si la réponse est déjà écrite (sans code, code refusé, JSON invalide…).
+func (s *Server) hookRequest(w http.ResponseWriter, r *http.Request) (HookInput, Code, bool) {
+	var in HookInput
+	code := bearer(r)
+	if code == "" {
+		// Hook versionné dans un dépôt, sans code pour cette personne : rien à faire, sans erreur.
+		w.WriteHeader(http.StatusNoContent)
+		return in, Code{}, false
+	}
+	ip := s.clientIP(r)
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&in); err != nil {
+		httpError(w, http.StatusBadRequest, "JSON invalide")
+		return in, Code{}, false
+	}
+	c, ok := s.store.UseCode(code, projectOf(in.Cwd))
+	if !ok {
+		s.authFailed(w, ip, "code d'appairage inconnu ou révoqué")
+		return in, Code{}, false
+	}
+	if !s.hookLimit.Allow(c.ID) {
+		httpError(w, http.StatusTooManyRequests, "trop d'événements")
+		return in, Code{}, false
+	}
+	return in, c, true
+}
+
+// pushAsync envoie l'événement sans faire attendre le hook.
+func (s *Server) pushAsync(deviceID string, p Payload) {
+	s.sending.Add(1)
+	go func() {
+		defer s.sending.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), pushTimeout)
+		defer cancel()
+		if err := s.push(ctx, deviceID, p, 0); err != nil {
+			log.Printf("push vers %s : %v", deviceID, err)
+		}
+	}()
+}
+
 // --- API de la montre ---
 
 // push envoie un événement à la montre par FCM. Un jeton refusé par Firebase est oublié.
-func (s *Server) push(ctx context.Context, deviceID string, p Payload) error {
+// ttl : durée de vie du message chez Firebase, 0 pour la valeur par défaut (24 h).
+func (s *Server) push(ctx context.Context, deviceID string, p Payload, ttl time.Duration) error {
 	token := s.store.PushToken(deviceID)
 	if token == "" {
 		return errNoPushToken
 	}
-	err := s.pusher.Send(ctx, token, Push{ID: "e" + randomToken(12), Time: time.Now().Unix(), Payload: p.JSON()})
+	err := s.pusher.Send(ctx, token, Push{ID: "e" + randomToken(12), Time: time.Now().Unix(), Payload: p.JSON(), TTL: ttl})
 	if errors.Is(err, errUnregistered) {
 		_ = s.store.ForgetPushToken(deviceID, token)
 	}
@@ -178,7 +199,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetDevice(w http.ResponseWriter, _ *http.Request, d *Device) {
-	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != ""})
+	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != "", "answers": d.Answers})
 }
 
 func (s *Server) handleSetPush(w http.ResponseWriter, r *http.Request, d *Device) {
@@ -258,7 +279,7 @@ func (s *Server) handleTest(w http.ResponseWriter, r *http.Request, d *Device) {
 	p := Payload{Type: "done", Message: "Push FCM reçu : tout fonctionne 🎉", Account: "Serveur"}
 	ctx, cancel := context.WithTimeout(r.Context(), pushTimeout)
 	defer cancel()
-	if err := s.push(ctx, d.ID, p); err != nil {
+	if err := s.push(ctx, d.ID, p, 0); err != nil {
 		log.Printf("test vers %s : %v", d.ID, err)
 		httpError(w, http.StatusBadGateway, err.Error())
 		return
@@ -280,24 +301,34 @@ func (s *Server) publicURL(r *http.Request) string {
 }
 
 // Événements relayés depuis une session cloud. SessionStart n'accepte pas les hooks http.
-var cloudEvents = []string{"Notification", "Stop", "StopFailure", "SubagentStop", "SessionEnd", "PreCompact"}
+var cloudEvents = []string{"Notification", "StopFailure", "SubagentStop", "SessionEnd", "PreCompact"}
+
+// askTimeoutHook : délai du hook /ask, un peu au-delà de defaultAskTimeout.
+const askTimeoutHook = 120
 
 // CloudSettings : bloc à ajouter au .claude/settings.json d'un dépôt pour ses sessions cloud.
 func CloudSettings(publicURL string) map[string]any {
-	hook := map[string]any{
-		"type":    "http",
-		"url":     publicURL + "/h",
-		"timeout": 5,
-		"headers": map[string]string{
-			"Authorization":           "Bearer $CLAUDE_COMPANION_CODE",
-			"X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID",
-		},
-		"allowedEnvVars": []string{"CLAUDE_COMPANION_CODE", "CLAUDE_CODE_REMOTE_SESSION_ID"},
+	hook := func(path string, timeout int) map[string]any {
+		return map[string]any{
+			"type":    "http",
+			"url":     publicURL + path,
+			"timeout": timeout,
+			"headers": map[string]string{
+				"Authorization":           "Bearer $CLAUDE_COMPANION_CODE",
+				"X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID",
+			},
+			"allowedEnvVars": []string{"CLAUDE_COMPANION_CODE", "CLAUDE_CODE_REMOTE_SESSION_ID"},
+		}
 	}
 	hooks := map[string]any{}
 	for _, e := range cloudEvents {
-		hooks[e] = []any{map[string]any{"hooks": []any{hook}}}
+		hooks[e] = []any{map[string]any{"hooks": []any{hook("/h", 5)}}}
 	}
+	// Questions auxquelles la montre peut répondre : le hook attend sa réponse.
+	ask := hook("/ask", askTimeoutHook)
+	hooks["Stop"] = []any{map[string]any{"hooks": []any{ask}}}
+	hooks["PermissionRequest"] = []any{map[string]any{"hooks": []any{ask}}}
+	hooks["PreToolUse"] = []any{map[string]any{"matcher": "AskUserQuestion|ExitPlanMode", "hooks": []any{ask}}}
 	return map[string]any{"hooks": hooks}
 }
 

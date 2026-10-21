@@ -75,6 +75,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         val pushToken = Push.token()
         val device = app.api.register(settings.serverUrl, Build.MODEL ?: "Montre", pushToken)
         store.saveDevice(settings.serverUrl, device.id, device.token)
+        if (settings.remoteAnswers) runCatching { app.api.setAnswers(store.settings.first(), true) }
         val codes = app.api.codes(store.settings.first())
         _pairing.update { it.copy(codes = codes) }
     }
@@ -114,6 +115,22 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     fun refreshPushToken() = viewModelScope.launch {
         val settings = store.settings.first()
         if (settings.isConnected && Push.isConfigured) runCatching { app.api.setPushToken(settings, Push.token()) }
+        if (settings.isConnected) runCatching { app.api.setAnswers(settings, settings.remoteAnswers) }
+    }
+
+    /** Active les réponses depuis la montre, sur la montre et sur le serveur. [onError] : message à afficher. */
+    fun setRemoteAnswers(enabled: Boolean, onError: (String) -> Unit) = viewModelScope.launch {
+        store.updateSettings { it.copy(remoteAnswers = enabled) }
+        val settings = store.settings.first()
+        if (!settings.isConnected) {
+            if (enabled) onError("Connecte d'abord la montre au serveur")
+            store.updateSettings { it.copy(remoteAnswers = false) }
+            return@launch
+        }
+        runCatching { app.api.setAnswers(settings, enabled) }.onFailure {
+            store.updateSettings { s -> s.copy(remoteAnswers = !enabled) }
+            onError(describe(it))
+        }
     }
 
     /** Supprime la montre du serveur : tous ses codes sont révoqués. */

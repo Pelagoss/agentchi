@@ -38,6 +38,8 @@ data class CompanionSettings(
     val quietStart: Int = 22,
     val quietEnd: Int = 7,
     val quietAllowsUrgent: Boolean = true,
+    /** Répondre depuis la montre aux autorisations, questions et messages de Claude. */
+    val remoteAnswers: Boolean = false,
 ) {
     /** Faut-il ignorer complètement cet événement (compte ou origine filtrés) ? */
     fun isFiltered(event: ClaudeEvent): Boolean =

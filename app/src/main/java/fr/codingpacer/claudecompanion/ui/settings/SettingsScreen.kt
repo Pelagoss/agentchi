@@ -72,6 +72,26 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                 }
             }
 
+            // --- Réponses ---
+            section("Répondre depuis la montre")
+            item {
+                Toggle("⌚ Répondre à Claude", "Autorisations, questions, messages", settings.remoteAnswers) { on ->
+                    viewModel.setRemoteAnswers(on, onError = ::toast)
+                }
+            }
+            item {
+                Text(
+                    if (settings.remoteAnswers) {
+                        "Claude attend ta réponse jusqu'à 2 min, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
+                    } else {
+                        "À activer quand tu t'éloignes : les questions de Claude arrivent ici avec leurs réponses."
+                    },
+                    style = MaterialTheme.typography.caption3,
+                    color = MaterialTheme.colors.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
             // --- Événements ---
             section("Me notifier quand…")
             EventType.entries.forEach { type ->

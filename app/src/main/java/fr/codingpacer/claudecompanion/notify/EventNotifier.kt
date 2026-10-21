@@ -19,11 +19,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import fr.codingpacer.claudecompanion.R
 import fr.codingpacer.claudecompanion.data.AlertStyle
+import fr.codingpacer.claudecompanion.data.Ask
+import fr.codingpacer.claudecompanion.data.AskAnswer
 import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.VibrationPattern
 import fr.codingpacer.claudecompanion.ui.MainActivity
 import fr.codingpacer.claudecompanion.ui.alert.AlertActivity
+import fr.codingpacer.claudecompanion.ui.ask.AskActivity
 
 /**
  * Affiche les notifications selon le style choisi par l'utilisateur.
@@ -62,8 +65,14 @@ class EventNotifier(private val context: Context) {
             event.type.urgent -> if (settings.sound) CH_URGENT_SOUND else CH_URGENT
             else -> if (settings.sound) CH_INFO_SOUND else CH_INFO
         }
-        val text = if (settings.showPreview) event.message else event.project ?: "Session Claude"
-        val notificationId = event.id.hashCode()
+        val ask = event.ask?.takeUnless { it.isExpired() }
+        val text = when {
+            !settings.showPreview -> event.project ?: "Session Claude"
+            ask?.kind == Ask.PERMISSION && ask.detail.isNotBlank() -> "${event.message} : ${ask.detail}"
+            ask?.kind == Ask.REPLY && ask.detail.isNotBlank() -> ask.detail
+            else -> event.message
+        }
+        val notificationId = event.notificationId
 
         val builder = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_stat_claude)
@@ -83,20 +92,59 @@ class EventNotifier(private val context: Context) {
                     else -> NotificationCompat.PRIORITY_DEFAULT
                 },
             )
-            .setContentIntent(openAppIntent())
+            .setContentIntent(if (ask != null) AskActivity.pendingIntent(context, event) else openAppIntent())
             .setGroup(GROUP)
+
+        if (ask != null) addAnswerActions(builder, ask)
 
         if (event.openableOnPhone) {
             builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, event, notificationId))
         }
 
         if (style == AlertStyle.FULL_SCREEN) {
-            builder.setFullScreenIntent(AlertActivity.pendingIntent(context, event, notificationId), true)
+            val fullScreen = if (ask != null) AskActivity.pendingIntent(context, event) else AlertActivity.pendingIntent(context, event, notificationId)
+            builder.setFullScreenIntent(fullScreen, true)
         }
 
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
 
         if (style != AlertStyle.SILENT) vibrate(settings.vibrationFor(event.type))
+    }
+
+    /**
+     * Réponses possibles directement depuis la notification. Le reste (« toujours autoriser »,
+     * choix multiples, refus avec un message) se fait dans [AskActivity], en touchant la notification.
+     */
+    private fun addAnswerActions(builder: NotificationCompat.Builder, ask: Ask) {
+        builder.setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            // Balayée : l'ordinateur pose la question sans attendre la fin du délai.
+            .setDeleteIntent(AnswerReceiver.pendingIntent(context, ask, 0, AskAnswer.pass))
+        val remaining = ask.expires * 1000 - System.currentTimeMillis()
+        if (ask.expires > 0 && remaining > 0) builder.setTimeoutAfter(remaining)
+
+        fun add(index: Int, title: String, answer: AskAnswer) =
+            builder.addAction(AnswerReceiver.action(context, ask, index, title, answer))
+        when (ask.kind) {
+            Ask.PERMISSION -> {
+                add(1, "✅ Autoriser", AskAnswer(AskAnswer.ALLOW))
+                add(2, "❌ Refuser", AskAnswer(AskAnswer.DENY))
+            }
+            Ask.PLAN -> {
+                add(1, "✅ Approuver le plan", AskAnswer(AskAnswer.ALLOW))
+                add(2, "❌ Refuser", AskAnswer(AskAnswer.DENY))
+            }
+            Ask.QUESTION -> {
+                val single = ask.questions.singleOrNull()?.takeIf { !it.multi && it.options.size in 1..4 }
+                single?.options?.forEachIndexed { i, option ->
+                    add(1 + i, option.label, AskAnswer(AskAnswer.ALLOW, answers = mapOf(single.question to option.label)))
+                }
+            }
+            Ask.REPLY -> {
+                builder.addAction(AnswerReceiver.replyAction(context, ask, 1))
+                add(2, "🏁 Terminer", AskAnswer.pass)
+            }
+        }
     }
 
     fun vibrate(pattern: VibrationPattern) {

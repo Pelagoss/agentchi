@@ -49,6 +49,16 @@
             android:taskAffinity="fr.codingpacer.claudecompanion.alert"
             android:theme="@android:style/Theme.DeviceDefault" />
 
+        <!-- Répondre à Claude depuis la montre (autorisation, question, plan, message). -->
+        <activity
+            android:name=".ui.ask.AskActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity="fr.codingpacer.claudecompanion.ask"
+            android:theme="@android:style/Theme.DeviceDefault" />
+
         <!-- Événements poussés par le serveur Claude Companion (Firebase Cloud Messaging). -->
         <service
             android:name=".push.PushService"
@@ -60,6 +70,10 @@
 
         <receiver
             android:name=".notify.OpenOnPhoneReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".notify.AnswerReceiver"
             android:exported="false" />
     </application>
 </manifest>
