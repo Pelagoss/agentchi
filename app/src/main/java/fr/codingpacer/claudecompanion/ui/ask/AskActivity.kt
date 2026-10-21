@@ -45,6 +45,7 @@ import fr.codingpacer.claudecompanion.data.AskQuestion
 import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.net.EventParser
 import fr.codingpacer.claudecompanion.sync.AskResponder
+import fr.codingpacer.claudecompanion.text.markdownAnnotated
 import fr.codingpacer.claudecompanion.ui.common.rememberTextInput
 import fr.codingpacer.claudecompanion.ui.theme.ClaudeOrange
 import fr.codingpacer.claudecompanion.ui.theme.CompanionTheme
@@ -160,7 +161,7 @@ private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, qui
             }
             when (ask.kind) {
                 Ask.PERMISSION -> {
-                    item { Text(event.message, style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
+                    item { Text(markdownAnnotated(event.message), style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
                     if (ask.detail.isNotBlank()) item { Detail(ask.detail, code = true) }
                     item { Action("✅ Autoriser", busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
                     if (ask.always) {
@@ -218,7 +219,7 @@ private fun ScalingLazyListScope.question(
     onOther: () -> Unit,
 ) {
     item { ListHeader { Text(q.header.ifBlank { "Question" }, color = MaterialTheme.colors.primary) } }
-    item { Text(q.question, style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
+    item { Text(markdownAnnotated(q.question), style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
     q.options.forEach { option ->
         item {
             val selected = option.label in chosen[q.question].orEmpty()
@@ -233,9 +234,9 @@ private fun ScalingLazyListScope.question(
                     }
                     if (!q.multi) other.remove(q.question)
                 },
-                label = { Text(option.label, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                label = { Text(markdownAnnotated(option.label), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 secondaryLabel = if (option.description.isNotBlank()) {
-                    { Text(option.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    { Text(markdownAnnotated(option.description), maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 } else {
                     null
                 },
@@ -249,15 +250,14 @@ private fun ScalingLazyListScope.question(
     }
 }
 
+/** Commande ([code], affichée telle quelle) ou texte Markdown de Claude (plan, message). */
 @Composable
 private fun Detail(text: String, code: Boolean = false) {
-    Text(
-        text,
-        style = MaterialTheme.typography.caption2,
-        fontFamily = if (code) FontFamily.Monospace else null,
-        maxLines = if (code) 8 else 40,
-        overflow = TextOverflow.Ellipsis,
-    )
+    if (code) {
+        Text(text, style = MaterialTheme.typography.caption2, fontFamily = FontFamily.Monospace, maxLines = 8, overflow = TextOverflow.Ellipsis)
+    } else {
+        Text(markdownAnnotated(text), style = MaterialTheme.typography.caption2, maxLines = 40, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 @Composable

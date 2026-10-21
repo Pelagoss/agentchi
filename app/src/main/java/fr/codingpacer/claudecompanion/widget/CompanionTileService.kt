@@ -22,6 +22,7 @@ import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.pet.MascotSprite
 import fr.codingpacer.claudecompanion.pet.PetLogic
 import fr.codingpacer.claudecompanion.pet.PetState
+import fr.codingpacer.claudecompanion.text.Markdown
 import fr.codingpacer.claudecompanion.ui.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -82,7 +83,7 @@ class CompanionTileService : TileService() {
         val reaction = PetLogic.currentReaction(pet, now)
         val bubble = if (pending != null) "❗" else MascotSprite.bubble(mood, reaction)
         val title = if (pending != null) "${pending.type.emoji} Claude attend" else "${pet.name} · niv. ${PetLogic.level(pet.xp)}"
-        val body = pending?.message ?: listOfNotNull(bubble, PetLogic.moodLine(pet, reaction)).joinToString(" ")
+        val body = pending?.message?.let { Markdown.plain(it) } ?: listOfNotNull(bubble, PetLogic.moodLine(pet, reaction)).joinToString(" ")
         val footer = pending?.origin ?: "🍪 ${pet.satiety.toInt()}  ⚡ ${pet.energy.toInt()}  💖 ${pet.happiness.toInt()}"
         return PrimaryLayout.Builder(device)
             .setResponsiveContentInsetEnabled(true)

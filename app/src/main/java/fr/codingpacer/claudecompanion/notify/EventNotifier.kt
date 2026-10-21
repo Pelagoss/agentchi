@@ -14,6 +14,9 @@ import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.TypefaceSpan
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -25,6 +28,7 @@ import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.VibrationPattern
 import fr.codingpacer.claudecompanion.ui.MainActivity
+import fr.codingpacer.claudecompanion.text.markdownSpanned
 import fr.codingpacer.claudecompanion.ui.alert.AlertActivity
 import fr.codingpacer.claudecompanion.ui.ask.AskActivity
 
@@ -66,11 +70,17 @@ class EventNotifier(private val context: Context) {
             else -> if (settings.sound) CH_INFO_SOUND else CH_INFO
         }
         val ask = event.ask?.takeUnless { it.isExpired() }
-        val text = when {
+        // Claude écrit en Markdown : converti en gras, italique, code… que la notification sait afficher.
+        val text: CharSequence = when {
             !settings.showPreview -> event.project ?: "Session Claude"
-            ask?.kind == Ask.PERMISSION && ask.detail.isNotBlank() -> "${event.message} : ${ask.detail}"
-            ask?.kind == Ask.REPLY && ask.detail.isNotBlank() -> ask.detail
-            else -> event.message
+            // Une commande n'est pas du Markdown : `rm *.log *.tmp` doit rester tel quel.
+            ask?.kind == Ask.PERMISSION && ask.detail.isNotBlank() -> SpannableStringBuilder(event.message + " : ").apply {
+                val start = length
+                append(ask.detail)
+                setSpan(TypefaceSpan("monospace"), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            ask?.kind == Ask.REPLY && ask.detail.isNotBlank() -> markdownSpanned(ask.detail)
+            else -> markdownSpanned(event.message)
         }
         val notificationId = event.notificationId
 

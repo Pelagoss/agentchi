@@ -282,8 +282,15 @@ func TestToPayload(t *testing.T) {
 		t.Fatalf("message de %d caractères", n)
 	}
 	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: "a\n\tb   c"}, "", "pas un id/valide")
-	if got.Message != "a b c" || got.Cloud {
+	if got.Message != "a\n  b c" || got.Cloud {
 		t.Fatalf("%+v", got)
+	}
+
+	// Markdown de Claude : lignes et indentation gardées, une seule ligne vide entre paragraphes.
+	md := "## Fini  \r\n\n\n\n- **un**\n  - deux   mots\n\n```\nx := 1\n```\n  "
+	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: md}, "", "")
+	if want := "## Fini\n\n- **un**\n  - deux mots\n\n```\nx := 1\n```"; got.Message != want {
+		t.Fatalf("message %q, attendu %q", got.Message, want)
 	}
 }
 

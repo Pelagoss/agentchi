@@ -2,7 +2,7 @@
 
 Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pendant que Claude travaille :
 
-- 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone.
+- 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone. Le Markdown de Claude est mis en forme : gras, italique, `code`, titres, listes à puces.
 - ⌚ **Répondre à Claude depuis la montre** : autoriser ou refuser une commande, choisir parmi les options qu'il propose (une ou plusieurs), approuver son plan, ou lui répondre au clavier ou à la voix quand il a fini.
 - 🦀 **Une mascotte façon tamagotchi** : nourris-la, joue avec elle, mets-la au lit. Elle réagit en direct : elle fait la fête quand Claude a fini et s'affole quand il t'attend. Elle a sa **tuile** et sa **complication** pour le cadran.
 - ⚙️ **Des paramètres** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, heures calmes.
