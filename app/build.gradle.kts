@@ -16,11 +16,11 @@ fun releaseProp(name: String): String? =
     releaseProps.getProperty(name) ?: System.getenv("RELEASE_" + name.replace(Regex("([A-Z])"), "_$1").uppercase())
 
 android {
-    namespace = "com.claudecompanion"
+    namespace = "fr.codingpacer.claudecompanion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.claudecompanion"
+        applicationId = "fr.codingpacer.claudecompanion"
         // Wear OS 3 (Galaxy Watch4 et plus récentes)
         minSdk = 30
         targetSdk = 34
@@ -34,7 +34,7 @@ android {
         buildConfigField("String", "COMPANION_SERVER", "\"${companionServer.trimEnd('/')}\"")
 
         // Projet Firebase pour le push FCM (console Firebase › Paramètres du projet › appli Android
-        // « com.claudecompanion »). Valeurs de google-services.json, passées en propriétés Gradle
+        // « fr.codingpacer.claudecompanion »). Valeurs de google-services.json, passées en propriétés Gradle
         // (-PfirebaseAppId=…) ou en variables d'environnement (FIREBASE_APP_ID…) : rien n'est versionné.
         fun firebase(property: String, env: String) =
             "\"${(findProperty(property) as String?) ?: System.getenv(env) ?: ""}\""

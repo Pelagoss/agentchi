@@ -37,7 +37,7 @@ Chaque ordinateur ou environnement cloud est appairé avec **son propre code** (
 
 Le push passe par Firebase Cloud Messaging, gratuit.
 
-1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `com.claudecompanion`.
+1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `fr.codingpacer.claudecompanion`.
 2. Télécharge `google-services.json`. Il ne sert qu'à lire quatre valeurs, il ne se versionne pas :
 
    | Variable (ou propriété Gradle) | Champ de `google-services.json` |

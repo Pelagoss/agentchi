@@ -46,7 +46,7 @@
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:taskAffinity="com.claudecompanion.alert"
+            android:taskAffinity="fr.codingpacer.claudecompanion.alert"
             android:theme="@android:style/Theme.DeviceDefault" />
 
         <!-- Événements poussés par le serveur Claude Companion (Firebase Cloud Messaging). -->

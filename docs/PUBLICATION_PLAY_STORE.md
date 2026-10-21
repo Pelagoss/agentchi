@@ -26,7 +26,7 @@ N'écris pas non plus « **Tamagotchi** » dans la fiche : c'est une marque de B
 
 ### 0.2 L'identifiant de l'appli est définitif
 
-`applicationId = "com.claudecompanion"`, défini dans `app/build.gradle.kts`, **ne pourra plus changer** après la première publication. Si tu renommes l'appli, change-le **maintenant**, et déclare le même identifiant pour l'appli Android de ton projet Firebase (sinon le push ne marche pas). Exemple : `fr.pelagoss.pixelbuddy`.
+`applicationId = "fr.codingpacer.claudecompanion"`, défini dans `app/build.gradle.kts`, **ne pourra plus changer** après la première publication. Si tu renommes l'appli, change-le **maintenant**, et déclare le même identifiant pour l'appli Android de ton projet Firebase (sinon le push ne marche pas). Exemple : `fr.pelagoss.pixelbuddy`.
 
 ### 0.3 Le compte développeur
 
@@ -104,7 +104,7 @@ Fichier produit : `app/build/outputs/bundle/release/app-release.aab`.
 
 ```bash
 ./gradlew :app:assembleRelease -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…
-adb -s <montre> uninstall com.claudecompanion   # la signature diffère des builds de test
+adb -s <montre> uninstall fr.codingpacer.claudecompanion   # la signature diffère des builds de test
 adb -s <montre> install app/build/outputs/apk/release/app-release.apk
 ```
 
