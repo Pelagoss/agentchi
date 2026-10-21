@@ -18,7 +18,8 @@ permissions:
 
 env:
   REGISTRY: harbor.codingpacer.fr
-  IMAGE: harbor.codingpacer.fr/prod/claude-companion-server
+  IMAGE: harbor.codingpacer.fr/prod/agentchi-server
+  # Nom technique d'origine : le volume (state.json) et le Secret chiffré y sont rattachés.
   NAMESPACE: claude-companion
   # Push de tag → la version (ex. 1.2.3) ; sinon nom de branche + sha.
   IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('{0}{1}', github.ref_name, github.sha) }}

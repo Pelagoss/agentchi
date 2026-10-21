@@ -46,20 +46,20 @@
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:taskAffinity="fr.codingpacer.claudecompanion.alert"
+            android:taskAffinity="fr.codingpacer.agentchi.alert"
             android:theme="@android:style/Theme.DeviceDefault" />
 
-        <!-- Répondre à Claude depuis la montre (autorisation, question, plan, message). -->
+        <!-- Répondre à l'agent depuis la montre (autorisation, question, plan, message). -->
         <activity
             android:name=".ui.ask.AskActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:taskAffinity="fr.codingpacer.claudecompanion.ask"
+            android:taskAffinity="fr.codingpacer.agentchi.ask"
             android:theme="@android:style/Theme.DeviceDefault" />
 
-        <!-- Événements poussés par le serveur Claude Companion (Firebase Cloud Messaging). -->
+        <!-- Événements poussés par le serveur Agentchi (Firebase Cloud Messaging). -->
         <service
             android:name=".push.PushService"
             android:exported="false">
@@ -94,8 +94,8 @@
         <service
             android:name=".widget.PetComplicationService"
             android:exported="true"
-            android:icon="@drawable/ic_stat_claude"
-            android:label="Mascotte Claude"
+            android:icon="@drawable/ic_stat_agentchi"
+            android:label="Mascotte Agentchi"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />

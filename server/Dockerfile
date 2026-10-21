@@ -2,11 +2,11 @@ FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY go.mod ./
 COPY *.go ./
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /claude-companion-server .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /agentchi-server .
 
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /claude-companion-server /claude-companion-server
+COPY --from=build /agentchi-server /agentchi-server
 ENV CC_ADDR=:8080 CC_DATA=/data/state.json
 VOLUME /data
 EXPOSE 8080
-ENTRYPOINT ["/claude-companion-server"]
+ENTRYPOINT ["/agentchi-server"]

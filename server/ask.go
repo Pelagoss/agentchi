@@ -19,7 +19,7 @@ import (
 // et attendent. Si la montre a activé les réponses, le serveur lui pousse la question puis garde la
 // requête ouverte jusqu'à sa réponse (POST /v1/asks/{id}), qu'il traduit en décision de hook
 // (https://code.claude.com/docs/en/hooks). Sans réponse à temps, ou si la montre passe, le corps
-// est vide : Claude Code affiche la question comme d'habitude. Rien n'est écrit sur disque.
+// est vide : l'agent (Claude Code, Codex) affiche la question comme d'habitude. Rien n'est écrit sur disque.
 
 const (
 	// Attente par défaut, et bornes du réglage de la montre. Le hook attend 310 s
@@ -37,7 +37,7 @@ const (
 	askPermission = "permission" // PermissionRequest : autoriser, toujours autoriser, refuser
 	askQuestion   = "question"   // AskUserQuestion : choix simples, multiples ou réponse libre
 	askPlan       = "plan"       // ExitPlanMode : approuver ou refuser le plan
-	askReply      = "reply"      // Stop : répondre à Claude, qui repart avec ce texte
+	askReply      = "reply"      // Stop : répondre à l'agent, qui repart avec ce texte
 )
 
 // AskView : la question telle que l'affiche la montre (champ « q » du payload).
@@ -45,7 +45,7 @@ type AskView struct {
 	ID   string `json:"id"`
 	Kind string `json:"k"`
 	Tool string `json:"tool,omitempty"`
-	// Commande, fichier, plan ou dernier message de Claude.
+	// Commande, fichier, plan ou dernier message de l'agent.
 	Detail string `json:"d,omitempty"`
 	// « Toujours autoriser » : Claude Code propose une règle de permission.
 	Always    bool           `json:"al,omitempty"`
@@ -70,7 +70,7 @@ type OptionView struct {
 type Answer struct {
 	// allow, always (toujours autoriser), deny ou pass (laisser l'ordinateur demander).
 	Decision string `json:"decision"`
-	// Raison d'un refus, ou texte de la réponse à Claude (Stop).
+	// Raison d'un refus, ou texte de la réponse à l'agent (Stop).
 	Message string `json:"message"`
 	// AskUserQuestion : question → libellé choisi (choix multiples séparés par des virgules) ou texte libre.
 	Answers map[string]string `json:"answers"`
@@ -141,6 +141,7 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	remote := r.Header.Get("X-Claude-Remote-Session")
+	in.Agent = agentOf(r.Header.Get("X-Agent"))
 	answers, deviceTimeout := s.store.Answers(c.DeviceID)
 	timeout := s.askTimeout(deviceTimeout)
 	view, payload, askable := buildAsk(in, c.Label, remote, timeout)
@@ -184,7 +185,7 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 		s.endAsk(p)
 		w.WriteHeader(http.StatusNoContent)
 	case <-r.Context().Done():
-		// Claude Code a abandonné le hook (question traitée sur l'ordinateur, session interrompue…).
+		// L'agent a abandonné le hook (question traitée sur l'ordinateur, session interrompue…).
 		s.endAsk(p)
 	}
 }
@@ -256,9 +257,9 @@ func buildAsk(in HookInput, account, remoteSession string, timeout time.Duration
 	switch {
 	case in.HookEventName == "PermissionRequest" && in.ToolName != "AskUserQuestion" && in.ToolName != "ExitPlanMode":
 		v.Kind, p.Type = askPermission, "permission"
-		v.Detail = describeTool(tool, in.ToolInput)
+		v.Detail = describeTool(in.ToolName, tool, in.ToolInput)
 		v.Always = hasSuggestions(in.PermissionSuggestions)
-		p.Message = "Claude veut utiliser " + firstNonEmpty(in.ToolName, "un outil")
+		p.Message = in.AgentName() + " veut " + toolAction(in.ToolName)
 	case in.HookEventName == "PreToolUse" && in.ToolName == "AskUserQuestion":
 		v.Kind, p.Type = askQuestion, "input"
 		v.Questions = questionsOf(tool)
@@ -270,13 +271,13 @@ func buildAsk(in HookInput, account, remoteSession string, timeout time.Duration
 		v.Kind, p.Type = askPlan, "input"
 		plan, _ := tool["plan"].(string)
 		v.Detail = strings.TrimSpace(plan)
-		p.Message = "Claude propose un plan"
+		p.Message = in.AgentName() + " propose un plan"
 	case in.HookEventName == "Stop":
 		v.Kind, p.Type = askReply, "done"
 		v.Tool = ""
-		// La fin du message, là où Claude pose sa question.
+		// La fin du message, là où l'agent pose sa question.
 		v.Detail = tail(strings.TrimSpace(in.LastAssistantMessage), 1500)
-		p.Message = firstNonEmpty(in.LastAssistantMessage, "Claude a terminé sa tâche.")
+		p.Message = firstNonEmpty(in.LastAssistantMessage, in.AgentName()+" a terminé sa tâche.")
 	default:
 		return v, p, false
 	}
@@ -293,8 +294,41 @@ func toolInput(raw json.RawMessage) map[string]any {
 	return m
 }
 
+// toolAction : « utiliser Bash », « modifier des fichiers »…
+func toolAction(name string) string {
+	switch name {
+	case "":
+		return "utiliser un outil"
+	case "apply_patch":
+		return "modifier des fichiers"
+	case "write_stdin":
+		return "écrire dans un terminal"
+	case "request_permissions":
+		return "obtenir des permissions"
+	}
+	return "utiliser " + name
+}
+
+// patchFiles : fichiers touchés par un patch Codex (« *** Update File: chemin »…), un par ligne.
+func patchFiles(patch string) string {
+	var out []string
+	for _, line := range strings.Split(patch, "\n") {
+		for prefix, verb := range map[string]string{"*** Add File: ": "+ ", "*** Update File: ": "~ ", "*** Delete File: ": "- "} {
+			if strings.HasPrefix(line, prefix) {
+				out = append(out, verb+strings.TrimSpace(strings.TrimPrefix(line, prefix)))
+			}
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
 // describeTool : ce que l'outil va faire, en une ligne lisible.
-func describeTool(tool map[string]any, raw json.RawMessage) string {
+func describeTool(name string, tool map[string]any, raw json.RawMessage) string {
+	if patch, ok := tool["command"].(string); ok && name == "apply_patch" {
+		if files := patchFiles(patch); files != "" {
+			return truncate(files, 600)
+		}
+	}
 	for _, k := range []string{"command", "file_path", "notebook_path", "url", "pattern", "query", "path", "description", "prompt"} {
 		if v, ok := tool[k].(string); ok && strings.TrimSpace(v) != "" {
 			return truncate(strings.TrimSpace(v), 600)

@@ -1,4 +1,4 @@
-# Publier Claude Companion sur le Google Play Store
+# Publier Agentchi sur le Google Play Store
 
 Ce guide couvre la publication de l'appli **Wear OS autonome** (`app/`). Il n'y a pas d'appli téléphone : la montre reçoit tout par push (Firebase Cloud Messaging).
 
@@ -18,7 +18,7 @@ Tu as trois options, de la plus sûre à la plus risquée :
 |---|---|---|
 | Nom sans la marque, compatibilité dans la description | « **Pixel Buddy — notifications IA pour ta montre** », avec la mention « compatible avec l'appli Claude » | Faible |
 | Demander l'autorisation à Anthropic | Contact via https://www.anthropic.com | Nul si accepté |
-| Garder « Claude Companion » + avertissement « non officiel » | — | **Élevé** : refus ou retrait possible |
+| Garder « Agentchi » + avertissement « non officiel » | — | **Élevé** : refus ou retrait possible |
 
 Même chose pour **l'icône et la mascotte** : la créature orange en pixel-art ne doit pas reprendre un visuel d'Anthropic. Si tu doutes, change sa couleur ou sa forme.
 
@@ -26,7 +26,7 @@ N'écris pas non plus « **Tamagotchi** » dans la fiche : c'est une marque de B
 
 ### 0.2 L'identifiant de l'appli est définitif
 
-`applicationId = "fr.codingpacer.claudecompanion"`, défini dans `app/build.gradle.kts`, **ne pourra plus changer** après la première publication. Si tu renommes l'appli, change-le **maintenant**, et déclare le même identifiant pour l'appli Android de ton projet Firebase (sinon le push ne marche pas). Exemple : `fr.pelagoss.pixelbuddy`.
+`applicationId = "fr.codingpacer.agentchi"`, défini dans `app/build.gradle.kts`, **ne pourra plus changer** après la première publication. Si tu renommes l'appli, change-le **maintenant**, et déclare le même identifiant pour l'appli Android de ton projet Firebase (sinon le push ne marche pas). Exemple : `fr.pelagoss.pixelbuddy`.
 
 ### 0.3 Le compte développeur
 
@@ -104,7 +104,7 @@ Fichier produit : `app/build/outputs/bundle/release/app-release.aab`.
 
 ```bash
 ./gradlew :app:assembleRelease -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…
-adb -s <montre> uninstall fr.codingpacer.claudecompanion   # la signature diffère des builds de test
+adb -s <montre> uninstall fr.codingpacer.agentchi   # la signature diffère des builds de test
 adb -s <montre> install app/build/outputs/apk/release/app-release.apk
 ```
 
@@ -146,7 +146,7 @@ Vérifie au minimum : ouverture de l'appli, **Ordinateurs et cloud › Connecter
 Réponds selon ce que fait réellement l'appli. Pour la version actuelle :
 
 - **L'appli collecte-t-elle ou partage-t-elle des données ?**
-  - La montre reçoit les événements Claude Code d'un **serveur Claude Companion** choisi par l'utilisateur (auto-hébergé), par **Firebase Cloud Messaging**. Par prudence, déclare : *Messages → Autres messages intégrés à l'appli → **Collectées** → Fonctionnalité de l'appli*, avec *« Données chiffrées en transit »* = **Oui** (HTTPS) et *« Suppression possible »* = **Oui** (*Déconnecter la montre*).
+  - La montre reçoit les événements Claude Code d'un **serveur Agentchi** choisi par l'utilisateur (auto-hébergé), par **Firebase Cloud Messaging**. Par prudence, déclare : *Messages → Autres messages intégrés à l'appli → **Collectées** → Fonctionnalité de l'appli*, avec *« Données chiffrées en transit »* = **Oui** (HTTPS) et *« Suppression possible »* = **Oui** (*Déconnecter la montre*).
   - Le **jeton FCM** est transmis au serveur de l'utilisateur : déclare *Identifiants de l'appareil ou autres → **Collectés** → Fonctionnalité de l'appli*.
 - **Données chiffrées en transit** : Oui.
 - **Possibilité de demander la suppression** : Oui (désinstallation, « Tout effacer »).

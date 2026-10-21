@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "claude-companion"
+rootProject.name = "agentchi"
 include(":app")

@@ -1,0 +1,240 @@
+{
+  "description": "Relaie les événements Claude Code au serveur Agentchi, et les réponses données sur la montre (curl, sans script).",
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-f",
+              "-sS",
+              "-m",
+              "305",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/ask"
+            ],
+            "timeout": 310
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-f",
+              "-sS",
+              "-m",
+              "305",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/ask"
+            ],
+            "timeout": 310
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-f",
+              "-sS",
+              "-m",
+              "305",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/ask"
+            ],
+            "timeout": 310
+          }
+        ]
+      }
+    ]
+  }
+}

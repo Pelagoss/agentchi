@@ -1,4 +1,4 @@
-# Serveur Claude Companion (server/Dockerfile) : reçoit les hooks Claude Code
+# Serveur Agentchi (server/Dockerfile) : reçoit les hooks Claude Code
 # et les pousse aux montres par FCM. L'état (montres, codes d'appairage) est un
 # fichier JSON sur un volume persistant : une seule réplique, et `Recreate`
 # pour que deux pods n'écrivent jamais le même fichier.
@@ -26,7 +26,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: server
-          image: harbor.codingpacer.fr/prod/claude-companion-server:_GITHUB_INJECTED
+          image: harbor.codingpacer.fr/prod/agentchi-server:_GITHUB_INJECTED
           ports:
             - containerPort: 8080
           envFrom:

@@ -1,4 +1,4 @@
-# Serveur Claude Companion + Caddy (HTTPS automatique avec Let's Encrypt).
+# Serveur Agentchi + Caddy (HTTPS automatique avec Let's Encrypt).
 #   1. Place la clé du compte de service Firebase dans firebase-service-account.json
 #      (lisible par le conteneur : chmod 644).
 #   2. CC_DOMAIN=cc.example.fr docker compose up -d

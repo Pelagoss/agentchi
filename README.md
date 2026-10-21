@@ -1,4 +1,4 @@
-# Claude Companion ⌚️
+# Agentchi ⌚️
 
 Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pendant que Claude travaille :
 
@@ -38,7 +38,7 @@ Chaque ordinateur ou environnement cloud est appairé avec **son propre code** (
 
 Le push passe par Firebase Cloud Messaging, gratuit.
 
-1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `fr.codingpacer.claudecompanion`.
+1. Sur https://console.firebase.google.com, crée un projet, puis ajoute une **appli Android** avec le package `fr.codingpacer.agentchi`.
 2. Télécharge `google-services.json`. Il ne sert qu'à lire quatre valeurs, il ne se versionne pas :
 
    | Variable (ou propriété Gradle) | Champ de `google-services.json` |
@@ -108,7 +108,7 @@ gh run download -R Pelagoss/claude-companion -n claude-companion-debug
    adb connect <ip>:<port>
    adb install claude-companion-montre.apk
    ```
-3. Ouvre **Claude Companion** sur la montre, accepte les notifications, puis **Paramètres › Ordinateurs et cloud** : saisis l'adresse du serveur et touche **Connecter la montre**.
+3. Ouvre **Agentchi** sur la montre, accepte les notifications, puis **Paramètres › Ordinateurs et cloud** : saisis l'adresse du serveur et touche **Connecter la montre**.
 
 La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
 
@@ -170,7 +170,7 @@ Il faut le plugin **0.3.0** (`claude plugin update watch-companion`). Pour une s
 
 Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niveau tous les 100 XP. Tu peux la renommer dans les paramètres.
 
-- **Tuile** (balaie le cadran, puis *+* › Claude Companion) : humeur, niveau et jauges. Quand Claude attend une réponse, la tuile affiche la question avec un bouton **Répondre**.
+- **Tuile** (balaie le cadran, puis *+* › Agentchi) : humeur, niveau et jauges. Quand Claude attend une réponse, la tuile affiche la question avec un bouton **Répondre**.
 - **Complication** *Mascotte Claude* (appui long sur le cadran › Modifier) : forme moyenne de la mascotte en jauge ou en texte court, 🔔 quand Claude attend.
 
 ## Publier sur le Play Store

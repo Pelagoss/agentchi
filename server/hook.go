@@ -8,8 +8,8 @@ import (
 	"unicode/utf8"
 )
 
-// HookInput : champs utiles du JSON qu'envoie Claude Code à un hook
-// (https://code.claude.com/docs/en/hooks).
+// HookInput : champs utiles du JSON qu'envoie un hook Claude Code (https://code.claude.com/docs/en/hooks)
+// ou Codex (même format, voir openai/codex, crate codex-rs/hooks).
 type HookInput struct {
 	HookEventName        string `json:"hook_event_name"`
 	SessionID            string `json:"session_id"`
@@ -26,6 +26,27 @@ type HookInput struct {
 	ToolName              string          `json:"tool_name"`
 	ToolInput             json.RawMessage `json:"tool_input"`
 	PermissionSuggestions json.RawMessage `json:"permission_suggestions"`
+
+	// Agent à l'origine du hook (en-tête X-Agent) : vide pour Claude Code, « codex » pour Codex.
+	Agent string `json:"-"`
+}
+
+const agentCodex = "codex"
+
+// AgentName : nom affiché de l'agent.
+func (in HookInput) AgentName() string {
+	if in.Agent == agentCodex {
+		return "Codex"
+	}
+	return "Claude"
+}
+
+// agentOf lit l'en-tête X-Agent ; tout ce qui n'est pas Codex est Claude Code.
+func agentOf(header string) string {
+	if strings.EqualFold(strings.TrimSpace(header), agentCodex) {
+		return agentCodex
+	}
+	return ""
 }
 
 // Payload : ce que lit la montre (voir app/.../net/HookPayload.kt).
@@ -37,6 +58,8 @@ type Payload struct {
 	Account string `json:"a,omitempty"`
 	Cloud   bool   `json:"c,omitempty"`
 	URL     string `json:"u,omitempty"`
+	// Agent : vide pour Claude Code, « codex » pour Codex.
+	Agent string `json:"ag,omitempty"`
 	// Question à laquelle la montre peut répondre (voir ask.go).
 	Ask *AskView `json:"q,omitempty"`
 	// Type « ask_end » : id de la question qui n'attend plus de réponse.
@@ -82,7 +105,7 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 		p.Type = "done"
 		p.Message = in.LastAssistantMessage
 		if strings.TrimSpace(p.Message) == "" {
-			p.Message = "Claude a terminé sa tâche."
+			p.Message = in.AgentName() + " a terminé sa tâche."
 		}
 	case "StopFailure":
 		p.Type = "error"
@@ -113,11 +136,12 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 
 // describe complète le payload : projet, session, origine cloud, message sur une ligne.
 func (p *Payload) describe(in HookInput, remoteSession string) {
+	p.Agent = in.Agent
 	p.Project = projectOf(in.Cwd)
 	p.Session = truncate(in.SessionID, 8)
 	p.Message = compact(p.Message, maxMessageRunes)
 	if p.Message == "" {
-		p.Message = "Événement Claude (" + p.Type + ")"
+		p.Message = "Événement " + in.AgentName() + " (" + p.Type + ")"
 	}
 	if remoteSessionR.MatchString(remoteSession) {
 		p.Cloud = true
@@ -133,7 +157,7 @@ func projectOf(cwd string) string {
 	return path.Base(strings.ReplaceAll(strings.TrimRight(cwd, `/\`), `\`, "/"))
 }
 
-// compact garde les retours à la ligne (la montre affiche le Markdown de Claude : listes, titres…)
+// compact garde les retours à la ligne (la montre affiche le Markdown de l'agent : listes, titres…)
 // et l'indentation, mais pas les espaces en trop ni plus d'une ligne vide d'affilée.
 func compact(s string, n int) string {
 	var out []string
