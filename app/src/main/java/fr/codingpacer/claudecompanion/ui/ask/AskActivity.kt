@@ -44,7 +44,6 @@ import fr.codingpacer.claudecompanion.data.AskAnswer
 import fr.codingpacer.claudecompanion.data.AskQuestion
 import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.net.EventParser
-import fr.codingpacer.claudecompanion.notify.AnswerReceiver
 import fr.codingpacer.claudecompanion.sync.AskResponder
 import fr.codingpacer.claudecompanion.ui.common.rememberTextInput
 import fr.codingpacer.claudecompanion.ui.theme.ClaudeOrange
@@ -64,31 +63,33 @@ class AskActivity : ComponentActivity() {
             finish()
             return
         }
-        val responder = (application as CompanionApp).responder
+        val app = application as CompanionApp
         setContent {
-            CompanionTheme { AskScreen(event, ask, responder, onDone = ::finish) }
+            val settings by app.store.settings.collectAsStateWithLifecycle(initialValue = null)
+            CompanionTheme {
+                AskScreen(event, ask, app.responder, quickReplies = settings?.quickReplies.orEmpty(), onDone = ::finish)
+            }
         }
     }
 
     companion object {
         private const val EXTRA_EVENT = "event"
 
-        fun pendingIntent(context: Context, event: ClaudeEvent): PendingIntent {
-            val intent = Intent(context, AskActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(EXTRA_EVENT, EventParser.json.encodeToString(ClaudeEvent.serializer(), event))
-            return PendingIntent.getActivity(
-                context,
-                event.notificationId,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-        }
+        fun intent(context: Context, event: ClaudeEvent): Intent = Intent(context, AskActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(EXTRA_EVENT, EventParser.json.encodeToString(ClaudeEvent.serializer(), event))
+
+        fun pendingIntent(context: Context, event: ClaudeEvent): PendingIntent = PendingIntent.getActivity(
+            context,
+            event.notificationId,
+            intent(context, event),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 }
 
 @Composable
-private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, onDone: () -> Unit) {
+private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, quickReplies: List<String>, onDone: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberScalingLazyListState(initialCenterItemIndex = 0)
@@ -193,7 +194,7 @@ private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, onD
                 Ask.REPLY -> {
                     item { Detail(ask.detail.ifBlank { event.message }) }
                     item { Action("🎤 Répondre…", busy, primary = true, onClick = reply) }
-                    AnswerReceiver.QUICK_REPLIES.forEach { text ->
+                    quickReplies.forEach { text ->
                         item { Action(text, busy) { send(AskAnswer(AskAnswer.ALLOW, message = text)) } }
                     }
                     item { Action("🏁 Terminer", busy) { send(AskAnswer.pass) } }

@@ -23,6 +23,8 @@ type Device struct {
 	PushToken string `json:"push_token,omitempty"`
 	// Répondre depuis la montre : les hooks /ask attendent sa réponse au lieu de rendre la main tout de suite.
 	Answers bool `json:"answers,omitempty"`
+	// Attente maximale d'une réponse, en secondes (0 : défaut du serveur).
+	AnswerTimeout int `json:"answer_timeout,omitempty"`
 }
 
 // Un code d'appairage, saisi sur un ordinateur ou dans un environnement cloud.
@@ -176,25 +178,32 @@ func (s *Store) ForgetPushToken(deviceID, pushToken string) error {
 	return s.save()
 }
 
-// Answers indique si la montre répond aux questions de Claude (voir ask.go).
-func (s *Store) Answers(deviceID string) bool {
+// Answers indique si la montre répond aux questions de Claude (voir ask.go), et combien de temps l'attendre.
+func (s *Store) Answers(deviceID string) (bool, time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.st.Devices[deviceID]
-	return ok && d.Answers && d.PushToken != ""
+	if !ok {
+		return false, 0
+	}
+	return d.Answers && d.PushToken != "", time.Duration(d.AnswerTimeout) * time.Second
 }
 
-func (s *Store) SetAnswers(deviceID string, on bool) error {
+// SetAnswers active ou non les réponses. timeout en secondes, 0 pour ne pas le changer.
+func (s *Store) SetAnswers(deviceID string, on bool, timeout int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.st.Devices[deviceID]
 	if !ok {
 		return errNotFound
 	}
-	if d.Answers == on {
+	if timeout == 0 {
+		timeout = d.AnswerTimeout
+	}
+	if d.Answers == on && d.AnswerTimeout == timeout {
 		return nil
 	}
-	d.Answers = on
+	d.Answers, d.AnswerTimeout = on, timeout
 	return s.save()
 }
 

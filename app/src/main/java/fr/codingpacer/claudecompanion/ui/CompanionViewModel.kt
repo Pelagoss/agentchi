@@ -9,10 +9,12 @@ import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.EventType
 import fr.codingpacer.claudecompanion.data.VibrationPattern
+import fr.codingpacer.claudecompanion.data.next
 import fr.codingpacer.claudecompanion.net.PairingCode
 import fr.codingpacer.claudecompanion.pet.PetLogic
 import fr.codingpacer.claudecompanion.pet.PetState
 import fr.codingpacer.claudecompanion.push.Push
+import fr.codingpacer.claudecompanion.widget.Widgets
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -75,7 +77,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         val pushToken = Push.token()
         val device = app.api.register(settings.serverUrl, Build.MODEL ?: "Montre", pushToken)
         store.saveDevice(settings.serverUrl, device.id, device.token)
-        if (settings.remoteAnswers) runCatching { app.api.setAnswers(store.settings.first(), true) }
+        if (settings.remoteAnswers) runCatching { app.api.setAnswers(store.settings.first()) }
         val codes = app.api.codes(store.settings.first())
         _pairing.update { it.copy(codes = codes) }
     }
@@ -115,30 +117,47 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     fun refreshPushToken() = viewModelScope.launch {
         val settings = store.settings.first()
         if (settings.isConnected && Push.isConfigured) runCatching { app.api.setPushToken(settings, Push.token()) }
-        if (settings.isConnected) runCatching { app.api.setAnswers(settings, settings.remoteAnswers) }
+        if (settings.isConnected) runCatching { app.api.setAnswers(settings) }
     }
 
     /** Active les réponses depuis la montre, sur la montre et sur le serveur. [onError] : message à afficher. */
-    fun setRemoteAnswers(enabled: Boolean, onError: (String) -> Unit) = viewModelScope.launch {
-        store.updateSettings { it.copy(remoteAnswers = enabled) }
+    fun setRemoteAnswers(enabled: Boolean, onError: (String) -> Unit) =
+        syncAnswers(onError) { it.copy(remoteAnswers = enabled) }
+
+    /** Passe au délai d'attente suivant (1, 2 ou 5 min). */
+    fun nextAnswerDelay(onError: (String) -> Unit) = syncAnswers(onError) { it.copy(answerDelay = it.answerDelay.next()) }
+
+    /** Change le réglage puis l'envoie au serveur ; revient en arrière s'il ne l'accepte pas. */
+    private fun syncAnswers(onError: (String) -> Unit, transform: (CompanionSettings) -> CompanionSettings) = viewModelScope.launch {
+        val before = store.settings.first()
+        store.updateSettings(transform)
         val settings = store.settings.first()
         if (!settings.isConnected) {
-            if (enabled) onError("Connecte d'abord la montre au serveur")
-            store.updateSettings { it.copy(remoteAnswers = false) }
+            if (settings.remoteAnswers) {
+                onError("Connecte d'abord la montre au serveur")
+                store.updateSettings { it.copy(remoteAnswers = false) }
+            }
             return@launch
         }
-        runCatching { app.api.setAnswers(settings, enabled) }.onFailure {
-            store.updateSettings { s -> s.copy(remoteAnswers = !enabled) }
+        runCatching { app.api.setAnswers(settings) }.onFailure {
+            store.updateSettings { s -> s.copy(remoteAnswers = before.remoteAnswers, answerDelay = before.answerDelay) }
             onError(describe(it))
         }
     }
 
-    /** Supprime la montre du serveur : tous ses codes sont révoqués. */
-    fun disconnect() = serverCall(requireConnected = true) {
-        runCatching { app.api.deleteDevice(store.settings.first()) }
-        store.clearDevice()
-        _pairing.value = PairingUi()
+    /** Remplace la réponse rapide [index] (une nouvelle si hors de la liste). Un texte vide la supprime. */
+    fun setQuickReply(index: Int, text: String) = updateSettings { s ->
+        val replies = s.quickReplies.toMutableList()
+        val clean = text.trim().take(60)
+        when {
+            index !in replies.indices -> if (clean.isNotEmpty()) replies += clean
+            clean.isEmpty() -> replies.removeAt(index)
+            else -> replies[index] = clean
+        }
+        s.copy(quickReplies = replies.distinct().take(CompanionSettings.MAX_QUICK_REPLIES))
     }
+
+    fun resetQuickReplies() = updateSettings { it.copy(quickReplies = CompanionSettings.DEFAULT_QUICK_REPLIES) }
 
     private fun serverCall(requireConnected: Boolean = false, block: suspend () -> Unit) = viewModelScope.launch {
         if (requireConnected && !store.settings.first().isConnected) return@launch
@@ -166,7 +185,10 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     fun rename(name: String) = updatePet { s, _ -> s.copy(name = name.take(16)) }
 
     private fun updatePet(transform: (PetState, Long) -> PetState) {
-        viewModelScope.launch { store.updatePet { transform(it, System.currentTimeMillis()) } }
+        viewModelScope.launch {
+            store.updatePet { transform(it, System.currentTimeMillis()) }
+            Widgets.refresh(app)
+        }
     }
 
     fun updateSettings(transform: (CompanionSettings) -> CompanionSettings) {

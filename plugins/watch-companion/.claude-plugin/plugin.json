@@ -1,7 +1,7 @@
 {
   "name": "watch-companion",
   "displayName": "Claude Companion (montre)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Envoie les événements de Claude Code à ta montre Claude Companion, via ton serveur Claude Companion.",
   "author": { "name": "Pelagoss" },
   "homepage": "https://github.com/Pelagoss/claude-companion",

@@ -50,9 +50,17 @@ class CompanionApi(
         call(settings, "PUT", "/v1/device/push", jsonBody { put("token", token) })
     }
 
-    /** Active ou non les réponses depuis la montre : les hooks attendent alors sa réponse. */
-    suspend fun setAnswers(settings: CompanionSettings, enabled: Boolean) {
-        call(settings, "PUT", "/v1/device/answers", jsonBody { put("enabled", enabled) })
+    /** Active ou non les réponses depuis la montre : les hooks attendent alors sa réponse, au plus [CompanionSettings.answerDelay]. */
+    suspend fun setAnswers(settings: CompanionSettings) {
+        call(
+            settings,
+            "PUT",
+            "/v1/device/answers",
+            jsonBody {
+                put("enabled", settings.remoteAnswers)
+                put("timeout", settings.answerDelay.seconds)
+            },
+        )
     }
 
     /** Répond à une question de Claude. HTTP 410 : Claude ne l'attend plus. */

@@ -31,7 +31,7 @@
               "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
-            "timeout": 120,
+            "timeout": 310,
             "type": "http",
             "url": "https://claude-companion.codingpacer.fr/ask"
           }
@@ -70,7 +70,7 @@
               "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
-            "timeout": 120,
+            "timeout": 310,
             "type": "http",
             "url": "https://claude-companion.codingpacer.fr/ask"
           }
@@ -108,7 +108,7 @@
               "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
-            "timeout": 120,
+            "timeout": 310,
             "type": "http",
             "url": "https://claude-companion.codingpacer.fr/ask"
           }

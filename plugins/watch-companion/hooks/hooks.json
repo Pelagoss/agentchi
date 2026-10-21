@@ -37,7 +37,7 @@
               "-f",
               "-sS",
               "-m",
-              "118",
+              "305",
               "-X",
               "POST",
               "-H",
@@ -48,7 +48,7 @@
               "@-",
               "${user_config.server_url}/ask"
             ],
-            "timeout": 120
+            "timeout": 310
           }
         ]
       }
@@ -193,7 +193,7 @@
               "-f",
               "-sS",
               "-m",
-              "118",
+              "305",
               "-X",
               "POST",
               "-H",
@@ -204,7 +204,7 @@
               "@-",
               "${user_config.server_url}/ask"
             ],
-            "timeout": 120
+            "timeout": 310
           }
         ]
       }
@@ -220,7 +220,7 @@
               "-f",
               "-sS",
               "-m",
-              "118",
+              "305",
               "-X",
               "POST",
               "-H",
@@ -231,7 +231,7 @@
               "@-",
               "${user_config.server_url}/ask"
             ],
-            "timeout": 120
+            "timeout": 310
           }
         ]
       }

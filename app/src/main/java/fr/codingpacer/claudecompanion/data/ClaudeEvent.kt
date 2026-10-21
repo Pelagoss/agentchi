@@ -45,7 +45,12 @@ data class ClaudeEvent(
     val time: Long,
     /** Question à laquelle répondre depuis la montre. */
     val ask: Ask? = null,
+    /** Réponse donnée depuis la montre (voir [AskAnswer.summary]), ou [AskAnswer.UNANSWERED]. */
+    val answer: String? = null,
 ) {
+    /** Question qui attend encore une réponse. */
+    val isPendingAsk: Boolean get() = ask != null && answer == null && !ask.isExpired()
+
     /** Une question garde le même identifiant de notification, pour la retirer quand elle expire. */
     val notificationId: Int get() = (ask?.id ?: id).hashCode()
 

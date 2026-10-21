@@ -95,7 +95,7 @@ class EventNotifier(private val context: Context) {
             .setContentIntent(if (ask != null) AskActivity.pendingIntent(context, event) else openAppIntent())
             .setGroup(GROUP)
 
-        if (ask != null) addAnswerActions(builder, ask)
+        if (ask != null) addAnswerActions(builder, ask, settings.quickReplies)
 
         if (event.openableOnPhone) {
             builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, event, notificationId))
@@ -115,7 +115,7 @@ class EventNotifier(private val context: Context) {
      * Réponses possibles directement depuis la notification. Le reste (« toujours autoriser »,
      * choix multiples, refus avec un message) se fait dans [AskActivity], en touchant la notification.
      */
-    private fun addAnswerActions(builder: NotificationCompat.Builder, ask: Ask) {
+    private fun addAnswerActions(builder: NotificationCompat.Builder, ask: Ask, quickReplies: List<String>) {
         builder.setAutoCancel(false)
             .setOnlyAlertOnce(true)
             // Balayée : l'ordinateur pose la question sans attendre la fin du délai.
@@ -141,7 +141,7 @@ class EventNotifier(private val context: Context) {
                 }
             }
             Ask.REPLY -> {
-                builder.addAction(AnswerReceiver.replyAction(context, ask, 1))
+                builder.addAction(AnswerReceiver.replyAction(context, ask, 1, quickReplies))
                 add(2, "🏁 Terminer", AskAnswer.pass)
             }
         }

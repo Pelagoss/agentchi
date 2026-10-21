@@ -5,10 +5,12 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import fr.codingpacer.claudecompanion.data.Ask
 import fr.codingpacer.claudecompanion.data.AskAnswer
+import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.CompanionStore
 import fr.codingpacer.claudecompanion.net.CompanionApi
 import fr.codingpacer.claudecompanion.net.ServerException
 import fr.codingpacer.claudecompanion.notify.EventNotifier
+import fr.codingpacer.claudecompanion.widget.Widgets
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,9 +50,24 @@ class AskResponder(
         } catch (e: Exception) {
             Result.FAILED
         }
+        when (result) {
+            Result.SENT -> store.setAnswer(ask.id, answer.summary(ask))
+            Result.EXPIRED -> store.setAnswer(ask.id, AskAnswer.UNANSWERED)
+            Result.FAILED -> Unit
+        }
         if (result != Result.FAILED) end(ask.id)
         return result
     }
+
+    /** Le serveur a retiré la question restée sans réponse. */
+    suspend fun expired(askId: String) {
+        store.setAnswer(askId, AskAnswer.UNANSWERED)
+        end(askId)
+    }
+
+    /** Dernière question qui attend encore une réponse de la montre. */
+    suspend fun pending(): ClaudeEvent? =
+        store.history.first().firstOrNull { it.isPendingAsk && it.ask!!.id !in ended.value }
 
     /** Laisse l'ordinateur poser la question (notification balayée, événement filtré…). */
     suspend fun pass(ask: Ask) {
@@ -61,6 +78,7 @@ class AskResponder(
     fun end(askId: String) {
         _ended.update { (it + askId).toList().takeLast(50).toSet() }
         notifier.cancel(askId.hashCode())
+        Widgets.refresh(context)
     }
 
     /** Affiche le résultat d'une réponse, depuis n'importe quel thread. */

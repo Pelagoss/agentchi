@@ -332,3 +332,27 @@ func TestAttenteAuDelaDesDelaisDuServeur(t *testing.T) {
 		t.Fatalf("hook : %d %q", r.status, r.body)
 	}
 }
+
+func TestDelaiChoisiSurLaMontre(t *testing.T) {
+	e := newAskEnv(t, 0)
+	if resp, body := call(t, "PUT", e.url+"/v1/device/answers", e.device, `{"enabled":true,"timeout":10}`); resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("délai trop court accepté : %d %s", resp.StatusCode, body)
+	}
+	if resp, body := call(t, "PUT", e.url+"/v1/device/answers", e.device, `{"enabled":true,"timeout":300}`); resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("délai : %d %s", resp.StatusCode, body)
+	}
+	// Réactiver sans délai garde le délai choisi.
+	call(t, "PUT", e.url+"/v1/device/answers", e.device, `{"enabled":true}`)
+	_, body := call(t, "GET", e.url+"/v1/device", e.device, "")
+	if !strings.Contains(body, `"answer_timeout":300`) {
+		t.Fatalf("montre : %s", body)
+	}
+
+	res := e.ask(t, permissionRequest)
+	q := e.question(t)
+	if left := time.Until(time.Unix(q.Ask.Expires, 0)); left < 290*time.Second || left > 301*time.Second {
+		t.Fatalf("échéance dans %v", left)
+	}
+	e.answer(t, q.Ask.ID, `{"decision":"allow"}`)
+	wait(t, res)
+}

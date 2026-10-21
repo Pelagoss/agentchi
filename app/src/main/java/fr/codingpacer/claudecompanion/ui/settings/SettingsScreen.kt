@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +27,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import fr.codingpacer.claudecompanion.BuildConfig
+import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.EventType
 import fr.codingpacer.claudecompanion.data.next
 import fr.codingpacer.claudecompanion.ui.CompanionViewModel
@@ -45,6 +49,11 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
         else toast("L'adresse doit commencer par https://")
     }
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
+    // Réponse rapide en cours de modification (index hors de la liste : nouvelle réponse).
+    var editingReply by remember { mutableIntStateOf(0) }
+    val editReply = rememberTextInput("Réponse rapide (vide pour l'effacer)", allowEmpty = true) { text ->
+        viewModel.setQuickReply(editingReply, text)
+    }
 
     Scaffold(
         timeText = { TimeText() },
@@ -80,9 +89,12 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                 }
             }
             item {
+                Setting("⏱ Attendre ma réponse", settings.answerDelay.label) { viewModel.nextAnswerDelay(onError = ::toast) }
+            }
+            item {
                 Text(
                     if (settings.remoteAnswers) {
-                        "Claude attend ta réponse jusqu'à 2 min, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
+                        "Claude attend ta réponse ${settings.answerDelay.label}, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
                     } else {
                         "À activer quand tu t'éloignes : les questions de Claude arrivent ici avec leurs réponses."
                     },
@@ -90,6 +102,26 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                     color = MaterialTheme.colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+            }
+            section("Réponses rapides")
+            settings.quickReplies.forEachIndexed { index, reply ->
+                item {
+                    Setting("💬 $reply", "Toucher pour modifier ou effacer") {
+                        editingReply = index
+                        editReply()
+                    }
+                }
+            }
+            if (settings.quickReplies.size < CompanionSettings.MAX_QUICK_REPLIES) {
+                item {
+                    Setting("➕ Ajouter", "Nouvelle réponse rapide") {
+                        editingReply = settings.quickReplies.size
+                        editReply()
+                    }
+                }
+            }
+            if (settings.quickReplies != CompanionSettings.DEFAULT_QUICK_REPLIES) {
+                item { Setting("↩️ Rétablir", "Réponses par défaut", onClick = viewModel::resetQuickReplies) }
             }
 
             // --- Événements ---

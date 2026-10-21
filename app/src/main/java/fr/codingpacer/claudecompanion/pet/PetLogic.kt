@@ -108,6 +108,19 @@ object PetLogic {
 
     fun level(xp: Int): Int = 1 + xp / 100
 
+    /** Forme moyenne de la mascotte (0-100), pour la complication. */
+    fun wellbeing(s: PetState): Int = ((s.satiety + s.energy + s.happiness) / 3f).toInt().coerceIn(0, 100)
+
+    /** L'humeur en un emoji, pour la tuile et la complication. */
+    fun emoji(mood: Mood): String = when (mood) {
+        Mood.HAPPY -> "😊"
+        Mood.NEUTRAL -> "🙂"
+        Mood.SAD -> "😢"
+        Mood.HUNGRY -> "🍪"
+        Mood.TIRED -> "🥱"
+        Mood.SLEEPING -> "😴"
+    }
+
     fun moodLine(s: PetState, reaction: Reaction): String = when (reaction) {
         Reaction.ALERT -> "Claude a besoin de toi !"
         Reaction.CELEBRATE -> "Tâche terminée, bravo !"

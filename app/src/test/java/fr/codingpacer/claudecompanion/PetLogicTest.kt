@@ -65,4 +65,13 @@ class PetLogicTest {
         assertEquals(Mood.HAPPY, PetLogic.mood(PetState(satiety = 90f, energy = 90f, happiness = 90f)))
         assertTrue(PetLogic.level(250) == 3)
     }
+
+    @Test
+    fun `forme et emoji pour la tuile et la complication`() {
+        assertEquals(80, PetLogic.wellbeing(PetState()))
+        assertEquals(0, PetLogic.wellbeing(PetState(satiety = 0f, energy = 0f, happiness = 0f)))
+        assertEquals("😊", PetLogic.emoji(PetLogic.mood(PetState())))
+        assertEquals("😴", PetLogic.emoji(PetLogic.mood(PetState(sleeping = true))))
+        Mood.entries.forEach { assertTrue(PetLogic.emoji(it).isNotEmpty()) }
+    }
 }

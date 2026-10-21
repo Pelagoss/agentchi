@@ -42,6 +42,8 @@ class CompanionStore(context: Context) {
         val quietEnd = intPreferencesKey("quiet_end")
         val quietUrgent = booleanPreferencesKey("quiet_urgent")
         val remoteAnswers = booleanPreferencesKey("remote_answers")
+        val answerDelay = stringPreferencesKey("answer_delay")
+        val quickReplies = stringPreferencesKey("quick_replies")
 
         val pet = stringPreferencesKey("pet")
         val history = stringPreferencesKey("history")
@@ -69,6 +71,8 @@ class CompanionStore(context: Context) {
             quietEnd = p[Keys.quietEnd] ?: d.quietEnd,
             quietAllowsUrgent = p[Keys.quietUrgent] ?: d.quietAllowsUrgent,
             remoteAnswers = p[Keys.remoteAnswers] ?: d.remoteAnswers,
+            answerDelay = enumOr(p[Keys.answerDelay], d.answerDelay),
+            quickReplies = p[Keys.quickReplies]?.split('\n')?.filter { it.isNotBlank() } ?: d.quickReplies,
         )
     }.distinctUntilChanged()
 
@@ -93,6 +97,8 @@ class CompanionStore(context: Context) {
             p[Keys.quietEnd] = s.quietEnd
             p[Keys.quietUrgent] = s.quietAllowsUrgent
             p[Keys.remoteAnswers] = s.remoteAnswers
+            p[Keys.answerDelay] = s.answerDelay.name
+            p[Keys.quickReplies] = s.quickReplies.joinToString("\n")
         }
     }
 
@@ -164,6 +170,17 @@ class CompanionStore(context: Context) {
             }
         }
         return added
+    }
+
+    /** Note la réponse à une question dans l'historique, si elle n'en a pas déjà une. */
+    suspend fun setAnswer(askId: String, answer: String) {
+        store.edit { p ->
+            val list = decodeHistory(p[Keys.history])
+            if (list.any { it.ask?.id == askId && it.answer == null }) {
+                val next = list.map { if (it.ask?.id == askId && it.answer == null) it.copy(answer = answer) else it }
+                p[Keys.history] = EventParser.json.encodeToString(HISTORY_SERIALIZER, next)
+            }
+        }
     }
 
     suspend fun clearHistory() {

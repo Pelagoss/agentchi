@@ -11,14 +11,17 @@ import androidx.wear.input.RemoteInputIntentHelper
 
 private const val KEY = "text"
 
-/** Ouvre la saisie texte de Wear OS (clavier, dictée…) et renvoie le texte saisi. */
+/**
+ * Ouvre la saisie texte de Wear OS (clavier, dictée…) et renvoie le texte saisi.
+ * [allowEmpty] : un texte vide est aussi renvoyé (pour effacer), pas seulement une annulation.
+ */
 @Composable
-fun rememberTextInput(label: String, onResult: (String) -> Unit): () -> Unit {
+fun rememberTextInput(label: String, allowEmpty: Boolean = false, onResult: (String) -> Unit): () -> Unit {
     val callback by rememberUpdatedState(onResult)
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data: Intent = result.data ?: return@rememberLauncherForActivityResult
-        val text = RemoteInput.getResultsFromIntent(data)?.getCharSequence(KEY)?.toString()?.trim()
-        if (!text.isNullOrEmpty()) callback(text)
+        val text = RemoteInput.getResultsFromIntent(data)?.getCharSequence(KEY)?.toString()?.trim() ?: return@rememberLauncherForActivityResult
+        if (text.isNotEmpty() || allowEmpty) callback(text)
     }
     return {
         val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
