@@ -77,7 +77,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { ListHeader { Text("Ordinateurs et cloud") } }
+            item { ListHeader { Text("Serveur") } }
 
             val created = ui.newCode
             val createdCode = created?.code
@@ -94,7 +94,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                 !settings.isConnected -> {
                     hint("Connecte la montre à ${host(settings.serverUrl)} pour appairer tes ordinateurs.")
                     item { Action(if (ui.busy) "Connexion…" else "🔗 Connecter la montre", null, primary = true) { if (!ui.busy) viewModel.connect() } }
-                    item { Action("🌐 Serveur", settings.serverUrl, onClick = editServer) }
+                    item { Action("🌐 Adresse", settings.serverUrl, onClick = editServer) }
                 }
 
                 created != null && createdCode != null -> {
@@ -116,6 +116,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
 
                 else -> {
                     item { Action(if (ui.busy) "…" else "➕ Nouveau code", "Un par ordinateur ou environnement cloud", primary = true, onClick = newCode) }
+                    if (ui.codes.isNotEmpty()) item { ListHeader { Text("Ordinateurs et cloud", color = MaterialTheme.colors.primary) } }
                     if (ui.codes.isEmpty() && !ui.busy) hint("Aucun ordinateur appairé pour l'instant.")
                     ui.codes.sortedByDescending { it.lastUsed ?: it.created }.forEach { code ->
                         item {
@@ -140,7 +141,7 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                             Toast.makeText(context, "Test envoyé…", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    item { Action("🌐 Serveur", settings.serverUrl, onClick = editServer) }
+                    item { Action("🌐 Adresse", settings.serverUrl, onClick = editServer) }
                     item {
                         val confirming = confirm == DISCONNECT
                         Action(

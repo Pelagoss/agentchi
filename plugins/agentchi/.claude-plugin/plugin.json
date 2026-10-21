@@ -1,7 +1,7 @@
 {
   "name": "agentchi",
   "displayName": "Agentchi (montre)",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Envoie les événements de Claude Code à ta montre Agentchi et lui permet d'y répondre, via ton serveur Agentchi.",
   "author": {
     "name": "Pelagoss"

@@ -4,8 +4,9 @@ Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pend
 
 - 🔔 **Leurs événements sur la montre** : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone. Le Markdown des agents est mis en forme : gras, italique, `code`, titres, listes à puces.
 - ⌚ **Leur répondre depuis la montre** : autoriser ou refuser une commande, choisir parmi les options proposées (une ou plusieurs), approuver un plan, ou répondre au clavier ou à la voix quand l'agent a fini.
-- 🦀 **Une mascotte virtuelle à soigner** : nourris-la, joue avec elle, mets-la au lit. Elle fait la fête quand l'agent a fini et s'affole quand il t'attend. **Personnalisable** (espèce, couleurs, accessoires, icônes d'actions), avec sa **tuile**, sa **complication** et même l'**icône de l'appli** assortie.
-- ⚙️ **Des paramètres rangés par catégorie** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, heures calmes.
+- 🦀 **Une mascotte virtuelle à soigner** : nourris-la, joue avec elle, mets-la au lit. Elle fait la fête quand l'agent a fini et s'affole quand il t'attend. **Personnalisable** (espèce, couleurs, accessoires, icônes d'actions), avec sa **tuile**, sa **complication**, son **cadran** où elle s'affiche en grand, et même l'**icône de l'appli** assortie. Des **séries et succès** récompensent les jours d'affilée avec des tâches terminées et les réponses données depuis la montre.
+- 📋 **Les sessions en cours** d'un coup d'œil : au travail, en attente de ta réponse, terminées.
+- ⚙️ **Des paramètres rangés par catégorie** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, **résumé groupé** des événements non urgents, heures calmes, **Ne pas déranger et mode Coucher** de la montre.
 
 > Application non officielle, sans lien avec Anthropic ni OpenAI.
 
@@ -97,7 +98,7 @@ Sans Docker : `go build` dans `server/`, puis lance le binaire derrière ton rev
 
 ### 3. La montre
 
-Onglet **Actions** du dépôt → dernier build vert → artefact `agentchi-debug`, qui contient `agentchi-montre.apk` (compilé avec les valeurs Firebase de l'étape 1) :
+Onglet **Actions** du dépôt → dernier build vert → artefact `agentchi-debug`, qui contient `agentchi-montre.apk` (compilé avec les valeurs Firebase de l'étape 1) et le cadran `agentchi-cadran.apk` :
 
 ```bash
 gh run download -R Pelagoss/claude-companion -n agentchi-debug
@@ -109,8 +110,9 @@ gh run download -R Pelagoss/claude-companion -n agentchi-debug
    adb pair <ip>:<port-appairage>      # code affiché sur la montre
    adb connect <ip>:<port>
    adb install agentchi-montre.apk
+   adb install agentchi-cadran.apk     # facultatif : le cadran Agentchi
    ```
-3. Ouvre **Agentchi** sur la montre, accepte les notifications, puis **Paramètres › Serveur › Ordinateurs et cloud** : saisis l'adresse du serveur et touche **Connecter la montre**.
+3. Ouvre **Agentchi** sur la montre, accepte les notifications, puis **Paramètres › Serveur** : saisis l'adresse du serveur et touche **Connecter la montre**.
 
 La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
 
@@ -118,7 +120,7 @@ Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https:
 
 ### 4. Claude Code, sur chaque ordinateur
 
-Sur la montre : **Paramètres › Serveur › Ordinateurs et cloud › Nouveau code**, nomme l'ordinateur et note le code. Puis, sur l'ordinateur :
+Sur la montre : **Paramètres › Serveur › Nouveau code**, nomme l'ordinateur et note le code. Puis, sur l'ordinateur :
 
 ```bash
 claude plugin install agentchi --marketplace Pelagoss/claude-companion \
@@ -154,11 +156,11 @@ Si tu as déjà un `~/.codex/hooks.json`, fusionne les deux plutôt que de l'éc
 
 Dans l'appli Codex (desktop), tu peux aussi installer le plugin `agentchi-codex` : `codex plugin marketplace add Pelagoss/claude-companion`, puis l'installer depuis le répertoire des plugins. Il lit le code dans `AGENTCHI_CODE` et l'adresse dans `AGENTCHI_SERVER` (défaut `https://agentchi.codingpacer.fr`).
 
-Avec Codex, la montre reçoit les fins de tâche, les demandes d'autorisation (commandes, modifications de fichiers, outils MCP) et peut y répondre. Ses questions à choix (`request_user_input`) restent sur l'ordinateur : Codex ne les passe pas aux hooks.
+Avec Codex, la montre reçoit les fins de tâche, les demandes d'autorisation (commandes, modifications de fichiers, outils MCP) et peut y répondre. Ses questions à choix (`request_user_input`) restent sur l'ordinateur : Codex ne les passe pas aux hooks. Dans *Sessions en cours*, une session Codex ne repasse pas « au travail » quand tu lui écris : ses hooks ne relaient pas l'envoi d'un message.
 
 ### Vérifier
 
-**Paramètres › Serveur › Ordinateurs et cloud › Tester le push** : le serveur envoie une notification par FCM et affiche l'erreur sur la montre si elle ne part pas (clé du compte de service absente, jeton refusé…). Firebase garde un push 24 h si la montre est éteinte ou hors ligne.
+**Paramètres › Serveur › Tester le push** : le serveur envoie une notification par FCM et affiche l'erreur sur la montre si elle ne part pas (clé du compte de service absente, jeton refusé…). Firebase garde un push 24 h si la montre est éteinte ou hors ligne.
 
 ## Répondre depuis la montre
 
@@ -173,7 +175,33 @@ Sur la montre : **Paramètres › Réponses › Répondre depuis la montre**. Ac
 
 Les réponses simples se donnent depuis la notification. Touche-la pour l'écran complet : texte entier, choix multiples, compte à rebours. La **tuile** et la **complication** signalent aussi une question en attente et y mènent d'un toucher. L'**historique** garde ce que tu as répondu sous chaque question.
 
+Chaque réponse donnée depuis la montre compte pour les [succès](#séries-et-succès).
+
 Le hook attend ta réponse **1, 2 ou 5 minutes** selon le réglage *Attendre ma réponse* (2 par défaut). Les **réponses rapides** se modifient dans *Réponses › Réponses rapides*. Passé le délai, ou si tu **balaies la notification**, l'agent pose la question à l'écran comme d'habitude. Réglage désactivé, le serveur rend la main tout de suite : rien ne change sur l'ordinateur, la fin de tâche reste une simple notification.
+
+## Notifications
+
+**Paramètres › Notifications** :
+
+- **Me notifier quand…** : les événements à recevoir, urgents (autorisation, réponse attendue, erreur) ou non.
+- **Styles des alertes** : plein écran, notification ou discrète, et motif de vibration, séparément pour les urgences et le reste.
+- **Résumé groupé** (activé par défaut) : les événements non urgents s'ajoutent à une seule notification, « ✅ 3 tâches terminées · 1 session terminée — sur 2 projets », avec les dernières lignes en détail. Seule la première vibre ; touche le résumé pour ouvrir l'historique. Il repart de zéro quand tu le balaies. Les urgences et les questions auxquelles répondre restent à part.
+- **Suivre la montre** (activé par défaut) : quand *Ne pas déranger* ou le *mode Coucher* est actif, les notifications d'Agentchi deviennent discrètes et ne vibrent plus, comme pendant les **heures calmes** (plage horaire réglable). *Laisser passer les urgences* vaut pour les deux.
+
+## Sessions en cours
+
+Depuis l'écran de la mascotte, **Sessions en cours** liste les sessions des agents, celles qui t'attendent en premier :
+
+| État | Quand |
+|---|---|
+| ⚙️ Au travail | tu viens d'écrire à l'agent, ou il avance (sous-agent, compaction), ou tu as répondu depuis la montre |
+| 🔔 Attend ta réponse | demande d'autorisation, question, réponse attendue |
+| ✅ À toi de jouer | tâche terminée, ou session démarrée |
+| ⚠️ Erreur | erreur API |
+
+Toucher une session ouvre la question en attente, ou la session cloud sur le téléphone. Une session disparaît à sa fermeture (`SessionEnd`), ou au bout de 12 h sans nouvelles. La montre reçoit tous ces événements, même ceux que tu ne veux pas en notification : seuls ceux cochés dans *Me notifier quand…* s'affichent.
+
+« Au travail » vient du hook `UserPromptSubmit` (plugin Claude Code et sessions cloud) : il prévient le serveur quand tu écris à l'agent, sans transmettre ton message à la montre. Ces pushs partent en priorité normale (ils ne réveillent pas la montre) et sans identifiant, pour que les versions précédentes de l'appli les ignorent.
 
 ## La mascotte
 
@@ -196,7 +224,24 @@ Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niv
 Tout le dessin vient de `MascotSprite` (grille pixel-art) : l'appli, la tuile et les icônes d'appli (générées par `AppIconsTest`) restent toujours d'accord.
 
 - **Tuile** (balaie le cadran, puis *+* › Agentchi) : la mascotte, son humeur et ses jauges. Quand un agent attend une réponse, la tuile affiche la question avec un bouton **Répondre**.
-- **Complication** *Mascotte Agentchi* (appui long sur le cadran › Modifier) : forme moyenne de la mascotte en jauge ou en texte court, 🔔 quand un agent attend.
+- **Complication** *Mascotte Agentchi* (appui long sur le cadran › Modifier) : forme moyenne de la mascotte en jauge ou en texte court, 🔔 quand un agent attend, ou la mascotte elle-même en image.
+- **Cadran Agentchi** (`agentchi-cadran.apk`, Wear OS 4 ou plus récent) : l'heure, la mascotte en grand au centre et sa forme en bas. Il est fait en [Watch Face Format](https://developer.android.com/training/wearables/wff) : la mascotte vient de la complication de l'appli, elle suit donc son humeur et s'affole quand un agent attend. Choisis-le d'un appui long sur le cadran actuel. Si la mascotte n'apparaît pas, *Personnaliser* › emplacement *Mascotte* › *Mascotte Agentchi*. En mode veille (écran toujours allumé), seule l'heure reste.
+
+### Séries et succès
+
+Depuis l'écran de la mascotte, **Succès** affiche la **série** en cours (jours d'affilée avec au moins une tâche terminée, et ton record) puis les succès, débloqués ou non, avec leur avancement. Un succès débloqué envoie une notification et la mascotte fait la fête.
+
+| | Succès | Comment |
+|---|---|---|
+| 🎉 🛠️ 🏗️ 🚀 | Premier succès, Bon début, Centurion, Usine à code | 1, 10, 100 et 1 000 tâches terminées |
+| 🔥 📅 🗓️ | Trois jours, une semaine, un mois d'affilée | Série de 3, 7 et 30 jours |
+| ✅ 🛂 | Feu vert, Douanier | 1 et 100 autorisations données depuis la montre |
+| 🛑 | Garde-fou | Premier refus depuis la montre |
+| 🗣️ 💬 | Premiers mots, Bavard | 1 et 50 messages envoyés depuis la montre (clavier ou voix) |
+| 🗺️ 🧩 | Architecte, Décideur | Premier plan approuvé, première question à choix répondue |
+| 🦉 | Oiseau de nuit | Une tâche terminée entre minuit et 5 h |
+| 🍪 | Aux petits soins | Nourrir la mascotte 50 fois |
+| 👑 🌟 | Niveau 5, Niveau 10 | Niveaux de la mascotte |
 
 ## Publier sur le Play Store
 
@@ -204,7 +249,7 @@ Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION
 
 ## Confidentialité
 
-- **Serveur** : il est à toi. Il reçoit les événements en HTTPS (nom du dossier, identifiant court de session, 300 premiers caractères du dernier message de l'agent) et les transmet aussitôt à Firebase, sans les stocker. Les hooks envoient du JSON brut : pas de chiffrement de bout en bout, la confiance repose sur ton serveur et sur Firebase Cloud Messaging (Google), qui achemine le push.
+- **Serveur** : il est à toi. Il reçoit les événements en HTTPS (nom du dossier, identifiant court de session, 300 premiers caractères du dernier message de l'agent) et les transmet aussitôt à Firebase, sans les stocker. Le hook `UserPromptSubmit` lui envoie aussi ton message à l'agent : il n'en garde rien et ne le transmet pas à la montre, seulement le fait qu'un message est parti. Les hooks envoient du JSON brut : pas de chiffrement de bout en bout, la confiance repose sur ton serveur et sur Firebase Cloud Messaging (Google), qui achemine le push.
 - **Réponses** : une question en attente ne vit qu'en mémoire, le temps de la réponse. Seule la montre qui l'a reçue peut y répondre, une seule fois. Une montre qui répond peut autoriser des commandes : désactive le réglage si tu la prêtes.
 - **Codes et jetons** : le serveur n'en garde que l'empreinte SHA-256. Chaque montre ne lit que ses événements. Les tentatives avec un code invalide sont limitées.
 
@@ -212,13 +257,15 @@ Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION
 
 - Montre : Kotlin, Jetpack Compose (Wear OS Material), tuiles ProtoLayout, complications, Firebase Cloud Messaging, DataStore, OkHttp
 - Serveur : Go, bibliothèque standard uniquement
-- `./gradlew :app:testDebugUnitTest` : mascotte et sprites, icônes d'appli à jour, lecture des pushs, filtres, Markdown
+- `./gradlew :app:testDebugUnitTest` : mascotte et sprites, icônes d'appli à jour, lecture des pushs, filtres, Markdown, résumé groupé, sessions en cours, séries et succès
+- `./gradlew :watchface:assembleDebug` : le cadran. Son `watchface.xml` suit le schéma [Watch Face Format](https://github.com/google/watchface) version 1 (XSD 1.1, à valider avec Xerces : xmllint ne lit pas ce schéma)
 - `cd server && go test ./...` : traduction des hooks (Claude Code, Codex), réponses depuis la montre, appairage, isolation entre montres, envoi FCM (JWT, OAuth, jeton périmé), persistance, plugin Codex à jour
 - `claude plugin validate .` : marketplace et plugin Claude Code
 - Fichiers générés : `UPDATE_CODEX_HOOKS=1 go test -run TestPluginCodex` (dans `server/`) et `UPDATE_APP_ICONS=1 ./gradlew :app:testDebugUnitTest --tests '*AppIconsTest*'`
 
 ```
-app/              appli Wear OS : push/ (FCM), net/ (API du serveur), notify/, pet/ (logique et sprites), sync/, text/, ui/, widget/ (tuile, complication, icônes)
+app/              appli Wear OS : push/ (FCM), net/ (API du serveur), notify/, pet/ (logique, sprites, succès), sync/, text/, ui/, widget/ (tuile, complication, icônes)
+watchface/        cadran Watch Face Format (ressources seules, sans code)
 server/           serveur Go : hooks → FCM, réponses, API d'appairage, Docker + Caddy
 plugins/          plugin Claude Code agentchi (.claude-plugin/marketplace.json) et Codex agentchi-codex (.agents/plugins/marketplace.json)
 keystore/         clé de debug (même signature d'un build à l'autre)

@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import fr.codingpacer.agentchi.CompanionApp
 import fr.codingpacer.agentchi.data.AgentEvent
+import fr.codingpacer.agentchi.data.AgentSession
 import fr.codingpacer.agentchi.data.CompanionSettings
 import fr.codingpacer.agentchi.data.EventType
 import fr.codingpacer.agentchi.data.VibrationPattern
@@ -14,7 +15,9 @@ import fr.codingpacer.agentchi.data.AppIcon
 import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.widget.AppIconSwitcher
 import fr.codingpacer.agentchi.net.PairingCode
+import fr.codingpacer.agentchi.pet.Achievements
 import fr.codingpacer.agentchi.pet.PetLogic
+import fr.codingpacer.agentchi.pet.Progress
 import fr.codingpacer.agentchi.pet.PetState
 import fr.codingpacer.agentchi.push.Push
 import fr.codingpacer.agentchi.widget.Widgets
@@ -57,7 +60,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- Serveur et ordinateurs appairés ---
 
-    /** État de l'écran « Ordinateurs et cloud ». [newCode] n'est affiché qu'une fois, à sa création. */
+    /** État de la page « Serveur » (ordinateurs et cloud appairés). [newCode] n'est affiché qu'une fois, à sa création. */
     data class PairingUi(
         val codes: List<PairingCode> = emptyList(),
         val newCode: PairingCode? = null,
@@ -201,7 +204,16 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     val history: StateFlow<List<AgentEvent>> =
         store.history.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun feed() = updatePet { s, now -> PetLogic.feed(s, now) }
+    val sessions: StateFlow<List<AgentSession>> =
+        store.sessions.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val progress: StateFlow<Progress> =
+        store.progress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Progress())
+
+    fun feed() {
+        updatePet { s, now -> PetLogic.feed(s, now) }
+        viewModelScope.launch { app.rewards.record { Achievements.onFeed(it) } }
+    }
     fun play() = updatePet { s, now -> PetLogic.play(s, now) }
     fun toggleSleep() = updatePet { s, now -> PetLogic.toggleSleep(s, now) }
     fun caress() = updatePet { s, now -> PetLogic.pet(s, now) }
@@ -210,6 +222,8 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     private fun updatePet(transform: (PetState, Long) -> PetState) {
         viewModelScope.launch {
             store.updatePet { transform(it, System.currentTimeMillis()) }
+            // L'XP gagnée en jouant peut faire monter de niveau : succès de niveau.
+            app.rewards.record { it }
             Widgets.refresh(app)
         }
     }

@@ -33,6 +33,9 @@ type HookInput struct {
 
 const agentCodex = "codex"
 
+// typePrompt : message envoyé à l'agent, jamais notifié (voir Server.push).
+const typePrompt = "prompt"
+
 // AgentName : nom affiché de l'agent.
 func (in HookInput) AgentName() string {
 	if in.Agent == agentCodex {
@@ -123,6 +126,10 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 	case "PreCompact":
 		p.Type = "compact"
 		p.Message = "Compaction du contexte" + paren(in.Trigger)
+	case "UserPromptSubmit":
+		// La session se remet au travail (écran « Sessions en cours ») : le message lui-même n'est pas transmis.
+		p.Type = typePrompt
+		p.Message = "Message envoyé à " + in.AgentName()
 	case "", "PermissionRequest", "PreToolUse":
 		// Les questions passent par /ask (ask.go), qui les affiche lui-même.
 		return p, false

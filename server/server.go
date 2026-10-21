@@ -154,12 +154,23 @@ func (s *Server) push(ctx context.Context, deviceID string, p Payload, ttl time.
 	if token == "" {
 		return errNoPushToken
 	}
-	err := s.pusher.Send(ctx, token, Push{ID: "e" + randomToken(12), Time: time.Now().Unix(), Payload: p.JSON(), TTL: ttl})
+	msg := Push{ID: "e" + randomToken(12), Time: time.Now().Unix(), Payload: p.JSON(), TTL: ttl}
+	if p.Type == typePrompt {
+		// Sans id, les versions de l'appli d'avant l'écran « Sessions en cours » l'ignorent au lieu
+		// de le notifier. Rien d'urgent : priorité normale, et périmé au bout de 10 minutes.
+		msg.ID, msg.Normal = "", true
+		if msg.TTL == 0 {
+			msg.TTL = promptTTL
+		}
+	}
+	err := s.pusher.Send(ctx, token, msg)
 	if errors.Is(err, errUnregistered) {
 		_ = s.store.ForgetPushToken(deviceID, token)
 	}
 	return err
 }
+
+const promptTTL = 10 * time.Minute
 
 var errNoPushToken = errors.New("la montre n'a pas encore transmis son jeton FCM")
 
@@ -304,7 +315,7 @@ func (s *Server) publicURL(r *http.Request) string {
 }
 
 // Événements relayés depuis une session cloud. SessionStart n'accepte pas les hooks http.
-var cloudEvents = []string{"Notification", "StopFailure", "SubagentStop", "SessionEnd", "PreCompact"}
+var cloudEvents = []string{"Notification", "StopFailure", "SubagentStop", "SessionEnd", "PreCompact", "UserPromptSubmit"}
 
 // askTimeoutHook : délai du hook /ask, un peu au-delà de maxAskTimeout.
 const askTimeoutHook = 310
@@ -403,7 +414,7 @@ pre{background:var(--card);border:1px solid var(--line);border-radius:8px;paddin
 <p>Ce serveur relaie les hooks de Claude Code et de Codex vers ta montre, et lui permet d'y répondre. Adresse du serveur : <code class="k">{{.URL}}</code></p>
 
 <h2>1. Sur la montre</h2>
-<p><b>Paramètres › Serveur › Ordinateurs et cloud › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud : chacun se révoque séparément.</p>
+<p><b>Paramètres › Serveur › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud : chacun se révoque séparément.</p>
 
 <h2>2. Claude Code (terminal, IDE, appli Desktop, Remote Control)</h2>
 <p>Une seule commande, avec ton code :</p>

@@ -16,22 +16,39 @@ object MascotBitmap {
     const val HEIGHT_DP = 40f
 
     fun png(look: MascotSprite.Look, face: MascotSprite.Face): ByteArray {
-        val bitmap = Bitmap.createBitmap(WIDTH_PX, HEIGHT_PX, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        MascotSprite.pixels(look, face).forEach { p ->
-            paint.color = p.argb
-            val top = (p.y + p.dy) * CELL
-            if (p.round) {
-                canvas.drawCircle((p.x + 0.5f) * CELL, top + p.h * CELL / 2, CELL * 0.46f, paint)
-            } else {
-                canvas.drawRect(p.x * CELL.toFloat(), top, (p.x + 1f) * CELL, top + p.h * CELL, paint)
-            }
-        }
+        val bitmap = bitmap(look, face)
         return ByteArrayOutputStream().use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             bitmap.recycle()
             out.toByteArray()
+        }
+    }
+
+    /**
+     * La mascotte centrée sur une image carrée, pour la complication du cadran. Grandes cases ([cell] pixels) :
+     * le cadran l'affiche en grand, et un pixel-art agrandi par le système serait flou.
+     */
+    fun square(look: MascotSprite.Look, face: MascotSprite.Face, cell: Int = 24): Bitmap {
+        val side = MascotSprite.WIDTH * cell
+        val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+        draw(Canvas(bitmap), look, face, cell, dy = (side - MascotSprite.HEIGHT * cell) / 2f)
+        return bitmap
+    }
+
+    fun bitmap(look: MascotSprite.Look, face: MascotSprite.Face): Bitmap =
+        Bitmap.createBitmap(WIDTH_PX, HEIGHT_PX, Bitmap.Config.ARGB_8888).also { draw(Canvas(it), look, face, CELL, 0f) }
+
+    private fun draw(canvas: Canvas, look: MascotSprite.Look, face: MascotSprite.Face, cell: Int, dy: Float) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        MascotSprite.pixels(look, face).forEach { p ->
+            paint.color = p.argb
+            val left = p.x * cell.toFloat()
+            val top = dy + (p.y + p.dy) * cell
+            if (p.round) {
+                canvas.drawCircle(left + cell * 0.5f, top + p.h * cell / 2, cell * 0.46f, paint)
+            } else {
+                canvas.drawRect(left, top, left + cell, top + p.h * cell, paint)
+            }
         }
     }
 

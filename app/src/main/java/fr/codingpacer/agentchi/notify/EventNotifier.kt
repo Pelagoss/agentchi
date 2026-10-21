@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
+import android.os.Bundle
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -27,10 +28,13 @@ import fr.codingpacer.agentchi.data.AskAnswer
 import fr.codingpacer.agentchi.data.AgentEvent
 import fr.codingpacer.agentchi.data.CompanionSettings
 import fr.codingpacer.agentchi.data.VibrationPattern
+import fr.codingpacer.agentchi.net.EventParser
+import fr.codingpacer.agentchi.pet.Achievement
 import fr.codingpacer.agentchi.ui.MainActivity
 import fr.codingpacer.agentchi.text.markdownSpanned
 import fr.codingpacer.agentchi.ui.alert.AlertActivity
 import fr.codingpacer.agentchi.ui.ask.AskActivity
+import kotlinx.serialization.builtins.ListSerializer
 
 /**
  * Affiche les notifications selon le style choisi par l'utilisateur.
@@ -61,6 +65,15 @@ class EventNotifier(private val context: Context) {
 
     fun notify(event: AgentEvent, settings: CompanionSettings, muted: Boolean = false) {
         if (!canPost()) return
+        // Résumé groupé : un événement non urgent rejoint ceux encore affichés, sans vibrer de nouveau.
+        val digestible = settings.groupInfo && Digest.accepts(event)
+        if (digestible) {
+            val earlier = takeDigestEvents().filter { it.id != event.id }
+            if (earlier.isNotEmpty()) {
+                notifyDigest((listOf(event) + earlier).take(Digest.MAX_EVENTS))
+                return
+            }
+        }
         val style = if (muted) AlertStyle.SILENT else settings.styleFor(event.type)
         val channel = when {
             style == AlertStyle.SILENT -> CH_SILENT
@@ -100,9 +113,10 @@ class EventNotifier(private val context: Context) {
                     else -> NotificationCompat.PRIORITY_DEFAULT
                 },
             )
-            .setContentIntent(if (ask != null) AskActivity.pendingIntent(context, event) else openAppIntent())
+            .setContentIntent(if (ask != null) AskActivity.pendingIntent(context, event) else openAppIntent(null))
             .setGroup(GROUP)
 
+        if (digestible) builder.addExtras(digestExtras(listOf(event)))
         if (ask != null) addAnswerActions(builder, ask, settings.quickReplies)
 
         if (event.openableOnPhone) {
@@ -118,6 +132,64 @@ class EventNotifier(private val context: Context) {
 
         if (style != AlertStyle.SILENT) vibrate(settings.vibrationFor(event.type))
     }
+
+    /**
+     * Une notification pour tous les événements non urgents pas encore lus : « ✅ 3 tâches terminées
+     * sur 2 projets ». Elle remplace les notifications individuelles et ouvre l'historique.
+     */
+    private fun notifyDigest(events: List<AgentEvent>) {
+        val summary = Digest.summary(events)
+        val style = NotificationCompat.InboxStyle().setBigContentTitle(summary.title).setSummaryText(summary.text)
+        summary.lines.forEach { style.addLine(it) }
+        val builder = NotificationCompat.Builder(context, CH_INFO)
+            .setSmallIcon(R.drawable.ic_stat_agentchi)
+            .setColor(ContextCompat.getColor(context, R.color.brand_orange))
+            .setContentTitle(summary.title)
+            .setContentText(summary.text)
+            .setStyle(style)
+            .setNumber(events.size)
+            .setWhen(events.first().time * 1000)
+            .setShowWhen(true)
+            .setAutoCancel(true)
+            // Déjà signalé par la première notification : le résumé se met à jour en silence.
+            .setSilent(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setContentIntent(openAppIntent(MainActivity.ROUTE_HISTORY))
+            .setGroup(GROUP)
+            .addExtras(digestExtras(events))
+        NotificationManagerCompat.from(context).notify(DIGEST_ID, builder.build())
+    }
+
+    /** Succès débloqués : une notification chacun, qui ouvre la liste des succès. */
+    fun notifyAchievements(achievements: List<Achievement>) {
+        if (!canPost()) return
+        achievements.forEach { a ->
+            val builder = NotificationCompat.Builder(context, CH_INFO)
+                .setSmallIcon(R.drawable.ic_stat_agentchi)
+                .setColor(ContextCompat.getColor(context, R.color.brand_orange))
+                .setContentTitle("🏆 Succès débloqué")
+                .setContentText("${a.emoji} ${a.title} : ${a.description}")
+                .setStyle(NotificationCompat.BigTextStyle().bigText("${a.emoji} ${a.title}\n${a.description}"))
+                .setAutoCancel(true)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setContentIntent(openAppIntent(MainActivity.ROUTE_ACHIEVEMENTS))
+            NotificationManagerCompat.from(context).notify(ACHIEVEMENT_ID + a.ordinal, builder.build())
+        }
+    }
+
+    /** Événements des notifications regroupables encore affichées ; les individuelles sont retirées. */
+    private fun takeDigestEvents(): List<AgentEvent> {
+        val nm = context.getSystemService(NotificationManager::class.java)
+        val active = runCatching { nm.activeNotifications.toList() }.getOrDefault(emptyList())
+        return active.flatMap { sbn ->
+            val raw = sbn.notification.extras.getString(EXTRA_DIGEST) ?: return@flatMap emptyList()
+            if (sbn.id != DIGEST_ID) nm.cancel(sbn.id)
+            runCatching { EventParser.json.decodeFromString(DIGEST_SERIALIZER, raw) }.getOrDefault(emptyList())
+        }.distinctBy { it.id }.sortedByDescending { it.time }
+    }
+
+    private fun digestExtras(events: List<AgentEvent>) =
+        Bundle().apply { putString(EXTRA_DIGEST, EventParser.json.encodeToString(DIGEST_SERIALIZER, events)) }
 
     /**
      * Réponses possibles directement depuis la notification. Le reste (« toujours autoriser »,
@@ -177,10 +249,13 @@ class EventNotifier(private val context: Context) {
 
     fun cancel(notificationId: Int) = NotificationManagerCompat.from(context).cancel(notificationId)
 
-    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
+    /** Ouvre l'appli, sur l'écran [route] s'il est donné (voir [MainActivity.EXTRA_ROUTE]). */
+    private fun openAppIntent(route: String?): PendingIntent = PendingIntent.getActivity(
         context,
-        0,
-        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        route?.hashCode() ?: 0,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .apply { if (route != null) putExtra(MainActivity.EXTRA_ROUTE, route) },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
@@ -195,5 +270,9 @@ class EventNotifier(private val context: Context) {
         const val CH_INFO_SOUND = "agent_info_sound"
         const val CH_SILENT = "agent_silent"
         private const val GROUP = "agent_events"
+        private const val DIGEST_ID = 4_202
+        private const val ACHIEVEMENT_ID = 4_300
+        private const val EXTRA_DIGEST = "fr.codingpacer.agentchi.digest"
+        private val DIGEST_SERIALIZER = ListSerializer(AgentEvent.serializer())
     }
 }

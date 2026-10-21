@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "agentchi"
 include(":app")
+include(":watchface")

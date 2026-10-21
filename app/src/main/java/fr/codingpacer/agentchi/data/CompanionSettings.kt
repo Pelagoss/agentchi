@@ -60,6 +60,10 @@ data class CompanionSettings(
     val quietStart: Int = 22,
     val quietEnd: Int = 7,
     val quietAllowsUrgent: Boolean = true,
+    /** Ne pas déranger ou mode Coucher de la montre : mêmes effets que les heures calmes. */
+    val followSystemQuiet: Boolean = true,
+    /** Un seul résumé pour les événements non urgents (« 3 tâches terminées sur 2 projets »). */
+    val groupInfo: Boolean = true,
     /** Répondre depuis la montre aux autorisations, questions et messages des agents. */
     val remoteAnswers: Boolean = false,
     val answerDelay: AnswerDelay = AnswerDelay.TWO_MINUTES,
@@ -86,11 +90,13 @@ data class CompanionSettings(
     fun styleFor(type: EventType) = if (type.urgent) urgentStyle else infoStyle
     fun vibrationFor(type: EventType) = if (type.urgent) urgentVibration else infoVibration
 
-    /** Indique si un événement doit être muet à l'heure donnée (0-23). */
-    fun isMuted(type: EventType, hour: Int): Boolean {
-        if (!quietHoursEnabled) return false
-        if (type.urgent && quietAllowsUrgent) return false
-        return isInQuietHours(hour, quietStart, quietEnd)
+    /**
+     * Indique si un événement doit être muet à l'heure donnée (0-23).
+     * [systemQuiet] : Ne pas déranger ou mode Coucher activé sur la montre.
+     */
+    fun isMuted(type: EventType, hour: Int, systemQuiet: Boolean = false): Boolean {
+        val quiet = (quietHoursEnabled && isInQuietHours(hour, quietStart, quietEnd)) || (followSystemQuiet && systemQuiet)
+        return quiet && !(type.urgent && quietAllowsUrgent)
     }
 
     companion object {

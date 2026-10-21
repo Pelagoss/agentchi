@@ -10,7 +10,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import fr.codingpacer.agentchi.net.EventParser
+import fr.codingpacer.agentchi.pet.Achievement
+import fr.codingpacer.agentchi.pet.Achievements
 import fr.codingpacer.agentchi.pet.MascotSprite
+import fr.codingpacer.agentchi.pet.Progress
 import fr.codingpacer.agentchi.pet.PetState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -43,6 +46,8 @@ class CompanionStore(context: Context) {
         val quietStart = intPreferencesKey("quiet_start")
         val quietEnd = intPreferencesKey("quiet_end")
         val quietUrgent = booleanPreferencesKey("quiet_urgent")
+        val followSystemQuiet = booleanPreferencesKey("follow_system_quiet")
+        val groupInfo = booleanPreferencesKey("group_info")
         val remoteAnswers = booleanPreferencesKey("remote_answers")
         val answerDelay = stringPreferencesKey("answer_delay")
         val quickReplies = stringPreferencesKey("quick_replies")
@@ -53,6 +58,8 @@ class CompanionStore(context: Context) {
         val appIcon = stringPreferencesKey("app_icon")
 
         val pet = stringPreferencesKey("pet")
+        val progress = stringPreferencesKey("progress")
+        val sessions = stringPreferencesKey("sessions")
         val history = stringPreferencesKey("history")
     }
 
@@ -78,6 +85,8 @@ class CompanionStore(context: Context) {
             quietStart = p[Keys.quietStart] ?: d.quietStart,
             quietEnd = p[Keys.quietEnd] ?: d.quietEnd,
             quietAllowsUrgent = p[Keys.quietUrgent] ?: d.quietAllowsUrgent,
+            followSystemQuiet = p[Keys.followSystemQuiet] ?: d.followSystemQuiet,
+            groupInfo = p[Keys.groupInfo] ?: d.groupInfo,
             remoteAnswers = p[Keys.remoteAnswers] ?: d.remoteAnswers,
             answerDelay = enumOr(p[Keys.answerDelay], d.answerDelay),
             quickReplies = p[Keys.quickReplies]?.split('\n')?.filter { it.isNotBlank() } ?: d.quickReplies,
@@ -114,6 +123,8 @@ class CompanionStore(context: Context) {
             p[Keys.quietStart] = s.quietStart
             p[Keys.quietEnd] = s.quietEnd
             p[Keys.quietUrgent] = s.quietAllowsUrgent
+            p[Keys.followSystemQuiet] = s.followSystemQuiet
+            p[Keys.groupInfo] = s.groupInfo
             p[Keys.remoteAnswers] = s.remoteAnswers
             p[Keys.answerDelay] = s.answerDelay.name
             p[Keys.quickReplies] = s.quickReplies.joinToString("\n")
@@ -176,6 +187,36 @@ class CompanionStore(context: Context) {
         }
     }
 
+    // --- Sessions en cours ---
+
+    val sessions: Flow<List<AgentSession>> = store.data.map { decodeSessions(it[Keys.sessions]) }.distinctUntilChanged()
+
+    suspend fun updateSessions(transform: (List<AgentSession>) -> List<AgentSession>) {
+        store.edit { p -> p[Keys.sessions] = EventParser.json.encodeToString(SESSIONS_SERIALIZER, transform(decodeSessions(p[Keys.sessions]))) }
+    }
+
+    private fun decodeSessions(raw: String?): List<AgentSession> =
+        raw?.let { runCatching { EventParser.json.decodeFromString(SESSIONS_SERIALIZER, it) }.getOrNull() } ?: emptyList()
+
+    // --- Séries et succès ---
+
+    val progress: Flow<Progress> = store.data.map { decodeProgress(it[Keys.progress]) }.distinctUntilChanged()
+
+    /** Met à jour les compteurs et débloque les succès atteints. Retourne les nouveaux succès. */
+    suspend fun updateProgress(now: Long, transform: (Progress) -> Progress): List<Achievement> {
+        var unlocked = emptyList<Achievement>()
+        store.edit { p ->
+            val pet = p[Keys.pet]?.let { runCatching { EventParser.json.decodeFromString<PetState>(it) }.getOrNull() } ?: PetState()
+            val (next, new) = Achievements.unlock(transform(decodeProgress(p[Keys.progress])), pet, now)
+            p[Keys.progress] = EventParser.json.encodeToString(Progress.serializer(), next)
+            unlocked = new
+        }
+        return unlocked
+    }
+
+    private fun decodeProgress(raw: String?): Progress =
+        raw?.let { runCatching { EventParser.json.decodeFromString<Progress>(it) }.getOrNull() } ?: Progress()
+
     // --- Historique des événements ---
 
     val history: Flow<List<AgentEvent>> = store.data.map { p -> decodeHistory(p[Keys.history]) }
@@ -221,5 +262,6 @@ class CompanionStore(context: Context) {
         private const val MAX_HISTORY = 30
         private const val LEGACY_NTFY = "https://ntfy.sh"
         private val HISTORY_SERIALIZER = kotlinx.serialization.builtins.ListSerializer(AgentEvent.serializer())
+        private val SESSIONS_SERIALIZER = kotlinx.serialization.builtins.ListSerializer(AgentSession.serializer())
     }
 }

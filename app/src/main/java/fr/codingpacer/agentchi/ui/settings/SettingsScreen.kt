@@ -51,29 +51,27 @@ object SettingsRoute {
     const val NOTIFICATIONS = "settings/notifications"
     const val EVENTS = "settings/notifications/events"
     const val STYLES = "settings/notifications/styles"
-    const val SERVER = "settings/server"
     const val MASCOT = "settings/mascot"
     const val TESTS = "settings/tests"
     const val ABOUT = "settings/about"
 }
 
-/** Déclare les pages des paramètres. [onOpenPairing] : écran « Ordinateurs et cloud ». */
+/** Déclare les pages des paramètres. [onOpenPairing] : page « Serveur » (adresse, connexion, ordinateurs et cloud). */
 fun NavGraphBuilder.settingsPages(viewModel: CompanionViewModel, navigate: (String) -> Unit, onOpenPairing: () -> Unit) {
-    composable(SettingsRoute.MENU) { SettingsMenu(viewModel, navigate) }
+    composable(SettingsRoute.MENU) { SettingsMenu(viewModel, navigate, onOpenPairing) }
     composable(SettingsRoute.SOURCES) { SourcesPage(viewModel) }
     composable(SettingsRoute.ANSWERS) { AnswersPage(viewModel, navigate) }
     composable(SettingsRoute.QUICK_REPLIES) { QuickRepliesPage(viewModel) }
     composable(SettingsRoute.NOTIFICATIONS) { NotificationsPage(viewModel, navigate) }
     composable(SettingsRoute.EVENTS) { EventsPage(viewModel) }
     composable(SettingsRoute.STYLES) { StylesPage(viewModel) }
-    composable(SettingsRoute.SERVER) { ServerPage(viewModel, onOpenPairing) }
     composable(SettingsRoute.MASCOT) { MascotPage(viewModel) }
     composable(SettingsRoute.TESTS) { TestsPage(viewModel) }
     composable(SettingsRoute.ABOUT) { AboutPage() }
 }
 
 @Composable
-private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Unit) {
+private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Unit, onOpenPairing: () -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val (pet, _) = viewModel.pet.collectAsStateWithLifecycle().value
     Page("Paramètres") {
@@ -88,11 +86,19 @@ private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Un
             }
         }
         item {
-            Category("🔔", "Notifications", if (settings.quietHoursEnabled) "Calme ${settings.quietStart}h → ${settings.quietEnd}h" else "${settings.enabledEvents.size} événements") {
+            val summary = listOfNotNull(
+                "${settings.enabledEvents.size} événements",
+                "Résumé groupé".takeIf { settings.groupInfo },
+                "Calme ${settings.quietStart}h → ${settings.quietEnd}h".takeIf { settings.quietHoursEnabled },
+            ).joinToString(" · ")
+            Category("🔔", "Notifications", summary) {
                 navigate(SettingsRoute.NOTIFICATIONS)
             }
         }
-        item { Category("🔗", "Serveur", if (settings.isConnected) "Montre connectée" else "Montre non connectée") { navigate(SettingsRoute.SERVER) } }
+        // Une seule page pour le serveur : adresse, connexion de la montre et codes des ordinateurs.
+        item {
+            Category("🔗", "Serveur", if (settings.isConnected) "Ordinateurs et cloud" else "Montre non connectée", onClick = onOpenPairing)
+        }
         item { Category("🦀", "Mascotte", "${pet.name} · ${settings.mascot.species.label} · ${settings.mascot.palette.label}") { navigate(SettingsRoute.MASCOT) } }
         item { Category("🧪", "Tests", "Simuler une notification") { navigate(SettingsRoute.TESTS) } }
         item { Category("ℹ️", "À propos", "Version ${BuildConfig.VERSION_NAME}") { navigate(SettingsRoute.ABOUT) } }
@@ -209,7 +215,7 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val update = viewModel::updateSettings
     Page("Notifications") {
-        item { Category("📋", "Me notifier quand…", "${settings.enabledEvents.size} sur ${EventType.entries.size}") { navigate(SettingsRoute.EVENTS) } }
+        item { Category("📋", "Me notifier quand…", "${settings.enabledEvents.size} sur ${EventType.entries.count { !it.silent }}") { navigate(SettingsRoute.EVENTS) } }
         item {
             Category("🎨", "Styles des alertes", "Urgentes : ${settings.urgentStyle.label} · Autres : ${settings.infoStyle.label}") {
                 navigate(SettingsRoute.STYLES)
@@ -219,8 +225,19 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
         item {
             Toggle("👁️ Aperçu du message", "Masque le texte si désactivé", settings.showPreview) { on -> update { it.copy(showPreview = on) } }
         }
+        item {
+            Toggle("📚 Résumé groupé", "« 3 tâches terminées sur 2 projets »", settings.groupInfo) { on -> update { it.copy(groupInfo = on) } }
+        }
+        if (settings.groupInfo) {
+            item { Note("Les événements non urgents s'ajoutent à une seule notification, qui ne vibre qu'une fois. Les urgences restent à part.") }
+        }
 
         section("Ne pas déranger")
+        item {
+            Toggle("⌚ Suivre la montre", "Ne pas déranger, mode Coucher", settings.followSystemQuiet) { on ->
+                update { it.copy(followSystemQuiet = on) }
+            }
+        }
         item {
             Toggle("🌙 Heures calmes", "${settings.quietStart}h → ${settings.quietEnd}h", settings.quietHoursEnabled) { on ->
                 update { it.copy(quietHoursEnabled = on) }
@@ -229,6 +246,8 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
         if (settings.quietHoursEnabled) {
             item { Setting("Début", "${settings.quietStart}h") { update { it.copy(quietStart = (it.quietStart + 1) % 24) } } }
             item { Setting("Fin", "${settings.quietEnd}h") { update { it.copy(quietEnd = (it.quietEnd + 1) % 24) } } }
+        }
+        if (settings.quietHoursEnabled || settings.followSystemQuiet) {
             item {
                 Toggle("Laisser passer les urgences", null, settings.quietAllowsUrgent) { on -> update { it.copy(quietAllowsUrgent = on) } }
             }
@@ -240,7 +259,7 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
 private fun EventsPage(viewModel: CompanionViewModel) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     Page("Me notifier quand…") {
-        EventType.entries.forEach { type ->
+        EventType.entries.filter { !it.silent }.forEach { type ->
             item {
                 Toggle("${type.emoji} ${type.label}", if (type.urgent) "Urgent" else null, type in settings.enabledEvents) { on ->
                     viewModel.updateSettings { s -> s.copy(enabledEvents = if (on) s.enabledEvents + type else s.enabledEvents - type) }
@@ -274,23 +293,7 @@ private fun StylesPage(viewModel: CompanionViewModel) {
     }
 }
 
-// --- Serveur, mascotte, tests, à propos ---
-
-@Composable
-private fun ServerPage(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
-    val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val toast = rememberToast()
-    val editServer = rememberTextInput("Adresse du serveur Agentchi") { url ->
-        if (url.startsWith("https://") || url.startsWith("http://")) viewModel.setServer(url)
-        else toast("L'adresse doit commencer par https://")
-    }
-    Page("Serveur") {
-        item {
-            Category("🔗", "Ordinateurs et cloud", if (settings.isConnected) "Codes d'appairage" else "Montre non connectée", onClick = onOpenPairing)
-        }
-        item { Setting("🌐 Adresse", settings.serverUrl.ifBlank { "Non configurée" }, onClick = editServer) }
-    }
-}
+// --- Mascotte, tests, à propos ---
 
 @Composable
 private fun MascotPage(viewModel: CompanionViewModel) {

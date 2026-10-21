@@ -152,6 +152,25 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "allowedEnvVars": [
+              "AGENTCHI_CODE",
+              "CLAUDE_CODE_REMOTE_SESSION_ID"
+            ],
+            "headers": {
+              "Authorization": "Bearer $AGENTCHI_CODE",
+              "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
+            },
+            "timeout": 5,
+            "type": "http",
+            "url": "https://agentchi.codingpacer.fr/h"
+          }
+        ]
+      }
     ]
   }
 }

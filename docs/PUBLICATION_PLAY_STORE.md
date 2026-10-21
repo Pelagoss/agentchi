@@ -100,7 +100,7 @@ adb -s <montre> uninstall fr.codingpacer.agentchi   # la signature diffère des 
 adb -s <montre> install app/build/outputs/apk/release/app-release.apk
 ```
 
-Vérifie au minimum : ouverture de l'appli, **Ordinateurs et cloud › Connecter la montre**, **Tester le push**, création d'un code avec son QR code, et le bouton « Ouvrir sur le téléphone » d'une notification de session cloud.
+Vérifie au minimum : ouverture de l'appli, **Paramètres › Serveur › Connecter la montre**, **Tester le push**, création d'un code avec son QR code, et le bouton « Ouvrir sur le téléphone » d'une notification de session cloud.
 
 **Codes de version.** Le projet utilise `2_000_001`. À **chaque mise à jour**, incrémente-le, par exemple `2_000_002`. Un code déjà envoyé au Play Store ne peut jamais être réutilisé.
 
@@ -177,7 +177,7 @@ Prends la mascotte, les paramètres, une notification et l'historique. Pour Wear
 
 1. *Test → Test interne → Créer une release* dans la piste « **Wear OS uniquement – Test interne** ».
 2. Ajoute ton adresse dans la liste de testeurs et ouvre le lien d'inscription.
-3. Sur la montre : *Play Store*, recherche directe, installe. Vérifie le push : **Ordinateurs et cloud › Tester le push**.
+3. Sur la montre : *Play Store*, recherche directe, installe. Vérifie le push : **Paramètres › Serveur › Tester le push**.
 
 ### 7.2 Test fermé (obligatoire pour un compte personnel récent)
 

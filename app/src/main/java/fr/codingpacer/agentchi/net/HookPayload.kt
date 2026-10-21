@@ -39,9 +39,13 @@ object EventParser {
      * Retourne null si le message est incomplet ou illisible.
      */
     fun fromPush(data: Map<String, String>): AgentEvent? {
-        val id = data["id"]?.takeIf { it.isNotBlank() } ?: return null
         val time = data["time"]?.toLongOrNull() ?: return null
-        return toEvent(id, time, data["payload"].orEmpty())
+        val payload = data["payload"].orEmpty()
+        // Les messages envoyés à l'agent arrivent sans id, pour que les anciennes versions de l'appli les ignorent.
+        val id = data["id"]?.takeIf { it.isNotBlank() }
+            ?: toEvent("", time, payload)?.takeIf { it.type == EventType.PROMPT }?.let { "prompt-$time-${it.session}" }
+            ?: return null
+        return toEvent(id, time, payload)
     }
 
     /** Identifiant de la question retirée par un push « ask_end », null pour un autre push. */
