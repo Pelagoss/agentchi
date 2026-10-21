@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -49,10 +50,12 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
         else toast("L'adresse doit commencer par https://")
     }
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
-    // Réponse rapide en cours de modification (index hors de la liste : nouvelle réponse).
+    // Réponse rapide dépliée (Modifier / Supprimer), et celle en cours de saisie (hors de la liste : nouvelle).
+    var selectedReply by remember { mutableStateOf<Int?>(null) }
     var editingReply by remember { mutableIntStateOf(0) }
-    val editReply = rememberTextInput("Réponse rapide (vide pour l'effacer)", allowEmpty = true) { text ->
+    val editReply = rememberTextInput("Réponse rapide") { text ->
         viewModel.setQuickReply(editingReply, text)
+        selectedReply = null
     }
 
     Scaffold(
@@ -106,9 +109,22 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
             section("Réponses rapides")
             settings.quickReplies.forEachIndexed { index, reply ->
                 item {
-                    Setting("💬 $reply", "Toucher pour modifier ou effacer") {
-                        editingReply = index
-                        editReply()
+                    Setting("💬 $reply", if (selectedReply == index) "Toucher pour fermer" else "Toucher pour modifier") {
+                        selectedReply = if (selectedReply == index) null else index
+                    }
+                }
+                if (selectedReply == index) {
+                    item {
+                        Setting("✏️ Modifier", reply) {
+                            editingReply = index
+                            editReply()
+                        }
+                    }
+                    item {
+                        Setting("🗑️ Supprimer", reply) {
+                            viewModel.removeQuickReply(index)
+                            selectedReply = null
+                        }
                     }
                 }
             }

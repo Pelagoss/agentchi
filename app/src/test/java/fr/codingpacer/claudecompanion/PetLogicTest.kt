@@ -1,6 +1,7 @@
 package fr.codingpacer.claudecompanion
 
 import fr.codingpacer.claudecompanion.data.EventType
+import fr.codingpacer.claudecompanion.pet.MascotSprite
 import fr.codingpacer.claudecompanion.pet.Mood
 import fr.codingpacer.claudecompanion.pet.PetLogic
 import fr.codingpacer.claudecompanion.pet.PetState
@@ -73,5 +74,17 @@ class PetLogicTest {
         assertEquals("😊", PetLogic.emoji(PetLogic.mood(PetState())))
         assertEquals("😴", PetLogic.emoji(PetLogic.mood(PetState(sleeping = true))))
         Mood.entries.forEach { assertTrue(PetLogic.emoji(it).isNotEmpty()) }
+    }
+
+    @Test
+    fun `sprite de la mascotte dans la grille`() {
+        MascotSprite.Face.entries.forEach { face ->
+            val pixels = MascotSprite.pixels(face)
+            assertTrue(pixels.all { it.x in 0 until MascotSprite.WIDTH && it.y in 0 until MascotSprite.HEIGHT })
+            assertTrue(pixels.any { it.ink == MascotSprite.Ink.EYE })
+        }
+        assertEquals(MascotSprite.Face.CLOSED, MascotSprite.face(Mood.SLEEPING, Reaction.NONE))
+        assertEquals(MascotSprite.Face.WIDE, MascotSprite.face(Mood.HAPPY, Reaction.ALERT))
+        assertEquals("💤", MascotSprite.bubble(Mood.SLEEPING, Reaction.NONE))
     }
 }

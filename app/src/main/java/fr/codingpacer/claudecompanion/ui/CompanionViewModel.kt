@@ -145,16 +145,17 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** Remplace la réponse rapide [index] (une nouvelle si hors de la liste). Un texte vide la supprime. */
+    /** Remplace la réponse rapide [index] (une nouvelle si hors de la liste). */
     fun setQuickReply(index: Int, text: String) = updateSettings { s ->
-        val replies = s.quickReplies.toMutableList()
         val clean = text.trim().take(60)
-        when {
-            index !in replies.indices -> if (clean.isNotEmpty()) replies += clean
-            clean.isEmpty() -> replies.removeAt(index)
-            else -> replies[index] = clean
-        }
+        if (clean.isEmpty()) return@updateSettings s
+        val replies = s.quickReplies.toMutableList()
+        if (index in replies.indices) replies[index] = clean else replies += clean
         s.copy(quickReplies = replies.distinct().take(CompanionSettings.MAX_QUICK_REPLIES))
+    }
+
+    fun removeQuickReply(index: Int) = updateSettings { s ->
+        s.copy(quickReplies = s.quickReplies.filterIndexed { i, _ -> i != index })
     }
 
     fun resetQuickReplies() = updateSettings { it.copy(quickReplies = CompanionSettings.DEFAULT_QUICK_REPLIES) }
