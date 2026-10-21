@@ -1,0 +1,10 @@
+# Clé age partagée avec Pelagoss/chess-analyzer : même clé privée en secret
+# GitHub DECRYPTING_KEY. Édition : `sops edit <fichier>`.
+creation_rules:
+  # Manifests k8s : seules les valeurs des Secrets sont chiffrées.
+  - path_regex: k8s/.*\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1gr775xu7s2fkepm0amxt3rpk5y09785e9245fsvtr920xwm40ylshh9r4d
+  # Variables de build (format dotenv) : toutes les valeurs sont chiffrées.
+  - path_regex: .*\.secrets\.env$
+    age: age1gr775xu7s2fkepm0amxt3rpk5y09785e9245fsvtr920xwm40ylshh9r4d

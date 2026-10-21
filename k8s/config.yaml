@@ -1,0 +1,15 @@
+# Configuration non secrète du serveur (server/main.go). La clé du compte de
+# service Firebase est dans le Secret `firebase-service-account` (0.secrets.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: claude-companion
+data:
+  CC_ADDR: ":8080"
+  CC_DATA: /data/state.json
+  CC_PUBLIC_URL: https://claude-companion.codingpacer.fr
+  # Derrière Traefik : adresse du client dans X-Forwarded-For.
+  CC_TRUST_PROXY: "true"
+  CC_MAX_DEVICES: "1000"
+  CC_FCM_CREDENTIALS: /secrets/firebase-service-account.json
