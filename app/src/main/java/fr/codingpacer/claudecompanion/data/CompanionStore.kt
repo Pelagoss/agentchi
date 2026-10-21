@@ -41,6 +41,7 @@ class CompanionStore(context: Context) {
         val quietStart = intPreferencesKey("quiet_start")
         val quietEnd = intPreferencesKey("quiet_end")
         val quietUrgent = booleanPreferencesKey("quiet_urgent")
+        val remoteAnswers = booleanPreferencesKey("remote_answers")
 
         val pet = stringPreferencesKey("pet")
         val history = stringPreferencesKey("history")
@@ -67,6 +68,7 @@ class CompanionStore(context: Context) {
             quietStart = p[Keys.quietStart] ?: d.quietStart,
             quietEnd = p[Keys.quietEnd] ?: d.quietEnd,
             quietAllowsUrgent = p[Keys.quietUrgent] ?: d.quietAllowsUrgent,
+            remoteAnswers = p[Keys.remoteAnswers] ?: d.remoteAnswers,
         )
     }.distinctUntilChanged()
 
@@ -90,6 +92,7 @@ class CompanionStore(context: Context) {
             p[Keys.quietStart] = s.quietStart
             p[Keys.quietEnd] = s.quietEnd
             p[Keys.quietUrgent] = s.quietAllowsUrgent
+            p[Keys.remoteAnswers] = s.remoteAnswers
         }
     }
 

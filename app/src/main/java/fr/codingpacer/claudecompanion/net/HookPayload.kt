@@ -1,5 +1,6 @@
 package fr.codingpacer.claudecompanion.net
 
+import fr.codingpacer.claudecompanion.data.Ask
 import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.EventType
 import kotlinx.serialization.Serializable
@@ -21,6 +22,10 @@ data class HookPayload(
     val c: Boolean = false,
     /** Lien de la session cloud. */
     val u: String? = null,
+    /** Question à laquelle la montre peut répondre. */
+    val q: Ask? = null,
+    /** Type « ask_end » : question qui n'attend plus de réponse. */
+    val e: String? = null,
 )
 
 object EventParser {
@@ -36,6 +41,14 @@ object EventParser {
         return toEvent(id, time, data["payload"].orEmpty())
     }
 
+    /** Identifiant de la question retirée par un push « ask_end », null pour un autre push. */
+    fun askEnd(data: Map<String, String>): String? {
+        val payload = runCatching { json.decodeFromString<HookPayload>(data["payload"].orEmpty()) }.getOrNull()
+        return payload?.takeIf { it.t == ASK_END }?.e?.takeIf { it.isNotBlank() }
+    }
+
+    private const val ASK_END = "ask_end"
+
     fun toEvent(id: String, time: Long, payloadJson: String): ClaudeEvent? {
         val payload = runCatching { json.decodeFromString<HookPayload>(payloadJson) }.getOrNull() ?: return null
         val type = EventType.fromKey(payload.t)
@@ -50,6 +63,7 @@ object EventParser {
             // Seuls les liens claude.ai sont ouverts sur le téléphone
             url = payload.u?.takeIf { it.startsWith("https://claude.ai/") },
             time = time,
+            ask = payload.q?.takeIf { it.id.isNotBlank() },
         )
     }
 }

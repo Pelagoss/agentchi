@@ -12,6 +12,10 @@ import kotlinx.coroutines.runBlocking
 class PushService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
+        EventParser.askEnd(message.data)?.let {
+            (application as CompanionApp).processor.askEnded(it)
+            return
+        }
         val event = EventParser.fromPush(message.data) ?: return
         // Appelé sur un thread d'arrière-plan : on peut attendre la fin du traitement.
         runBlocking { (application as CompanionApp).processor.process(event) }

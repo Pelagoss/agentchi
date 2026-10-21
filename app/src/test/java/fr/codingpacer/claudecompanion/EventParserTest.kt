@@ -1,5 +1,7 @@
 package fr.codingpacer.claudecompanion
 
+import fr.codingpacer.claudecompanion.data.Ask
+import fr.codingpacer.claudecompanion.data.AskAnswer
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.EventType
 import fr.codingpacer.claudecompanion.net.EventParser
@@ -118,5 +120,44 @@ class EventParserTest {
         assertFalse(s.isMuted(EventType.PERMISSION, 23))
         assertTrue(s.isMuted(EventType.TASK_DONE, 23))
         assertFalse(s.isMuted(EventType.TASK_DONE, 12))
+    }
+
+    @Test
+    fun `lit une question a laquelle repondre`() {
+        val event = event(
+            mapOf(
+                "id" to "e3",
+                "time" to "1792500500",
+                "payload" to """{"t":"input","m":"Quelle base ?","p":"p","q":{"id":"qabc","k":"question","tool":"AskUserQuestion","x":1792500610,
+                    "qs":[{"q":"Quelle base ?","h":"Base","o":[{"l":"Postgres","d":"Relationnelle"},{"l":"SQLite"}]},
+                          {"q":"Étapes ?","mu":true,"o":[{"l":"Tests"}]}]}}""",
+            ),
+        )
+        val ask = event.ask!!
+        assertEquals(Ask.QUESTION, ask.kind)
+        assertEquals(2, ask.questions.size)
+        assertEquals("Relationnelle", ask.questions[0].options[0].description)
+        assertTrue(ask.questions[1].multi)
+        assertEquals("qabc".hashCode(), event.notificationId)
+        assertFalse(ask.isExpired(1_792_500_600))
+        assertTrue(ask.isExpired(1_792_500_610))
+        assertNull(EventParser.askEnd(permissionPush))
+    }
+
+    @Test
+    fun `retire une question expiree`() {
+        val data = mapOf("id" to "e4", "time" to "1", "payload" to """{"t":"ask_end","e":"qabc"}""")
+        assertEquals("qabc", EventParser.askEnd(data))
+        assertNull(event(permissionPush).ask)
+    }
+
+    @Test
+    fun `reponse au format du serveur`() {
+        val json = EventParser.json.encodeToString(
+            AskAnswer.serializer(),
+            AskAnswer(AskAnswer.ALLOW, answers = mapOf("Quelle base ?" to "SQLite")),
+        )
+        assertEquals("""{"decision":"allow","answers":{"Quelle base ?":"SQLite"}}""", json)
+        assertEquals("""{"decision":"pass"}""", EventParser.json.encodeToString(AskAnswer.serializer(), AskAnswer.pass))
     }
 }

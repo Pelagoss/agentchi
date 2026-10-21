@@ -3,6 +3,7 @@
 Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pendant que Claude travaille :
 
 - 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone.
+- ⌚ **Répondre à Claude depuis la montre** : autoriser ou refuser une commande, choisir parmi les options qu'il propose (une ou plusieurs), approuver son plan, ou lui répondre au clavier ou à la voix quand il a fini.
 - 🦀 **Une mascotte façon tamagotchi** : nourris-la, joue avec elle, mets-la au lit. Elle réagit en direct : elle fait la fête quand Claude a fini et s'affole quand il t'attend.
 - ⚙️ **Des paramètres** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, heures calmes.
 
@@ -142,6 +143,23 @@ Chaque personne qui travaille sur le dépôt met **son propre code** dans **son*
 
 **Ordinateurs et cloud › Tester le push** : le serveur envoie une notification par FCM et affiche l'erreur sur la montre si elle ne part pas (clé du compte de service absente, jeton refusé…). Firebase garde un push 24 h si la montre est éteinte ou hors ligne.
 
+## Répondre depuis la montre
+
+Sur la montre : **Paramètres › Répondre depuis la montre › Répondre à Claude**. Active-le quand tu t'éloignes de l'écran, et désactive-le quand tu y reviens.
+
+| Quand Claude… | Hook | Sur la montre |
+|---|---|---|
+| demande une autorisation (« 1. Oui / 2. Oui, ne plus demander / 3. Non ») | `PermissionRequest` | ✅ Autoriser, ♾️ Toujours autoriser, ❌ Refuser, avec ou sans explication |
+| pose une question à choix (`AskUserQuestion`, cases à cocher comprises) | `PreToolUse` | Options à cocher, une ou plusieurs, ou ✍️ autre réponse |
+| propose un plan (`ExitPlanMode`) | `PreToolUse` | ✅ Approuver, ✍️ Demander des changements |
+| a fini et attend ta réponse | `Stop` | 💬 Réponse au clavier, à la voix ou rapide (« Continue »…), ou 🏁 Terminer |
+
+Les réponses simples se donnent depuis la notification. Touche-la pour l'écran complet : texte entier, choix multiples, compte à rebours.
+
+Le hook attend ta réponse **2 minutes au plus**. Ensuite, ou si tu **balaies la notification**, Claude Code pose la question à l'écran comme d'habitude. Réglage désactivé, le serveur rend la main tout de suite : rien ne change sur l'ordinateur, la fin de tâche reste une simple notification.
+
+Il faut le plugin **0.2.0** (`claude plugin update watch-companion`). Pour une session cloud, recopie le bloc de `/v1/cloud-settings.json`. Derrière un reverse proxy, laisse les requêtes `POST /ask` ouvertes 2 minutes (Traefik et Caddy le font par défaut).
+
 ## La mascotte
 
 | Jauge | Baisse | Remonte |
@@ -159,6 +177,7 @@ Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION
 ## Confidentialité
 
 - **Serveur** : il est à toi. Il reçoit les événements en HTTPS (nom du dossier, identifiant court de session, 300 premiers caractères du dernier message de Claude) et les transmet aussitôt à Firebase, sans les stocker. Les hooks Claude Code envoient du JSON brut : pas de chiffrement de bout en bout, la confiance repose sur ton serveur et sur Firebase Cloud Messaging (Google), qui achemine le push.
+- **Réponses** : une question en attente ne vit qu'en mémoire, le temps de la réponse. Seule la montre qui l'a reçue peut y répondre, une seule fois. Une montre qui répond peut autoriser des commandes : désactive le réglage si tu la prêtes.
 - **Codes et jetons** : le serveur n'en garde que l'empreinte SHA-256. Chaque montre ne lit que ses événements. Les tentatives avec un code invalide sont limitées.
 
 ## Développement
@@ -166,7 +185,7 @@ Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION
 - Montre : Kotlin, Jetpack Compose (Wear OS Material), Firebase Cloud Messaging, DataStore, OkHttp
 - Serveur : Go, bibliothèque standard uniquement
 - `./gradlew :app:testDebugUnitTest` : mascotte, lecture des pushs, filtres
-- `cd server && go test ./...` : traduction des hooks, appairage, isolation entre montres, envoi FCM (JWT, OAuth, jeton périmé), persistance
+- `cd server && go test ./...` : traduction des hooks, réponses depuis la montre, appairage, isolation entre montres, envoi FCM (JWT, OAuth, jeton périmé), persistance
 - `claude plugin validate .` : marketplace et plugin
 
 ```
@@ -178,5 +197,4 @@ keystore/         clé de debug (même signature d'un build à l'autre)
 
 ## Idées pour la suite
 
-- Répondre (*Autoriser / Refuser*) depuis la montre, avec un hook `PermissionRequest` qui attend sa réponse
 - Tuile Wear OS et complication avec l'humeur de la mascotte

@@ -21,6 +21,8 @@ type Device struct {
 	Created   time.Time `json:"created"`
 	// Jeton d'enregistrement Firebase Cloud Messaging de la montre.
 	PushToken string `json:"push_token,omitempty"`
+	// Répondre depuis la montre : les hooks /ask attendent sa réponse au lieu de rendre la main tout de suite.
+	Answers bool `json:"answers,omitempty"`
 }
 
 // Un code d'appairage, saisi sur un ordinateur ou dans un environnement cloud.
@@ -171,6 +173,28 @@ func (s *Store) ForgetPushToken(deviceID, pushToken string) error {
 		return nil
 	}
 	d.PushToken = ""
+	return s.save()
+}
+
+// Answers indique si la montre répond aux questions de Claude (voir ask.go).
+func (s *Store) Answers(deviceID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d, ok := s.st.Devices[deviceID]
+	return ok && d.Answers && d.PushToken != ""
+}
+
+func (s *Store) SetAnswers(deviceID string, on bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d, ok := s.st.Devices[deviceID]
+	if !ok {
+		return errNotFound
+	}
+	if d.Answers == on {
+		return nil
+	}
+	d.Answers = on
 	return s.save()
 }
 

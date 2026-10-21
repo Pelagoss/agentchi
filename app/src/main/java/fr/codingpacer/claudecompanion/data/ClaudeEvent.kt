@@ -43,7 +43,12 @@ data class ClaudeEvent(
     val url: String? = null,
     /** Horodatage Unix en secondes. */
     val time: Long,
+    /** Question à laquelle répondre depuis la montre. */
+    val ask: Ask? = null,
 ) {
+    /** Une question garde le même identifiant de notification, pour la retirer quand elle expire. */
+    val notificationId: Int get() = (ask?.id ?: id).hashCode()
+
     val title: String
         get() = "${type.emoji} ${type.label}"
 

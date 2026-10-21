@@ -1,5 +1,6 @@
 package fr.codingpacer.claudecompanion.net
 
+import fr.codingpacer.claudecompanion.data.AskAnswer
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,6 +48,17 @@ class CompanionApi(
     /** Transmet le jeton FCM de la montre (Firebase le renouvelle de temps en temps). */
     suspend fun setPushToken(settings: CompanionSettings, token: String) {
         call(settings, "PUT", "/v1/device/push", jsonBody { put("token", token) })
+    }
+
+    /** Active ou non les réponses depuis la montre : les hooks attendent alors sa réponse. */
+    suspend fun setAnswers(settings: CompanionSettings, enabled: Boolean) {
+        call(settings, "PUT", "/v1/device/answers", jsonBody { put("enabled", enabled) })
+    }
+
+    /** Répond à une question de Claude. HTTP 410 : Claude ne l'attend plus. */
+    suspend fun answer(settings: CompanionSettings, askId: String, answer: AskAnswer) {
+        val body = EventParser.json.encodeToString(AskAnswer.serializer(), answer).toRequestBody("application/json".toMediaType())
+        call(settings, "POST", "/v1/asks/$askId", body)
     }
 
     suspend fun createCode(settings: CompanionSettings, label: String): PairingCode =

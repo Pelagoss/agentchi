@@ -22,6 +22,10 @@ type HookInput struct {
 	Trigger              string `json:"trigger"`
 	Error                string `json:"error"`
 	ErrorDetails         string `json:"error_details"`
+	// PermissionRequest et PreToolUse
+	ToolName              string          `json:"tool_name"`
+	ToolInput             json.RawMessage `json:"tool_input"`
+	PermissionSuggestions json.RawMessage `json:"permission_suggestions"`
 }
 
 // Payload : ce que lit la montre (voir app/.../net/HookPayload.kt).
@@ -33,6 +37,10 @@ type Payload struct {
 	Account string `json:"a,omitempty"`
 	Cloud   bool   `json:"c,omitempty"`
 	URL     string `json:"u,omitempty"`
+	// Question à laquelle la montre peut répondre (voir ask.go).
+	Ask *AskView `json:"q,omitempty"`
+	// Type « ask_end » : id de la question qui n'attend plus de réponse.
+	End string `json:"e,omitempty"`
 }
 
 // Une montre, une ligne, 300 caractères au plus.
@@ -91,17 +99,22 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 	case "PreCompact":
 		p.Type = "compact"
 		p.Message = "Compaction du contexte" + paren(in.Trigger)
-	case "":
+	case "", "PermissionRequest", "PreToolUse":
+		// Les questions passent par /ask (ask.go), qui les affiche lui-même.
 		return p, false
 	default:
 		p.Message = in.Message
 	}
 
-	if in.Cwd != "" {
-		p.Project = path.Base(strings.ReplaceAll(strings.TrimRight(in.Cwd, `/\`), `\`, "/"))
-	}
+	p.describe(in, remoteSession)
+	return p, true
+}
+
+// describe complète le payload : projet, session, origine cloud, message sur une ligne.
+func (p *Payload) describe(in HookInput, remoteSession string) {
+	p.Project = projectOf(in.Cwd)
 	p.Session = truncate(in.SessionID, 8)
-	p.Message = truncate(strings.TrimSpace(spaces.ReplaceAllString(p.Message, " ")), maxMessageRunes)
+	p.Message = oneLine(p.Message, maxMessageRunes)
 	if p.Message == "" {
 		p.Message = "Événement Claude (" + p.Type + ")"
 	}
@@ -109,7 +122,18 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 		p.Cloud = true
 		p.URL = "https://claude.ai/code/session_" + strings.TrimPrefix(remoteSession, "cse_")
 	}
-	return p, true
+}
+
+// projectOf : nom du dossier de travail, sous Windows comme ailleurs.
+func projectOf(cwd string) string {
+	if cwd == "" {
+		return ""
+	}
+	return path.Base(strings.ReplaceAll(strings.TrimRight(cwd, `/\`), `\`, "/"))
+}
+
+func oneLine(s string, n int) string {
+	return truncate(strings.TrimSpace(spaces.ReplaceAllString(s, " ")), n)
 }
 
 func (p Payload) JSON() string {

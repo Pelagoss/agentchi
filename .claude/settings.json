@@ -19,6 +19,25 @@
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "allowedEnvVars": [
+              "CLAUDE_COMPANION_CODE",
+              "CLAUDE_CODE_REMOTE_SESSION_ID"
+            ],
+            "headers": {
+              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
+            },
+            "timeout": 120,
+            "type": "http",
+            "url": "https://claude-companion.codingpacer.fr/ask"
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [
@@ -34,6 +53,26 @@
             "timeout": 5,
             "type": "http",
             "url": "https://claude-companion.codingpacer.fr/h"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [
+          {
+            "allowedEnvVars": [
+              "CLAUDE_COMPANION_CODE",
+              "CLAUDE_CODE_REMOTE_SESSION_ID"
+            ],
+            "headers": {
+              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
+            },
+            "timeout": 120,
+            "type": "http",
+            "url": "https://claude-companion.codingpacer.fr/ask"
           }
         ]
       }
@@ -69,9 +108,9 @@
               "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
-            "timeout": 5,
+            "timeout": 120,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://claude-companion.codingpacer.fr/ask"
           }
         ]
       }
