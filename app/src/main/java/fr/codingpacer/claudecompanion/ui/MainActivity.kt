@@ -19,7 +19,8 @@ import fr.codingpacer.claudecompanion.ui.ask.AskActivity
 import fr.codingpacer.claudecompanion.ui.history.HistoryScreen
 import fr.codingpacer.claudecompanion.ui.pairing.PairingScreen
 import fr.codingpacer.claudecompanion.ui.pet.PetScreen
-import fr.codingpacer.claudecompanion.ui.settings.SettingsScreen
+import fr.codingpacer.claudecompanion.ui.settings.SettingsRoute
+import fr.codingpacer.claudecompanion.ui.settings.settingsPages
 import fr.codingpacer.claudecompanion.ui.theme.CompanionTheme
 import kotlinx.coroutines.launch
 
@@ -46,13 +47,11 @@ class MainActivity : ComponentActivity() {
                     composable("pet") {
                         PetScreen(
                             viewModel = viewModel,
-                            onOpenSettings = { navController.navigate("settings") },
+                            onOpenSettings = { navController.navigate(SettingsRoute.MENU) },
                             onOpenHistory = { navController.navigate("history") },
                         )
                     }
-                    composable("settings") {
-                        SettingsScreen(viewModel, onOpenPairing = { navController.navigate("pairing") })
-                    }
+                    settingsPages(viewModel, navigate = { navController.navigate(it) }, onOpenPairing = { navController.navigate("pairing") })
                     composable("history") { HistoryScreen(viewModel) }
                     composable("pairing") { PairingScreen(viewModel) }
                 }

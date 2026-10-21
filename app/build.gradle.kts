@@ -25,8 +25,8 @@ android {
         minSdk = 30
         targetSdk = 34
         // Montre et téléphone partagent la fiche Play Store : codes de version distincts.
-        versionCode = 2_000_001
-        versionName = "0.1.0"
+        versionCode = 2_000_002
+        versionName = "0.2.0"
 
         // Serveur Claude Companion proposé par défaut (modifiable sur la montre) :
         // ./gradlew -PcompanionServer=https://cc.example.fr … ou variable COMPANION_SERVER.
