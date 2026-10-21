@@ -5,6 +5,7 @@ import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.Mood
 import fr.codingpacer.agentchi.pet.PetLogic
 import fr.codingpacer.agentchi.pet.PetState
+import fr.codingpacer.agentchi.pet.PixelIcon
 import fr.codingpacer.agentchi.pet.Reaction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -78,13 +79,31 @@ class PetLogicTest {
 
     @Test
     fun `sprite de la mascotte dans la grille`() {
-        MascotSprite.Face.entries.forEach { face ->
-            val pixels = MascotSprite.pixels(face)
-            assertTrue(pixels.all { it.x in 0 until MascotSprite.WIDTH && it.y in 0 until MascotSprite.HEIGHT })
-            assertTrue(pixels.any { it.ink == MascotSprite.Ink.EYE })
+        MascotSprite.Species.entries.forEach { species ->
+            MascotSprite.Accessory.entries.forEach { accessory ->
+                MascotSprite.Face.entries.forEach { face ->
+                    val pixels = MascotSprite.pixels(MascotSprite.Look(species, accessory = accessory), face, altLegs = true)
+                    assertTrue("$species $accessory $face", pixels.all { it.x in 0 until MascotSprite.WIDTH && it.y in 0 until MascotSprite.HEIGHT })
+                }
+            }
+            // Accessoires au-dessus du corps : les rangées du haut sont libres sans accessoire.
+            assertTrue(MascotSprite.pixels(MascotSprite.Look(species), MascotSprite.Face.OPEN).none { it.y < MascotSprite.TOP })
+            assertEquals(species.round, MascotSprite.pixels(MascotSprite.Look(species), MascotSprite.Face.OPEN).first().round)
         }
+        val coral = MascotSprite.Look(MascotSprite.Species.CRAB)
+        assertEquals(MascotSprite.Palette.CORAL, coral.palette)
+        assertTrue(MascotSprite.pixels(coral.copy(palette = MascotSprite.Palette.OCEAN), MascotSprite.Face.OPEN).any { it.argb == MascotSprite.Palette.OCEAN.body })
         assertEquals(MascotSprite.Face.CLOSED, MascotSprite.face(Mood.SLEEPING, Reaction.NONE))
         assertEquals(MascotSprite.Face.WIDE, MascotSprite.face(Mood.HAPPY, Reaction.ALERT))
         assertEquals("💤", MascotSprite.bubble(Mood.SLEEPING, Reaction.NONE))
+    }
+
+    @Test
+    fun `icones pixel 8 x 8`() {
+        PixelIcon.entries.forEach { icon ->
+            assertEquals(icon.name, PixelIcon.SIZE, icon.grid.size)
+            assertTrue(icon.name, icon.grid.all { it.length == PixelIcon.SIZE })
+            assertTrue(icon.name, icon.pixels().isNotEmpty())
+        }
     }
 }

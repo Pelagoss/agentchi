@@ -11,9 +11,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
@@ -27,7 +28,9 @@ import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
+import fr.codingpacer.agentchi.data.IconSet
 import fr.codingpacer.agentchi.pet.Mood
+import fr.codingpacer.agentchi.pet.PixelIcon
 import fr.codingpacer.agentchi.pet.PetLogic
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.theme.BrandOrange
@@ -40,6 +43,7 @@ fun PetScreen(
 ) {
     val (pet, now) = viewModel.pet.collectAsStateWithLifecycle().value
     val history by viewModel.history.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val reaction = PetLogic.currentReaction(pet, now)
     val mood = PetLogic.mood(pet)
     val listState = rememberScalingLazyListState(initialCenterItemIndex = 0)
@@ -57,6 +61,7 @@ fun PetScreen(
                 Mascot(
                     mood = mood,
                     reaction = reaction,
+                    look = settings.mascot,
                     modifier = Modifier.size(width = 120.dp, height = 96.dp),
                     onTap = viewModel::caress,
                 )
@@ -77,16 +82,21 @@ fun PetScreen(
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatRing("🍪", pet.satiety, Color(0xFFE8B04A))
-                    StatRing("⚡", pet.energy, Color(0xFF7FB3FF))
-                    StatRing("💖", pet.happiness, Color(0xFFE97CA0))
+                    StatRing(PixelIcon.SATIETY, settings.iconSet, pet.satiety, Color(0xFFE8B04A))
+                    StatRing(PixelIcon.ENERGY, settings.iconSet, pet.energy, Color(0xFF7FB3FF))
+                    StatRing(PixelIcon.HAPPINESS, settings.iconSet, pet.happiness, Color(0xFFE97CA0))
                 }
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ActionButton("🍪", "Nourrir", enabled = !pet.sleeping, onClick = viewModel::feed)
-                    ActionButton("🎾", "Jouer", enabled = !pet.sleeping && pet.energy >= 10f, onClick = viewModel::play)
-                    ActionButton(if (mood == Mood.SLEEPING) "☀️" else "😴", "Dormir", onClick = viewModel::toggleSleep)
+                    ActionButton(PixelIcon.FEED, settings.iconSet, "Nourrir", enabled = !pet.sleeping, onClick = viewModel::feed)
+                    ActionButton(PixelIcon.PLAY, settings.iconSet, "Jouer", enabled = !pet.sleeping && pet.energy >= 10f, onClick = viewModel::play)
+                    ActionButton(
+                        if (mood == Mood.SLEEPING) PixelIcon.WAKE else PixelIcon.SLEEP,
+                        settings.iconSet,
+                        if (mood == Mood.SLEEPING) "Réveiller" else "Dormir",
+                        onClick = viewModel::toggleSleep,
+                    )
                 }
             }
             item {
@@ -101,7 +111,7 @@ fun PetScreen(
                     onClick = onOpenHistory,
                     label = { Text("Notifications") },
                     secondaryLabel = { Text(history.firstOrNull()?.title ?: "Aucune pour l'instant") },
-                    icon = { Text("🔔") },
+                    icon = { ActionIcon(PixelIcon.NOTIFICATIONS, settings.iconSet) },
                     colors = ChipDefaults.secondaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -110,7 +120,7 @@ fun PetScreen(
                 Chip(
                     onClick = onOpenSettings,
                     label = { Text("Paramètres") },
-                    icon = { Text("⚙️") },
+                    icon = { ActionIcon(PixelIcon.SETTINGS, settings.iconSet) },
                     colors = ChipDefaults.secondaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -120,7 +130,7 @@ fun PetScreen(
 }
 
 @Composable
-private fun StatRing(emoji: String, value: Float, color: Color) {
+private fun StatRing(icon: PixelIcon, set: IconSet, value: Float, color: Color) {
     Box(modifier = Modifier.size(38.dp), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
             progress = value / 100f,
@@ -129,18 +139,18 @@ private fun StatRing(emoji: String, value: Float, color: Color) {
             trackColor = MaterialTheme.colors.onSurface.copy(alpha = 0.15f),
             strokeWidth = 4.dp,
         )
-        Text(emoji, fontSize = 14.sp)
+        ActionIcon(icon, set, size = 14.dp)
     }
 }
 
 @Composable
-private fun ActionButton(emoji: String, description: String, enabled: Boolean = true, onClick: () -> Unit) {
+private fun ActionButton(icon: PixelIcon, set: IconSet, description: String, enabled: Boolean = true, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.secondaryButtonColors(),
-        modifier = Modifier.size(ButtonDefaults.SmallButtonSize),
+        modifier = Modifier.size(ButtonDefaults.SmallButtonSize).semantics { contentDescription = description },
     ) {
-        Text(emoji, fontSize = 18.sp)
+        ActionIcon(icon, set, size = 20.dp)
     }
 }

@@ -10,6 +10,9 @@ import fr.codingpacer.agentchi.data.CompanionSettings
 import fr.codingpacer.agentchi.data.EventType
 import fr.codingpacer.agentchi.data.VibrationPattern
 import fr.codingpacer.agentchi.data.next
+import fr.codingpacer.agentchi.data.AppIcon
+import fr.codingpacer.agentchi.pet.MascotSprite
+import fr.codingpacer.agentchi.widget.AppIconSwitcher
 import fr.codingpacer.agentchi.net.PairingCode
 import fr.codingpacer.agentchi.pet.PetLogic
 import fr.codingpacer.agentchi.pet.PetState
@@ -156,6 +159,18 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun removeQuickReply(index: Int) = updateSettings { s ->
         s.copy(quickReplies = s.quickReplies.filterIndexed { i, _ -> i != index })
+    }
+
+    /** Change l'apparence de la mascotte ; l'icône de l'appli suit si elle lui est assortie. */
+    fun setLook(look: MascotSprite.Look) = viewModelScope.launch {
+        store.updateSettings { it.copy(mascot = look) }
+        AppIconSwitcher.apply(app, store.settings.first())
+        Widgets.refresh(app)
+    }
+
+    fun setAppIcon(icon: AppIcon) = viewModelScope.launch {
+        store.updateSettings { it.copy(appIcon = icon) }
+        AppIconSwitcher.apply(app, store.settings.first())
     }
 
     fun resetQuickReplies() = updateSettings { it.copy(quickReplies = CompanionSettings.DEFAULT_QUICK_REPLIES) }

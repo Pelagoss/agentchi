@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import fr.codingpacer.agentchi.net.EventParser
+import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.PetState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -45,6 +46,11 @@ class CompanionStore(context: Context) {
         val remoteAnswers = booleanPreferencesKey("remote_answers")
         val answerDelay = stringPreferencesKey("answer_delay")
         val quickReplies = stringPreferencesKey("quick_replies")
+        val mascotSpecies = stringPreferencesKey("mascot_species")
+        val mascotPalette = stringPreferencesKey("mascot_palette")
+        val mascotAccessory = stringPreferencesKey("mascot_accessory")
+        val iconSet = stringPreferencesKey("icon_set")
+        val appIcon = stringPreferencesKey("app_icon")
 
         val pet = stringPreferencesKey("pet")
         val history = stringPreferencesKey("history")
@@ -75,6 +81,15 @@ class CompanionStore(context: Context) {
             remoteAnswers = p[Keys.remoteAnswers] ?: d.remoteAnswers,
             answerDelay = enumOr(p[Keys.answerDelay], d.answerDelay),
             quickReplies = p[Keys.quickReplies]?.split('\n')?.filter { it.isNotBlank() } ?: d.quickReplies,
+            mascot = enumOr(p[Keys.mascotSpecies], d.mascot.species).let { species ->
+                MascotSprite.Look(
+                    species = species,
+                    palette = enumOr(p[Keys.mascotPalette], species.defaultPalette),
+                    accessory = enumOr(p[Keys.mascotAccessory], d.mascot.accessory),
+                )
+            },
+            iconSet = enumOr(p[Keys.iconSet], d.iconSet),
+            appIcon = enumOr(p[Keys.appIcon], d.appIcon),
         )
     }.distinctUntilChanged()
 
@@ -102,6 +117,11 @@ class CompanionStore(context: Context) {
             p[Keys.remoteAnswers] = s.remoteAnswers
             p[Keys.answerDelay] = s.answerDelay.name
             p[Keys.quickReplies] = s.quickReplies.joinToString("\n")
+            p[Keys.mascotSpecies] = s.mascot.species.name
+            p[Keys.mascotPalette] = s.mascot.palette.name
+            p[Keys.mascotAccessory] = s.mascot.accessory.name
+            p[Keys.iconSet] = s.iconSet.name
+            p[Keys.appIcon] = s.appIcon.name
         }
     }
 

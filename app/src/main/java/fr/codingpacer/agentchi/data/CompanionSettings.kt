@@ -1,6 +1,7 @@
 package fr.codingpacer.agentchi.data
 
 import fr.codingpacer.agentchi.BuildConfig
+import fr.codingpacer.agentchi.pet.MascotSprite
 
 enum class AlertStyle(val label: String) {
     FULL_SCREEN("Plein écran"),
@@ -13,6 +14,18 @@ enum class AnswerDelay(val seconds: Int, val label: String) {
     ONE_MINUTE(60, "1 min"),
     TWO_MINUTES(120, "2 min"),
     FIVE_MINUTES(300, "5 min"),
+}
+
+/** Icônes des actions de la mascotte (nourrir, jouer, dormir…). */
+enum class IconSet(val label: String) {
+    PIXEL("Pixel"),
+    EMOJI("Emojis"),
+}
+
+/** Icône de l'appli dans le lanceur. */
+enum class AppIcon(val label: String) {
+    CLASSIC("Classique"),
+    MASCOT("Assortie à la mascotte"),
 }
 
 enum class VibrationPattern(val label: String, val timings: LongArray?) {
@@ -52,6 +65,10 @@ data class CompanionSettings(
     val answerDelay: AnswerDelay = AnswerDelay.TWO_MINUTES,
     /** Réponses proposées d'un toucher quand l'agent attend un message. */
     val quickReplies: List<String> = DEFAULT_QUICK_REPLIES,
+    /** Apparence de la mascotte : espèce, couleurs, accessoire. */
+    val mascot: MascotSprite.Look = MascotSprite.Look(),
+    val iconSet: IconSet = IconSet.PIXEL,
+    val appIcon: AppIcon = AppIcon.CLASSIC,
 ) {
     /** Faut-il ignorer complètement cet événement (compte ou origine filtrés) ? */
     fun isFiltered(event: AgentEvent): Boolean =

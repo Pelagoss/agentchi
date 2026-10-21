@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
@@ -24,6 +25,8 @@ import androidx.wear.compose.material.Text
 import fr.codingpacer.agentchi.data.AgentEvent
 import fr.codingpacer.agentchi.net.EventParser
 import fr.codingpacer.agentchi.notify.PhoneLink
+import fr.codingpacer.agentchi.CompanionApp
+import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.Mood
 import fr.codingpacer.agentchi.pet.Reaction
 import fr.codingpacer.agentchi.text.markdownAnnotated
@@ -44,14 +47,16 @@ class AlertActivity : ComponentActivity() {
             finish()
             return
         }
+        val store = (application as CompanionApp).store
         setContent {
+            val look = store.settings.collectAsStateWithLifecycle(initialValue = null).value?.mascot ?: MascotSprite.Look()
             CompanionTheme {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                 ) {
-                    Mascot(mood = Mood.NEUTRAL, reaction = Reaction.ALERT, modifier = Modifier.size(80.dp, 60.dp))
+                    Mascot(mood = Mood.NEUTRAL, reaction = Reaction.ALERT, look = look, modifier = Modifier.size(80.dp, 64.dp))
                     Text(event.title, style = MaterialTheme.typography.title3, color = BrandOrange, textAlign = TextAlign.Center)
                     Text(event.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(

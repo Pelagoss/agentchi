@@ -3,6 +3,7 @@ package fr.codingpacer.agentchi.ui.settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -34,6 +36,9 @@ import fr.codingpacer.agentchi.data.Agent
 import fr.codingpacer.agentchi.data.CompanionSettings
 import fr.codingpacer.agentchi.data.EventType
 import fr.codingpacer.agentchi.data.next
+import fr.codingpacer.agentchi.pet.MascotSprite
+import fr.codingpacer.agentchi.pet.PetLogic
+import fr.codingpacer.agentchi.ui.pet.Mascot
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.common.rememberTextInput
 
@@ -88,7 +93,7 @@ private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Un
             }
         }
         item { Category("🔗", "Serveur", if (settings.isConnected) "Montre connectée" else "Montre non connectée") { navigate(SettingsRoute.SERVER) } }
-        item { Category("🦀", "Mascotte", pet.name) { navigate(SettingsRoute.MASCOT) } }
+        item { Category("🦀", "Mascotte", "${pet.name} · ${settings.mascot.species.label} · ${settings.mascot.palette.label}") { navigate(SettingsRoute.MASCOT) } }
         item { Category("🧪", "Tests", "Simuler une notification") { navigate(SettingsRoute.TESTS) } }
         item { Category("ℹ️", "À propos", "Version ${BuildConfig.VERSION_NAME}") { navigate(SettingsRoute.ABOUT) } }
     }
@@ -289,10 +294,49 @@ private fun ServerPage(viewModel: CompanionViewModel, onOpenPairing: () -> Unit)
 
 @Composable
 private fun MascotPage(viewModel: CompanionViewModel) {
-    val (pet, _) = viewModel.pet.collectAsStateWithLifecycle().value
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val (pet, now) = viewModel.pet.collectAsStateWithLifecycle().value
+    val look = settings.mascot
+    val level = PetLogic.level(pet.xp)
+    val toast = rememberToast()
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
     Page("Mascotte") {
+        item {
+            Mascot(
+                mood = PetLogic.mood(pet),
+                reaction = PetLogic.currentReaction(pet, now),
+                look = look,
+                modifier = Modifier.size(width = 96.dp, height = 80.dp),
+                onTap = viewModel::caress,
+            )
+        }
         item { Setting("✏️ Nom", pet.name, onClick = editName) }
+        item {
+            Setting("🧬 Espèce", look.species.label) {
+                val species = look.species.next()
+                // Nouvelle espèce : ses couleurs par défaut.
+                viewModel.setLook(look.copy(species = species, palette = species.defaultPalette))
+            }
+        }
+        item { Setting("🎨 Couleurs", look.palette.label) { viewModel.setLook(look.copy(palette = look.palette.next())) } }
+        item {
+            val locked = MascotSprite.Accessory.entries.count { it.level > level }
+            Setting("🎩 Accessoire", look.accessory.label + if (locked > 0) " · $locked à débloquer" else "") {
+                val unlocked = MascotSprite.Accessory.entries.filter { it.level <= level }
+                val next = unlocked[(unlocked.indexOf(look.accessory) + 1) % unlocked.size]
+                viewModel.setLook(look.copy(accessory = next))
+            }
+        }
+        MascotSprite.Accessory.entries.firstOrNull { it.level > level }?.let { next ->
+            item { Note("🔒 ${next.label} au niveau ${next.level} : accomplis des tâches avec ton agent pour monter de niveau.") }
+        }
+        item { Setting("🖼️ Icônes d'actions", settings.iconSet.label) { viewModel.updateSettings { it.copy(iconSet = it.iconSet.next()) } } }
+        item {
+            Setting("📱 Icône de l'appli", settings.appIcon.label) {
+                viewModel.setAppIcon(settings.appIcon.next())
+                toast("L'icône change dans le lanceur d'ici quelques secondes")
+            }
+        }
     }
 }
 

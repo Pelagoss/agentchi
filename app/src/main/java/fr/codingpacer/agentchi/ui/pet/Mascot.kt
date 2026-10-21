@@ -45,6 +45,7 @@ import kotlin.random.Random
 fun Mascot(
     mood: Mood,
     reaction: Reaction,
+    look: MascotSprite.Look,
     modifier: Modifier = Modifier,
     onTap: () -> Unit = {},
 ) {
@@ -92,20 +93,20 @@ fun Mascot(
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val px = minOf(size.width / (MascotSprite.WIDTH + 2), size.height / (MascotSprite.HEIGHT + 4))
+            val px = minOf(size.width / (MascotSprite.WIDTH + 2), size.height / (MascotSprite.HEIGHT + 3))
             val amplitude = if (excited) px * 1.2f else px * 0.35f
             val origin = Offset(
                 (size.width - MascotSprite.WIDTH * px) / 2,
-                (size.height - MascotSprite.HEIGHT * px) / 2 + px - bounce * amplitude - jump.value * px * 2.5f,
+                (size.height - MascotSprite.HEIGHT * px) / 2 - bounce * amplitude - jump.value * px * 2.5f,
             )
             // Ombre au sol
             val shadowW = MascotSprite.WIDTH * px * (0.75f - bounce * 0.1f)
             drawOval(
                 color = Color.Black.copy(alpha = 0.35f),
-                topLeft = Offset((size.width - shadowW) / 2, (size.height + MascotSprite.HEIGHT * px) / 2 + px * 1.2f),
+                topLeft = Offset((size.width - shadowW) / 2, (size.height + MascotSprite.HEIGHT * px) / 2 + px * 0.2f),
                 size = Size(shadowW, px * 0.8f),
             )
-            drawMascot(origin, px, face, altLegs, sleeping = mood == Mood.SLEEPING, breath = bounce)
+            drawMascot(origin, px, look, face, altLegs, sleeping = mood == Mood.SLEEPING, breath = bounce)
         }
         if (bubble != null) {
             Text(
@@ -119,15 +120,28 @@ fun Mascot(
     }
 }
 
-private fun DrawScope.drawMascot(origin: Offset, px: Float, face: MascotSprite.Face, altLegs: Boolean, sleeping: Boolean, breath: Float) {
+private fun DrawScope.drawMascot(
+    origin: Offset,
+    px: Float,
+    look: MascotSprite.Look,
+    face: MascotSprite.Face,
+    altLegs: Boolean,
+    sleeping: Boolean,
+    breath: Float,
+) {
     // Respiration : le corps s'étire très légèrement pendant le sommeil
     val stretch = if (sleeping) 1f + breath * 0.04f else 1f
-    MascotSprite.pixels(face, altLegs, stretch).forEach { p ->
-        drawRect(
-            color = Color(MascotSprite.argb(p.ink)),
-            topLeft = Offset(origin.x + p.x * px, origin.y + (p.y + p.dy) * px),
-            // léger chevauchement pour éviter les lignes d'anticrénelage entre pixels
-            size = Size(px + 0.5f, px * p.h + 0.5f),
-        )
+    MascotSprite.pixels(look, face, altLegs, stretch).forEach { p ->
+        val top = origin.y + (p.y + p.dy) * px
+        if (p.round) {
+            drawCircle(Color(p.argb), radius = px * 0.46f, center = Offset(origin.x + (p.x + 0.5f) * px, top + px * p.h / 2))
+        } else {
+            drawRect(
+                color = Color(p.argb),
+                topLeft = Offset(origin.x + p.x * px, top),
+                // léger chevauchement pour éviter les lignes d'anticrénelage entre pixels
+                size = Size(px + 0.5f, px * p.h + 0.5f),
+            )
+        }
     }
 }

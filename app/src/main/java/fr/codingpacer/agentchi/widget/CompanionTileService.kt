@@ -37,9 +37,10 @@ class CompanionTileService : TileService() {
             val pet = PetLogic.tick(app.store.pet.first(), now)
             val pending = app.responder.pending()
             val face = faceOf(pet, now, pending != null)
+            val look = app.store.settings.first().mascot
             TileBuilders.Tile.Builder()
-                // Une version par expression : la tuile redemande l'image quand elle change.
-                .setResourcesVersion(face.name)
+                // Une version par apparence et expression : la tuile redemande l'image quand elle change.
+                .setResourcesVersion(MascotBitmap.version(look, face))
                 // Les jauges baissent avec le temps.
                 .setFreshnessIntervalMillis(15 * 60_000L)
                 .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(layout(requestParams.deviceConfiguration, pet, now, pending, face)))
@@ -48,7 +49,7 @@ class CompanionTileService : TileService() {
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> =
         SuspendToFutureAdapter.launchFuture(Dispatchers.Default) {
-            val face = MascotSprite.Face.entries.firstOrNull { it.name == requestParams.version } ?: MascotSprite.Face.OPEN
+            val (look, face) = MascotBitmap.parse(requestParams.version)
             ResourceBuilders.Resources.Builder()
                 .setVersion(requestParams.version)
                 .addIdToImageMapping(
@@ -56,7 +57,7 @@ class CompanionTileService : TileService() {
                     ResourceBuilders.ImageResource.Builder()
                         .setInlineResource(
                             ResourceBuilders.InlineImageResource.Builder()
-                                .setData(MascotBitmap.png(face))
+                                .setData(MascotBitmap.png(look, face))
                                 .setWidthPx(MascotBitmap.WIDTH_PX)
                                 .setHeightPx(MascotBitmap.HEIGHT_PX)
                                 // Données PNG, décodées par la tuile.

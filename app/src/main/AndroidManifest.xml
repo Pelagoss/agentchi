@@ -32,12 +32,258 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault">
+            android:theme="@android:style/Theme.DeviceDefault" />
+
+        <!-- Entrées du lanceur, une par icône (réglage Mascotte › Icône de l'appli). -->
+        <!-- icônes:début (généré par AppIconsTest) -->
+        <activity-alias
+            android:name=".launcher.Classic"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:targetActivity=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_CORAL"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_coral"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_coral"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_INK"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_ink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_ink"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_OCEAN"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_ocean"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_ocean"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_MINT"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_mint"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_mint"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_LILAC"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_lilac"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_lilac"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_CRAB_ROSE"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_crab_rose"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_crab_rose"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_CORAL"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_coral"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_coral"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_INK"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_ink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_ink"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_OCEAN"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_ocean"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_ocean"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_MINT"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_mint"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_mint"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_LILAC"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_lilac"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_lilac"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_DOTS_ROSE"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_dots_rose"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_dots_rose"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_CORAL"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_coral"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_coral"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_INK"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_ink"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_ink"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_OCEAN"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_ocean"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_ocean"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_MINT"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_mint"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_mint"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_LILAC"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_lilac"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_lilac"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.Mascot_GHOST_ROSE"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_mascot_ghost_rose"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_mascot_ghost_rose"
+            android:targetActivity=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- icônes:fin -->
 
         <activity
             android:name=".ui.alert.AlertActivity"
