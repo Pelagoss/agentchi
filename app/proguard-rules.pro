@@ -1,7 +1,7 @@
 # kotlinx.serialization
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
--keepclassmembers @kotlinx.serialization.Serializable class com.claudecompanion.** {
+-keepclassmembers @kotlinx.serialization.Serializable class fr.codingpacer.claudecompanion.** {
     *** Companion;
     kotlinx.serialization.KSerializer serializer(...);
 }
