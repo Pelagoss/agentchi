@@ -1,0 +1,73 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "command": "curl -fsS -m 305 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/ask\"",
+            "timeout": 310,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "curl -fsS -m 5 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/h\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "curl -fsS -m 2 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/h\"",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "curl -fsS -m 5 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/h\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "curl -fsS -m 305 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/ask\"",
+            "timeout": 310,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "curl -fsS -m 5 -X POST -H \"Authorization: Bearer ${AGENTCHI_CODE:-}\" -H \"X-Agent: codex\" -H \"Content-Type: application/json\" --data-binary @- \"${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}/h\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

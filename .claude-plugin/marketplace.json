@@ -1,12 +1,14 @@
 {
   "name": "pelagoss",
-  "owner": { "name": "Pelagoss" },
-  "description": "Plugins de Claude Companion (montre Wear OS)",
+  "owner": {
+    "name": "Pelagoss"
+  },
+  "description": "Plugins d'Agentchi (montre Wear OS)",
   "plugins": [
     {
-      "name": "watch-companion",
-      "source": "./plugins/watch-companion",
-      "description": "Envoie les événements de Claude Code (autorisation, réponse attendue, tâche terminée…) à ta montre Claude Companion."
+      "name": "agentchi",
+      "source": "./plugins/agentchi",
+      "description": "Envoie les événements de Claude Code (autorisation, réponse attendue, tâche terminée…) à ta montre Agentchi, et lui permet d'y répondre."
     }
   ]
 }

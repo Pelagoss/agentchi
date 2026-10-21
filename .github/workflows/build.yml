@@ -61,17 +61,17 @@ jobs:
       - name: Build de publication (AAB non signé, vérifie R8)
         run: ./gradlew --no-daemon :app:bundleRelease
 
-      - name: Vérification du plugin Claude Code
-        run: jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/*/hooks/hooks.json
+      - name: Vérification des plugins Claude Code et Codex
+        run: jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/agentchi-codex/plugin.json .agents/plugins/marketplace.json plugins/*/hooks/hooks.json
 
       - name: Renommage de l'APK
         run: |
           mkdir -p apk
-          cp app/build/outputs/apk/debug/app-debug.apk apk/claude-companion-montre.apk
+          cp app/build/outputs/apk/debug/app-debug.apk apk/agentchi-montre.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: claude-companion-debug
+          name: agentchi-debug
           path: apk/*.apk
 
   server:
@@ -95,4 +95,4 @@ jobs:
           go test -race ./...
 
       - name: Image Docker
-        run: docker build -t claude-companion-server .
+        run: docker build -t agentchi-server .

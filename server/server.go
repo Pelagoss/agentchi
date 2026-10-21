@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -59,10 +60,11 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 	s.mux.HandleFunc("GET /{$}", s.handleHome)
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { io.WriteString(w, "ok\n") })
 	s.mux.HandleFunc("GET /v1/cloud-settings.json", s.handleCloudSettings)
+	s.mux.HandleFunc("GET /v1/codex-hooks.json", s.handleCodexHooks)
 
-	// Hook Claude Code : le code d'appairage sert de jeton.
+	// Hook Claude Code ou Codex : le code d'appairage sert de jeton.
 	s.mux.HandleFunc("POST /h", s.handleHook)
-	// Hook qui attend la réponse de la montre (autorisation, question, plan, réponse à Claude).
+	// Hook qui attend la réponse de la montre (autorisation, question, plan, réponse à l'agent).
 	s.mux.HandleFunc("POST /ask", s.handleAsk)
 
 	// API de la montre
@@ -94,11 +96,12 @@ func (s *Server) handleHook(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	in.Agent = agentOf(r.Header.Get("X-Agent"))
 	payload, show := ToPayload(in, c.Label, r.Header.Get("X-Claude-Remote-Session"))
 	if show {
 		s.pushAsync(c.DeviceID, payload)
 	}
-	// Corps vide : Claude Code n'en tire aucune décision ni aucun contexte.
+	// Corps vide : l'agent n'en tire aucune décision ni aucun contexte.
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -314,10 +317,10 @@ func CloudSettings(publicURL string) map[string]any {
 			"url":     publicURL + path,
 			"timeout": timeout,
 			"headers": map[string]string{
-				"Authorization":           "Bearer $CLAUDE_COMPANION_CODE",
+				"Authorization":           "Bearer $AGENTCHI_CODE",
 				"X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID",
 			},
-			"allowedEnvVars": []string{"CLAUDE_COMPANION_CODE", "CLAUDE_CODE_REMOTE_SESSION_ID"},
+			"allowedEnvVars": []string{"AGENTCHI_CODE", "CLAUDE_CODE_REMOTE_SESSION_ID"},
 		}
 	}
 	hooks := map[string]any{}
@@ -330,6 +333,44 @@ func CloudSettings(publicURL string) map[string]any {
 	hooks["PermissionRequest"] = []any{map[string]any{"hooks": []any{ask}}}
 	hooks["PreToolUse"] = []any{map[string]any{"matcher": "AskUserQuestion|ExitPlanMode", "hooks": []any{ask}}}
 	return map[string]any{"hooks": hooks}
+}
+
+// Événements Codex relayés sans attendre, et ceux qui attendent la réponse de la montre.
+// Codex n'a pas d'événement Notification, et ses questions (request_user_input) ne passent pas par les hooks.
+var (
+	codexEvents    = []string{"SessionStart", "SessionEnd", "SubagentStop", "PreCompact"}
+	codexAskEvents = []string{"PermissionRequest", "Stop"}
+)
+
+// CodexHooks : hooks.json de Codex (~/.codex/hooks.json ou plugin agentchi-codex). server est
+// l'adresse du serveur telle que l'écrit la commande shell : une URL, ou une expression comme
+// ${AGENTCHI_SERVER:-https://…}. Le code d'appairage vient de la variable AGENTCHI_CODE.
+func CodexHooks(server string) map[string]any {
+	curl := func(path string, maxTime int) string {
+		return `curl -fsS -m ` + fmt.Sprint(maxTime) + ` -X POST -H "Authorization: Bearer ${AGENTCHI_CODE:-}" -H "X-Agent: codex"` +
+			` -H "Content-Type: application/json" --data-binary @- "` + server + path + `"`
+	}
+	hooks := map[string]any{}
+	for _, e := range codexEvents {
+		hook := map[string]any{"type": "command", "command": curl("/h", 5), "timeout": 10, "async": true}
+		if e == "SessionEnd" {
+			// Codex exécute SessionEnd de façon synchrone, 3 s au plus.
+			hook = map[string]any{"type": "command", "command": curl("/h", 2), "timeout": 3}
+		}
+		hooks[e] = []any{map[string]any{"hooks": []any{hook}}}
+	}
+	for _, e := range codexAskEvents {
+		hooks[e] = []any{map[string]any{"hooks": []any{map[string]any{"type": "command", "command": curl("/ask", askTimeoutHook-5), "timeout": askTimeoutHook}}}}
+	}
+	return map[string]any{"hooks": hooks}
+}
+
+func (s *Server) handleCodexHooks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(CodexHooks(s.publicURL(r)))
 }
 
 func (s *Server) handleCloudSettings(w http.ResponseWriter, r *http.Request) {
@@ -347,7 +388,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 
 var homeTemplate = template.Must(template.New("home").Parse(`<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Claude Companion</title>
+<title>Agentchi</title>
 <style>
 :root{color-scheme:light dark;--bg:#faf9f5;--fg:#1a1918;--muted:#5e5d59;--card:#fff;--line:#e5e3dc;--accent:#d97757}
 @media (prefers-color-scheme:dark){:root{--bg:#1a1918;--fg:#f5f4ef;--muted:#a8a69e;--card:#262624;--line:#3a3936}}
@@ -358,26 +399,32 @@ p,li{color:var(--muted)}code,pre{font-family:ui-monospace,Menlo,monospace;font-s
 pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;color:var(--fg)}
 .k{color:var(--accent);font-weight:600}
 </style></head><body><main>
-<h1>⌚ Claude Companion</h1>
-<p>Ce serveur relaie les hooks Claude Code vers ta montre. Adresse du serveur : <code class="k">{{.URL}}</code></p>
+<h1>⌚ Agentchi</h1>
+<p>Ce serveur relaie les hooks de Claude Code et de Codex vers ta montre, et lui permet d'y répondre. Adresse du serveur : <code class="k">{{.URL}}</code></p>
 
 <h2>1. Sur la montre</h2>
-<p><b>Paramètres › Ordinateurs et cloud › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud : chacun se révoque séparément.</p>
+<p><b>Paramètres › Serveur › Ordinateurs et cloud › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud : chacun se révoque séparément.</p>
 
-<h2>2. Sur chaque ordinateur (terminal, IDE, appli Desktop, Remote Control)</h2>
+<h2>2. Claude Code (terminal, IDE, appli Desktop, Remote Control)</h2>
 <p>Une seule commande, avec ton code :</p>
-<pre>claude plugin install watch-companion --marketplace Pelagoss/claude-companion \
+<pre>claude plugin install agentchi --marketplace Pelagoss/claude-companion \
   --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</pre>
-<p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Sans <code>--config</code>, Claude Code demande les deux valeurs (<code>/plugin</code> › watch-companion › Configure options). Il faut <code>curl</code>, présent par défaut sur macOS, Linux et Windows 10+.</p>
+<p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Sans <code>--config</code>, Claude Code demande les deux valeurs (<code>/plugin</code> › agentchi › Configure options). Il faut <code>curl</code>, présent par défaut sur macOS, Linux et Windows 10+.</p>
 
-<h2>3. Sessions cloud (claude.ai/code)</h2>
+<h2>3. Sessions cloud Claude (claude.ai/code)</h2>
 <p>Les sessions cloud ne chargent pas les plugins. Ajoute ce bloc au <code>.claude/settings.json</code> du dépôt (<a href="/v1/cloud-settings.json">télécharger</a>), puis, dans les paramètres de ton environnement cloud :</p>
 <ul>
-<li>variable d'environnement <code>CLAUDE_COMPANION_CODE=&lt;ton code&gt;</code> ;</li>
+<li>variable d'environnement <code>AGENTCHI_CODE=&lt;ton code&gt;</code> ;</li>
 <li>accès réseau personnalisé autorisant <code>{{.URL}}</code>.</li>
 </ul>
 <p>Chaque personne qui travaille sur le dépôt met son propre code : sans code, le hook ne fait rien.</p>
 <pre>{{.Cloud}}</pre>
+
+<h2>4. Codex (CLI, appli, IDE ; macOS, Linux, WSL)</h2>
+<p>Enregistre les hooks Codex (<a href="/v1/codex-hooks.json">télécharger</a>) et rends ton code visible de Codex :</p>
+<pre>curl -fsS {{.URL}}/v1/codex-hooks.json -o ~/.codex/hooks.json
+echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc</pre>
+<p>Si tu as déjà un <code>~/.codex/hooks.json</code>, fusionne les deux plutôt que de l'écraser. Codex ignore un hook tant que tu ne l'as pas approuvé : lance <code>/hooks</code> dans Codex et approuve ceux d'Agentchi. Avec Codex, la montre reçoit les fins de tâche et les demandes d'autorisation, et peut y répondre ; les questions à choix restent sur l'ordinateur (Codex ne les passe pas aux hooks).</p>
 </main></body></html>
 `))
 

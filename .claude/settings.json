@@ -5,16 +5,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://agentchi.codingpacer.fr/h"
           }
         ]
       }
@@ -24,16 +24,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/ask"
+            "url": "https://agentchi.codingpacer.fr/ask"
           }
         ]
       }
@@ -43,16 +43,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://agentchi.codingpacer.fr/h"
           }
         ]
       }
@@ -63,16 +63,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/ask"
+            "url": "https://agentchi.codingpacer.fr/ask"
           }
         ]
       }
@@ -82,16 +82,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://agentchi.codingpacer.fr/h"
           }
         ]
       }
@@ -101,16 +101,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/ask"
+            "url": "https://agentchi.codingpacer.fr/ask"
           }
         ]
       }
@@ -120,16 +120,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://agentchi.codingpacer.fr/h"
           }
         ]
       }
@@ -139,16 +139,16 @@
         "hooks": [
           {
             "allowedEnvVars": [
-              "CLAUDE_COMPANION_CODE",
+              "AGENTCHI_CODE",
               "CLAUDE_CODE_REMOTE_SESSION_ID"
             ],
             "headers": {
-              "Authorization": "Bearer $CLAUDE_COMPANION_CODE",
+              "Authorization": "Bearer $AGENTCHI_CODE",
               "X-Claude-Remote-Session": "$CLAUDE_CODE_REMOTE_SESSION_ID"
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://claude-companion.codingpacer.fr/h"
+            "url": "https://agentchi.codingpacer.fr/h"
           }
         ]
       }

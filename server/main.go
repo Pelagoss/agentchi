@@ -1,4 +1,4 @@
-// Serveur Claude Companion : reçoit les hooks Claude Code (plugin ou hook http)
+// Serveur Agentchi : reçoit les hooks Claude Code (plugin ou hook http)
 // et les pousse à la montre par Firebase Cloud Messaging.
 //
 // Configuration par variables d'environnement :
@@ -59,7 +59,7 @@ func main() {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-	log.Printf("Claude Companion écoute sur %s", addr)
+	log.Printf("Agentchi écoute sur %s", addr)
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}

@@ -16,25 +16,25 @@ fun releaseProp(name: String): String? =
     releaseProps.getProperty(name) ?: System.getenv("RELEASE_" + name.replace(Regex("([A-Z])"), "_$1").uppercase())
 
 android {
-    namespace = "fr.codingpacer.claudecompanion"
+    namespace = "fr.codingpacer.agentchi"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "fr.codingpacer.claudecompanion"
+        applicationId = "fr.codingpacer.agentchi"
         // Wear OS 3 (Galaxy Watch4 et plus récentes)
         minSdk = 30
         targetSdk = 34
         // Montre et téléphone partagent la fiche Play Store : codes de version distincts.
-        versionCode = 2_000_002
-        versionName = "0.2.0"
+        versionCode = 2_000_003
+        versionName = "0.3.0"
 
-        // Serveur Claude Companion proposé par défaut (modifiable sur la montre) :
+        // Serveur Agentchi proposé par défaut (modifiable sur la montre) :
         // ./gradlew -PcompanionServer=https://cc.example.fr … ou variable COMPANION_SERVER.
         val companionServer = (findProperty("companionServer") as String?) ?: System.getenv("COMPANION_SERVER") ?: ""
         buildConfigField("String", "COMPANION_SERVER", "\"${companionServer.trimEnd('/')}\"")
 
         // Projet Firebase pour le push FCM (console Firebase › Paramètres du projet › appli Android
-        // « fr.codingpacer.claudecompanion »). Valeurs de google-services.json, passées en propriétés Gradle
+        // « fr.codingpacer.agentchi »). Valeurs de google-services.json, passées en propriétés Gradle
         // (-PfirebaseAppId=…) ou en variables d'environnement (FIREBASE_APP_ID…) : rien n'est versionné.
         fun firebase(property: String, env: String) =
             "\"${(findProperty(property) as String?) ?: System.getenv(env) ?: ""}\""
