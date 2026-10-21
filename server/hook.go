@@ -48,6 +48,7 @@ const maxMessageRunes = 300
 
 var (
 	spaces         = regexp.MustCompile(`\s+`)
+	inlineSpaces   = regexp.MustCompile(`[ \t]+`)
 	remoteSessionR = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 )
 
@@ -114,7 +115,7 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 func (p *Payload) describe(in HookInput, remoteSession string) {
 	p.Project = projectOf(in.Cwd)
 	p.Session = truncate(in.SessionID, 8)
-	p.Message = oneLine(p.Message, maxMessageRunes)
+	p.Message = compact(p.Message, maxMessageRunes)
 	if p.Message == "" {
 		p.Message = "Événement Claude (" + p.Type + ")"
 	}
@@ -132,8 +133,25 @@ func projectOf(cwd string) string {
 	return path.Base(strings.ReplaceAll(strings.TrimRight(cwd, `/\`), `\`, "/"))
 }
 
-func oneLine(s string, n int) string {
-	return truncate(strings.TrimSpace(spaces.ReplaceAllString(s, " ")), n)
+// compact garde les retours à la ligne (la montre affiche le Markdown de Claude : listes, titres…)
+// et l'indentation, mais pas les espaces en trop ni plus d'une ligne vide d'affilée.
+func compact(s string, n int) string {
+	var out []string
+	blank := false
+	for _, line := range strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n") {
+		line = strings.TrimRight(strings.ReplaceAll(line, "\t", "  "), " ")
+		if line == "" {
+			if !blank && len(out) > 0 {
+				out = append(out, "")
+			}
+			blank = true
+			continue
+		}
+		blank = false
+		body := strings.TrimLeft(line, " ")
+		out = append(out, line[:len(line)-len(body)]+inlineSpaces.ReplaceAllString(body, " "))
+	}
+	return truncate(strings.TrimSpace(strings.Join(out, "\n")), n)
 }
 
 func (p Payload) JSON() string {

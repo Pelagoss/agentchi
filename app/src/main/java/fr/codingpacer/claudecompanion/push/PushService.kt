@@ -13,7 +13,7 @@ class PushService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         EventParser.askEnd(message.data)?.let {
-            (application as CompanionApp).processor.askEnded(it)
+            runBlocking { (application as CompanionApp).processor.askEnded(it) }
             return
         }
         val event = EventParser.fromPush(message.data) ?: return

@@ -22,7 +22,9 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TitleCard
 import fr.codingpacer.claudecompanion.notify.PhoneLink
+import fr.codingpacer.claudecompanion.text.markdownAnnotated
 import fr.codingpacer.claudecompanion.ui.CompanionViewModel
+import fr.codingpacer.claudecompanion.ui.ask.AskActivity
 
 @Composable
 fun HistoryScreen(viewModel: CompanionViewModel) {
@@ -45,8 +47,14 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                 }
             }
             items(history, key = { it.id }) { event ->
+                val pending = event.isPendingAsk
                 TitleCard(
-                    onClick = { if (event.openableOnPhone) PhoneLink.open(context, event) },
+                    onClick = {
+                        when {
+                            pending -> context.startActivity(AskActivity.intent(context, event))
+                            event.openableOnPhone -> PhoneLink.open(context, event)
+                        }
+                    },
                     title = { Text(event.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     time = {
                         Text(
@@ -57,8 +65,14 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(event.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (event.openableOnPhone) Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
-                    Text(event.message, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                    when {
+                        pending -> Text("⌚ Toucher pour répondre", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                        event.openableOnPhone -> Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                    }
+                    Text(markdownAnnotated(event.message), maxLines = 4, overflow = TextOverflow.Ellipsis)
+                    event.answer?.let {
+                        Text("↩️ $it", style = MaterialTheme.typography.caption2, color = MaterialTheme.colors.primary, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
             if (history.isNotEmpty()) {

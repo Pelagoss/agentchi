@@ -22,7 +22,7 @@ type Config struct {
 	// Faire confiance à X-Forwarded-For / X-Forwarded-Proto (derrière un reverse proxy).
 	TrustProxy bool
 	MaxDevices int
-	// Attente maximale d'une réponse de la montre (défaut 110 s).
+	// Attente d'une réponse de la montre, à la place du réglage de chaque montre (tests).
 	AskTimeout time.Duration
 }
 
@@ -199,7 +199,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetDevice(w http.ResponseWriter, _ *http.Request, d *Device) {
-	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != "", "answers": d.Answers})
+	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != "", "answers": d.Answers, "answer_timeout": d.AnswerTimeout})
 }
 
 func (s *Server) handleSetPush(w http.ResponseWriter, r *http.Request, d *Device) {
@@ -303,8 +303,8 @@ func (s *Server) publicURL(r *http.Request) string {
 // Événements relayés depuis une session cloud. SessionStart n'accepte pas les hooks http.
 var cloudEvents = []string{"Notification", "StopFailure", "SubagentStop", "SessionEnd", "PreCompact"}
 
-// askTimeoutHook : délai du hook /ask, un peu au-delà de defaultAskTimeout.
-const askTimeoutHook = 120
+// askTimeoutHook : délai du hook /ask, un peu au-delà de maxAskTimeout.
+const askTimeoutHook = 310
 
 // CloudSettings : bloc à ajouter au .claude/settings.json d'un dépôt pour ses sessions cloud.
 func CloudSettings(publicURL string) map[string]any {

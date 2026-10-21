@@ -2,9 +2,9 @@
 
 Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pendant que Claude travaille :
 
-- 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone.
+- 🔔 **Les événements de Claude Code** sur la montre : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks Claude Code** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone. Le Markdown de Claude est mis en forme : gras, italique, `code`, titres, listes à puces.
 - ⌚ **Répondre à Claude depuis la montre** : autoriser ou refuser une commande, choisir parmi les options qu'il propose (une ou plusieurs), approuver son plan, ou lui répondre au clavier ou à la voix quand il a fini.
-- 🦀 **Une mascotte façon tamagotchi** : nourris-la, joue avec elle, mets-la au lit. Elle réagit en direct : elle fait la fête quand Claude a fini et s'affole quand il t'attend.
+- 🦀 **Une mascotte façon tamagotchi** : nourris-la, joue avec elle, mets-la au lit. Elle réagit en direct : elle fait la fête quand Claude a fini et s'affole quand il t'attend. Elle a sa **tuile** et sa **complication** pour le cadran.
 - ⚙️ **Des paramètres** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, heures calmes.
 
 > Application non officielle, sans lien avec Anthropic.
@@ -154,11 +154,11 @@ Sur la montre : **Paramètres › Répondre depuis la montre › Répondre à Cl
 | propose un plan (`ExitPlanMode`) | `PreToolUse` | ✅ Approuver, ✍️ Demander des changements |
 | a fini et attend ta réponse | `Stop` | 💬 Réponse au clavier, à la voix ou rapide (« Continue »…), ou 🏁 Terminer |
 
-Les réponses simples se donnent depuis la notification. Touche-la pour l'écran complet : texte entier, choix multiples, compte à rebours.
+Les réponses simples se donnent depuis la notification. Touche-la pour l'écran complet : texte entier, choix multiples, compte à rebours. La **tuile** et la **complication** signalent aussi une question en attente et y mènent d'un toucher. L'**historique** garde ce que tu as répondu sous chaque question.
 
-Le hook attend ta réponse **2 minutes au plus**. Ensuite, ou si tu **balaies la notification**, Claude Code pose la question à l'écran comme d'habitude. Réglage désactivé, le serveur rend la main tout de suite : rien ne change sur l'ordinateur, la fin de tâche reste une simple notification.
+Le hook attend ta réponse **1, 2 ou 5 minutes** selon le réglage *Attendre ma réponse* (2 par défaut). Les **réponses rapides** (« Oui », « Continue »…) se modifient dans les paramètres. Ensuite, ou si tu **balaies la notification**, Claude Code pose la question à l'écran comme d'habitude. Réglage désactivé, le serveur rend la main tout de suite : rien ne change sur l'ordinateur, la fin de tâche reste une simple notification.
 
-Il faut le plugin **0.2.0** (`claude plugin update watch-companion`). Pour une session cloud, recopie le bloc de `/v1/cloud-settings.json`. Derrière un reverse proxy, laisse les requêtes `POST /ask` ouvertes 2 minutes (Traefik et Caddy le font par défaut).
+Il faut le plugin **0.3.0** (`claude plugin update watch-companion`). Pour une session cloud, recopie le bloc de `/v1/cloud-settings.json`. Derrière un reverse proxy, laisse les requêtes `POST /ask` ouvertes 5 minutes (Traefik et Caddy le font par défaut).
 
 ## La mascotte
 
@@ -169,6 +169,9 @@ Il faut le plugin **0.2.0** (`claude plugin update watch-companion`). Pour une s
 | 💖 Bonheur | −4 / h | Jouer (+20), la caresser (tap), chaque tâche terminée par Claude (+10) |
 
 Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niveau tous les 100 XP. Tu peux la renommer dans les paramètres.
+
+- **Tuile** (balaie le cadran, puis *+* › Claude Companion) : humeur, niveau et jauges. Quand Claude attend une réponse, la tuile affiche la question avec un bouton **Répondre**.
+- **Complication** *Mascotte Claude* (appui long sur le cadran › Modifier) : forme moyenne de la mascotte en jauge ou en texte court, 🔔 quand Claude attend.
 
 ## Publier sur le Play Store
 
@@ -197,4 +200,4 @@ keystore/         clé de debug (même signature d'un build à l'autre)
 
 ## Idées pour la suite
 
-- Tuile Wear OS et complication avec l'humeur de la mascotte
+- Répondre à plusieurs sessions en parallèle depuis la tuile

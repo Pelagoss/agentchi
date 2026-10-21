@@ -44,8 +44,8 @@ import fr.codingpacer.claudecompanion.data.AskAnswer
 import fr.codingpacer.claudecompanion.data.AskQuestion
 import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.net.EventParser
-import fr.codingpacer.claudecompanion.notify.AnswerReceiver
 import fr.codingpacer.claudecompanion.sync.AskResponder
+import fr.codingpacer.claudecompanion.text.markdownAnnotated
 import fr.codingpacer.claudecompanion.ui.common.rememberTextInput
 import fr.codingpacer.claudecompanion.ui.theme.ClaudeOrange
 import fr.codingpacer.claudecompanion.ui.theme.CompanionTheme
@@ -64,31 +64,33 @@ class AskActivity : ComponentActivity() {
             finish()
             return
         }
-        val responder = (application as CompanionApp).responder
+        val app = application as CompanionApp
         setContent {
-            CompanionTheme { AskScreen(event, ask, responder, onDone = ::finish) }
+            val settings by app.store.settings.collectAsStateWithLifecycle(initialValue = null)
+            CompanionTheme {
+                AskScreen(event, ask, app.responder, quickReplies = settings?.quickReplies.orEmpty(), onDone = ::finish)
+            }
         }
     }
 
     companion object {
         private const val EXTRA_EVENT = "event"
 
-        fun pendingIntent(context: Context, event: ClaudeEvent): PendingIntent {
-            val intent = Intent(context, AskActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(EXTRA_EVENT, EventParser.json.encodeToString(ClaudeEvent.serializer(), event))
-            return PendingIntent.getActivity(
-                context,
-                event.notificationId,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-        }
+        fun intent(context: Context, event: ClaudeEvent): Intent = Intent(context, AskActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(EXTRA_EVENT, EventParser.json.encodeToString(ClaudeEvent.serializer(), event))
+
+        fun pendingIntent(context: Context, event: ClaudeEvent): PendingIntent = PendingIntent.getActivity(
+            context,
+            event.notificationId,
+            intent(context, event),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 }
 
 @Composable
-private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, onDone: () -> Unit) {
+private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, quickReplies: List<String>, onDone: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberScalingLazyListState(initialCenterItemIndex = 0)
@@ -159,7 +161,7 @@ private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, onD
             }
             when (ask.kind) {
                 Ask.PERMISSION -> {
-                    item { Text(event.message, style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
+                    item { Text(markdownAnnotated(event.message), style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
                     if (ask.detail.isNotBlank()) item { Detail(ask.detail, code = true) }
                     item { Action("✅ Autoriser", busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
                     if (ask.always) {
@@ -193,7 +195,7 @@ private fun AskScreen(event: ClaudeEvent, ask: Ask, responder: AskResponder, onD
                 Ask.REPLY -> {
                     item { Detail(ask.detail.ifBlank { event.message }) }
                     item { Action("🎤 Répondre…", busy, primary = true, onClick = reply) }
-                    AnswerReceiver.QUICK_REPLIES.forEach { text ->
+                    quickReplies.forEach { text ->
                         item { Action(text, busy) { send(AskAnswer(AskAnswer.ALLOW, message = text)) } }
                     }
                     item { Action("🏁 Terminer", busy) { send(AskAnswer.pass) } }
@@ -217,7 +219,7 @@ private fun ScalingLazyListScope.question(
     onOther: () -> Unit,
 ) {
     item { ListHeader { Text(q.header.ifBlank { "Question" }, color = MaterialTheme.colors.primary) } }
-    item { Text(q.question, style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
+    item { Text(markdownAnnotated(q.question), style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
     q.options.forEach { option ->
         item {
             val selected = option.label in chosen[q.question].orEmpty()
@@ -232,9 +234,9 @@ private fun ScalingLazyListScope.question(
                     }
                     if (!q.multi) other.remove(q.question)
                 },
-                label = { Text(option.label, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                label = { Text(markdownAnnotated(option.label), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 secondaryLabel = if (option.description.isNotBlank()) {
-                    { Text(option.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    { Text(markdownAnnotated(option.description), maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 } else {
                     null
                 },
@@ -248,15 +250,14 @@ private fun ScalingLazyListScope.question(
     }
 }
 
+/** Commande ([code], affichée telle quelle) ou texte Markdown de Claude (plan, message). */
 @Composable
 private fun Detail(text: String, code: Boolean = false) {
-    Text(
-        text,
-        style = MaterialTheme.typography.caption2,
-        fontFamily = if (code) FontFamily.Monospace else null,
-        maxLines = if (code) 8 else 40,
-        overflow = TextOverflow.Ellipsis,
-    )
+    if (code) {
+        Text(text, style = MaterialTheme.typography.caption2, fontFamily = FontFamily.Monospace, maxLines = 8, overflow = TextOverflow.Ellipsis)
+    } else {
+        Text(markdownAnnotated(text), style = MaterialTheme.typography.caption2, maxLines = 40, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 @Composable

@@ -26,6 +26,7 @@ import fr.codingpacer.claudecompanion.net.EventParser
 import fr.codingpacer.claudecompanion.notify.PhoneLink
 import fr.codingpacer.claudecompanion.pet.Mood
 import fr.codingpacer.claudecompanion.pet.Reaction
+import fr.codingpacer.claudecompanion.text.markdownAnnotated
 import fr.codingpacer.claudecompanion.ui.pet.ClaudeMascot
 import fr.codingpacer.claudecompanion.ui.theme.ClaudeOrange
 import fr.codingpacer.claudecompanion.ui.theme.CompanionTheme
@@ -54,7 +55,7 @@ class AlertActivity : ComponentActivity() {
                     Text(event.title, style = MaterialTheme.typography.title3, color = ClaudeOrange, textAlign = TextAlign.Center)
                     Text(event.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        event.message,
+                        markdownAnnotated(event.message),
                         style = MaterialTheme.typography.caption2,
                         textAlign = TextAlign.Center,
                         maxLines = 3,

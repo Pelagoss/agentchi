@@ -104,6 +104,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.wear.tiles)
+    implementation(libs.wear.protolayout)
+    implementation(libs.wear.protolayout.material)
+    implementation(libs.wear.complications.data.source)
+    implementation(libs.androidx.concurrent.futures)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -21,8 +22,11 @@ import (
 // est vide : Claude Code affiche la question comme d'habitude. Rien n'est écrit sur disque.
 
 const (
-	// Le hook attend 120 s (plugin et hook http) : on rend la main avant.
-	defaultAskTimeout = 110 * time.Second
+	// Attente par défaut, et bornes du réglage de la montre. Le hook attend 310 s
+	// (plugin et hook http) : on rend toujours la main avant.
+	defaultAskTimeout = 120 * time.Second
+	minAskTimeout     = 30 * time.Second
+	maxAskTimeout     = 300 * time.Second
 	maxAsksPerDevice  = 10
 	// Message « data » FCM : 4 Ko au plus, clés comprises.
 	maxAskPayload  = 3500
@@ -137,8 +141,10 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	remote := r.Header.Get("X-Claude-Remote-Session")
-	view, payload, askable := buildAsk(in, c.Label, remote, s.askTimeout())
-	if !askable || !s.store.Answers(c.DeviceID) {
+	answers, deviceTimeout := s.store.Answers(c.DeviceID)
+	timeout := s.askTimeout(deviceTimeout)
+	view, payload, askable := buildAsk(in, c.Label, remote, timeout)
+	if !askable || !answers {
 		// Pas de réponse possible : Stop reste une simple notification, comme avec /h.
 		if p, show := ToPayload(in, c.Label, remote); show {
 			s.pushAsync(c.DeviceID, p)
@@ -153,7 +159,7 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), pushTimeout)
-	err := s.push(ctx, c.DeviceID, payload, s.askTimeout())
+	err := s.push(ctx, c.DeviceID, payload, timeout)
 	cancel()
 	if err != nil {
 		s.asks.remove(p.id)
@@ -163,8 +169,8 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// La réponse peut prendre jusqu'à askTimeout : au-delà du WriteTimeout du serveur.
-	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(s.askTimeout() + 10*time.Second))
-	timer := time.NewTimer(s.askTimeout())
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(timeout + 10*time.Second))
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
 	case out := <-p.done:
@@ -183,11 +189,15 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) askTimeout() time.Duration {
-	if s.cfg.AskTimeout > 0 {
+// askTimeout : attente choisie sur la montre, bornée ; Config.AskTimeout la remplace (tests).
+func (s *Server) askTimeout(device time.Duration) time.Duration {
+	switch {
+	case s.cfg.AskTimeout > 0:
 		return s.cfg.AskTimeout
+	case device == 0:
+		return defaultAskTimeout
 	}
-	return defaultAskTimeout
+	return min(max(device, minAskTimeout), maxAskTimeout)
 }
 
 // endAsk retire une question restée sans réponse et la fait disparaître de la montre.
@@ -218,12 +228,18 @@ func (s *Server) handleAnswer(w http.ResponseWriter, r *http.Request, d *Device)
 func (s *Server) handleSetAnswers(w http.ResponseWriter, r *http.Request, d *Device) {
 	var body struct {
 		Enabled bool `json:"enabled"`
+		// Secondes, facultatif.
+		Timeout int `json:"timeout"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "JSON invalide")
 		return
 	}
-	if err := s.store.SetAnswers(d.ID, body.Enabled); err != nil {
+	if body.Timeout != 0 && (time.Duration(body.Timeout)*time.Second < minAskTimeout || time.Duration(body.Timeout)*time.Second > maxAskTimeout) {
+		httpError(w, http.StatusBadRequest, fmt.Sprintf("délai entre %d et %d secondes", int(minAskTimeout.Seconds()), int(maxAskTimeout.Seconds())))
+		return
+	}
+	if err := s.store.SetAnswers(d.ID, body.Enabled, body.Timeout); err != nil {
 		serverError(w, err)
 		return
 	}

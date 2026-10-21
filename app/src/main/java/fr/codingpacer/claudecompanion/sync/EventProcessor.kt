@@ -14,6 +14,8 @@ class EventProcessor(
     private val store: CompanionStore,
     private val notifier: EventNotifier,
     private val responder: AskResponder,
+    /** Mascotte ou questions changées : tuile et complication à redessiner. */
+    private val onChange: () -> Unit = {},
 ) {
     private val mutex = Mutex()
 
@@ -29,7 +31,7 @@ class EventProcessor(
     }
 
     /** Le serveur retire une question restée sans réponse. */
-    fun askEnded(askId: String) = responder.end(askId)
+    suspend fun askEnded(askId: String) = mutex.withLock { responder.expired(askId) }
 
     /** Simule un événement (bouton « tester » des paramètres). */
     suspend fun test(event: ClaudeEvent) = mutex.withLock { handle(event, record = false) }
@@ -38,6 +40,7 @@ class EventProcessor(
         if (record && !store.addEvent(event)) return // déjà traité
         val now = System.currentTimeMillis()
         store.updatePet { PetLogic.onClaudeEvent(it, event.type, now) }
+        onChange()
 
         val settings = store.settings.first()
         if (event.type !in settings.enabledEvents) {

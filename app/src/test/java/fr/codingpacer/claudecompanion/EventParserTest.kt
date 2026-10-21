@@ -2,6 +2,8 @@ package fr.codingpacer.claudecompanion
 
 import fr.codingpacer.claudecompanion.data.Ask
 import fr.codingpacer.claudecompanion.data.AskAnswer
+import fr.codingpacer.claudecompanion.data.AskQuestion
+import fr.codingpacer.claudecompanion.data.ClaudeEvent
 import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.EventType
 import fr.codingpacer.claudecompanion.net.EventParser
@@ -159,5 +161,38 @@ class EventParserTest {
         )
         assertEquals("""{"decision":"allow","answers":{"Quelle base ?":"SQLite"}}""", json)
         assertEquals("""{"decision":"pass"}""", EventParser.json.encodeToString(AskAnswer.serializer(), AskAnswer.pass))
+    }
+
+    @Test
+    fun `resume des reponses pour l historique`() {
+        val permission = Ask(id = "q1", kind = Ask.PERMISSION)
+        assertEquals("✅ Autorisé", AskAnswer(AskAnswer.ALLOW).summary(permission))
+        assertEquals("♾️ Toujours autorisé", AskAnswer(AskAnswer.ALWAYS).summary(permission))
+        assertEquals("❌ Refusé : pas sur la prod", AskAnswer(AskAnswer.DENY, "pas sur la prod").summary(permission))
+        assertEquals("💻 Laissée à l'ordinateur", AskAnswer.pass.summary(permission))
+
+        val question = Ask(
+            id = "q2",
+            kind = Ask.QUESTION,
+            questions = listOf(AskQuestion("Base ?"), AskQuestion("Étapes ?", multi = true)),
+        )
+        assertEquals("✅ SQLite · Tests, Docs", AskAnswer(AskAnswer.ALLOW, answers = mapOf("Étapes ?" to "Tests, Docs", "Base ?" to "SQLite")).summary(question))
+
+        val plan = Ask(id = "q3", kind = Ask.PLAN)
+        assertEquals("✍️ Changements demandés : sans la CI", AskAnswer(AskAnswer.DENY, "sans la CI").summary(plan))
+
+        val reply = Ask(id = "q4", kind = Ask.REPLY)
+        assertEquals("💬 Continue", AskAnswer(AskAnswer.ALLOW, "Continue").summary(reply))
+        assertEquals("🏁 Terminé", AskAnswer.pass.summary(reply))
+    }
+
+    @Test
+    fun `question en attente tant qu elle n a ni reponse ni echeance passee`() {
+        val now = System.currentTimeMillis() / 1000
+        val event = ClaudeEvent(id = "e", type = EventType.PERMISSION, message = "m", time = now, ask = Ask(id = "q", kind = Ask.PERMISSION, expires = now + 60))
+        assertTrue(event.isPendingAsk)
+        assertFalse(event.copy(answer = "✅ Autorisé").isPendingAsk)
+        assertFalse(event.copy(ask = event.ask!!.copy(expires = now - 1)).isPendingAsk)
+        assertFalse(event.copy(ask = null).isPendingAsk)
     }
 }

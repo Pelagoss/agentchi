@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +28,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import fr.codingpacer.claudecompanion.BuildConfig
+import fr.codingpacer.claudecompanion.data.CompanionSettings
 import fr.codingpacer.claudecompanion.data.EventType
 import fr.codingpacer.claudecompanion.data.next
 import fr.codingpacer.claudecompanion.ui.CompanionViewModel
@@ -45,6 +50,13 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
         else toast("L'adresse doit commencer par https://")
     }
     val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
+    // Réponse rapide dépliée (Modifier / Supprimer), et celle en cours de saisie (hors de la liste : nouvelle).
+    var selectedReply by remember { mutableStateOf<Int?>(null) }
+    var editingReply by remember { mutableIntStateOf(0) }
+    val editReply = rememberTextInput("Réponse rapide") { text ->
+        viewModel.setQuickReply(editingReply, text)
+        selectedReply = null
+    }
 
     Scaffold(
         timeText = { TimeText() },
@@ -80,9 +92,12 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                 }
             }
             item {
+                Setting("⏱ Attendre ma réponse", settings.answerDelay.label) { viewModel.nextAnswerDelay(onError = ::toast) }
+            }
+            item {
                 Text(
                     if (settings.remoteAnswers) {
-                        "Claude attend ta réponse jusqu'à 2 min, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
+                        "Claude attend ta réponse ${settings.answerDelay.label}, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
                     } else {
                         "À activer quand tu t'éloignes : les questions de Claude arrivent ici avec leurs réponses."
                     },
@@ -90,6 +105,39 @@ fun SettingsScreen(viewModel: CompanionViewModel, onOpenPairing: () -> Unit) {
                     color = MaterialTheme.colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+            }
+            section("Réponses rapides")
+            settings.quickReplies.forEachIndexed { index, reply ->
+                item {
+                    Setting("💬 $reply", if (selectedReply == index) "Toucher pour fermer" else "Toucher pour modifier") {
+                        selectedReply = if (selectedReply == index) null else index
+                    }
+                }
+                if (selectedReply == index) {
+                    item {
+                        Setting("✏️ Modifier", reply) {
+                            editingReply = index
+                            editReply()
+                        }
+                    }
+                    item {
+                        Setting("🗑️ Supprimer", reply) {
+                            viewModel.removeQuickReply(index)
+                            selectedReply = null
+                        }
+                    }
+                }
+            }
+            if (settings.quickReplies.size < CompanionSettings.MAX_QUICK_REPLIES) {
+                item {
+                    Setting("➕ Ajouter", "Nouvelle réponse rapide") {
+                        editingReply = settings.quickReplies.size
+                        editReply()
+                    }
+                }
+            }
+            if (settings.quickReplies != CompanionSettings.DEFAULT_QUICK_REPLIES) {
+                item { Setting("↩️ Rétablir", "Réponses par défaut", onClick = viewModel::resetQuickReplies) }
             }
 
             // --- Événements ---

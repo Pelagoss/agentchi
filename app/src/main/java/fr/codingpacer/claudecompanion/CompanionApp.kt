@@ -7,6 +7,7 @@ import fr.codingpacer.claudecompanion.notify.EventNotifier
 import fr.codingpacer.claudecompanion.push.Push
 import fr.codingpacer.claudecompanion.sync.AskResponder
 import fr.codingpacer.claudecompanion.sync.EventProcessor
+import fr.codingpacer.claudecompanion.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
@@ -28,7 +29,7 @@ class CompanionApp : Application() {
         store = CompanionStore(this)
         notifier = EventNotifier(this).also { it.createChannels() }
         responder = AskResponder(this, store, { api }, notifier)
-        processor = EventProcessor(store, notifier, responder)
+        processor = EventProcessor(store, notifier, responder, onChange = { Widgets.refresh(this) })
         Push.init(this)
     }
 }

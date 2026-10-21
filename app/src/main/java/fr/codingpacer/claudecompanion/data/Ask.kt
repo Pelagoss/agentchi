@@ -55,6 +55,29 @@ data class AskAnswer(
     /** Question → libellé choisi (choix multiples séparés par des virgules) ou texte libre. */
     val answers: Map<String, String>? = null,
 ) {
+    /** La réponse en une ligne, pour l'historique. */
+    fun summary(ask: Ask): String = when {
+        decision == PASS -> if (ask.kind == Ask.REPLY) "🏁 Terminé" else "💻 Laissée à l'ordinateur"
+        ask.kind == Ask.PERMISSION -> when (decision) {
+            ALWAYS -> "♾️ Toujours autorisé"
+            DENY -> "❌ Refusé" + message.suffix()
+            else -> "✅ Autorisé"
+        }
+        ask.kind == Ask.PLAN -> if (decision == DENY) {
+            if (message.isNullOrBlank()) "❌ Plan refusé" else "✍️ Changements demandés : $message"
+        } else {
+            "✅ Plan approuvé"
+        }
+        ask.kind == Ask.QUESTION -> if (decision == DENY) {
+            "❌ Pas de réponse" + message.suffix()
+        } else {
+            "✅ " + ask.questions.mapNotNull { answers?.get(it.question) }.joinToString(" · ")
+        }
+        else -> "💬 " + message.orEmpty()
+    }
+
+    private fun String?.suffix() = if (isNullOrBlank()) "" else " : $this"
+
     companion object {
         const val ALLOW = "allow"
         const val ALWAYS = "always"
@@ -64,5 +87,8 @@ data class AskAnswer(
         const val PASS = "pass"
 
         val pass = AskAnswer(PASS)
+
+        /** Historique : question restée sans réponse de la montre. */
+        const val UNANSWERED = "⏱ Sans réponse : posée sur l'ordinateur"
     }
 }

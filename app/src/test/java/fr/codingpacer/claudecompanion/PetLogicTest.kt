@@ -1,6 +1,7 @@
 package fr.codingpacer.claudecompanion
 
 import fr.codingpacer.claudecompanion.data.EventType
+import fr.codingpacer.claudecompanion.pet.MascotSprite
 import fr.codingpacer.claudecompanion.pet.Mood
 import fr.codingpacer.claudecompanion.pet.PetLogic
 import fr.codingpacer.claudecompanion.pet.PetState
@@ -64,5 +65,26 @@ class PetLogicTest {
         assertEquals(Mood.SLEEPING, PetLogic.mood(PetState(sleeping = true)))
         assertEquals(Mood.HAPPY, PetLogic.mood(PetState(satiety = 90f, energy = 90f, happiness = 90f)))
         assertTrue(PetLogic.level(250) == 3)
+    }
+
+    @Test
+    fun `forme et emoji pour la tuile et la complication`() {
+        assertEquals(80, PetLogic.wellbeing(PetState()))
+        assertEquals(0, PetLogic.wellbeing(PetState(satiety = 0f, energy = 0f, happiness = 0f)))
+        assertEquals("😊", PetLogic.emoji(PetLogic.mood(PetState())))
+        assertEquals("😴", PetLogic.emoji(PetLogic.mood(PetState(sleeping = true))))
+        Mood.entries.forEach { assertTrue(PetLogic.emoji(it).isNotEmpty()) }
+    }
+
+    @Test
+    fun `sprite de la mascotte dans la grille`() {
+        MascotSprite.Face.entries.forEach { face ->
+            val pixels = MascotSprite.pixels(face)
+            assertTrue(pixels.all { it.x in 0 until MascotSprite.WIDTH && it.y in 0 until MascotSprite.HEIGHT })
+            assertTrue(pixels.any { it.ink == MascotSprite.Ink.EYE })
+        }
+        assertEquals(MascotSprite.Face.CLOSED, MascotSprite.face(Mood.SLEEPING, Reaction.NONE))
+        assertEquals(MascotSprite.Face.WIDE, MascotSprite.face(Mood.HAPPY, Reaction.ALERT))
+        assertEquals("💤", MascotSprite.bubble(Mood.SLEEPING, Reaction.NONE))
     }
 }

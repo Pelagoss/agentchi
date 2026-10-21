@@ -8,6 +8,13 @@ enum class AlertStyle(val label: String) {
     SILENT("Discrète"),
 }
 
+/** Attente maximale d'une réponse de la montre, avant que l'ordinateur pose la question. */
+enum class AnswerDelay(val seconds: Int, val label: String) {
+    ONE_MINUTE(60, "1 min"),
+    TWO_MINUTES(120, "2 min"),
+    FIVE_MINUTES(300, "5 min"),
+}
+
 enum class VibrationPattern(val label: String, val timings: LongArray?) {
     NONE("Aucune", null),
     SHORT("Courte", longArrayOf(0, 120)),
@@ -40,6 +47,9 @@ data class CompanionSettings(
     val quietAllowsUrgent: Boolean = true,
     /** Répondre depuis la montre aux autorisations, questions et messages de Claude. */
     val remoteAnswers: Boolean = false,
+    val answerDelay: AnswerDelay = AnswerDelay.TWO_MINUTES,
+    /** Réponses proposées d'un toucher quand Claude attend un message. */
+    val quickReplies: List<String> = DEFAULT_QUICK_REPLIES,
 ) {
     /** Faut-il ignorer complètement cet événement (compte ou origine filtrés) ? */
     fun isFiltered(event: ClaudeEvent): Boolean =
@@ -67,6 +77,8 @@ data class CompanionSettings(
         /** Défini à la compilation : -PcompanionServer=https://… ou variable COMPANION_SERVER. */
         val DEFAULT_SERVER: String = BuildConfig.COMPANION_SERVER
         val DEVICE_ID_REGEX = Regex("^[-_A-Za-z0-9]{1,64}$")
+        val DEFAULT_QUICK_REPLIES = listOf("Oui", "Non", "Continue", "Fais au mieux")
+        const val MAX_QUICK_REPLIES = 6
 
         fun isInQuietHours(hour: Int, start: Int, end: Int): Boolean = when {
             start == end -> false

@@ -48,9 +48,6 @@ class AnswerReceiver : BroadcastReceiver() {
         private const val EXTRA_ANSWER = "answer"
         private const val KEY_REPLY = "reply"
 
-        /** Réponses rapides proposées sous la saisie. */
-        val QUICK_REPLIES = listOf("Oui", "Non", "Continue", "Fais au mieux")
-
         private fun intent(context: Context, ask: Ask) = Intent(context, AnswerReceiver::class.java)
             .putExtra(EXTRA_ASK, EventParser.json.encodeToString(Ask.serializer(), ask))
 
@@ -65,11 +62,11 @@ class AnswerReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        /** Action « Répondre » : clavier, dictée ou réponse rapide, directement depuis la notification. */
-        fun replyAction(context: Context, ask: Ask, index: Int): NotificationCompat.Action {
+        /** Action « Répondre » : clavier, dictée ou réponse rapide ([choices]), directement depuis la notification. */
+        fun replyAction(context: Context, ask: Ask, index: Int, choices: List<String>): NotificationCompat.Action {
             val input = RemoteInput.Builder(KEY_REPLY)
                 .setLabel("Ta réponse à Claude")
-                .setChoices(QUICK_REPLIES.toTypedArray())
+                .apply { if (choices.isNotEmpty()) setChoices(choices.toTypedArray()) }
                 .build()
             // La saisie est ajoutée à l'intent par le système : il doit rester modifiable.
             val pending = PendingIntent.getBroadcast(
