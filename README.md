@@ -248,7 +248,7 @@ Depuis l'écran de la mascotte, **Succès** affiche la **série** en cours (jour
 
 ## Publier sur le Play Store
 
-Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION_PLAY_STORE.md), et la politique de confidentialité dans [`docs/PRIVACY.md`](docs/PRIVACY.md).
+Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION_PLAY_STORE.md), et la politique de confidentialité dans [`docs/PRIVACY.md`](docs/PRIVACY.md). Les textes des fiches (Google Play, Galaxy Store), les captures, l'image de présentation et la vidéo de présentation sont dans [`Stores/`](Stores/FICHE_STORES.md).
 
 ## Confidentialité
 

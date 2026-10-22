@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agentchi · vidéo companion</title>
+<style>html,body{margin:0;background:#000}canvas{display:block;width:100vw;height:auto}</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="mascot.js"></script>
+<script src="screens.js"></script>
+<script src="watch.js"></script>
+<script>
+// Vidéo motion design (1920 x 1080, ~43 s) : frame(t) dessine l'image à l'instant t (secondes).
+// Ouvrir ce fichier dans un navigateur la joue en boucle ; render-video.mjs l'exporte image par image.
+const W = 1920, H = 1080, DURATION = 43;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+const easeInOut = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const backOut = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const spring = k => k <= 0 ? 0 : 1 - Math.exp(-6 * k) * Math.cos(10 * k); // 0 -> 1 avec rebond
+function rand(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/** Rebond de respiration comme Mascot.kt (aller-retour linéaire). */
+function bounceAt(t, period) { const p = (t % (2 * period)) / period; return p < 1 ? p : 2 - p; }
+function blinkAt(t) { const p = t % 3.7; return p > 3.55; }
+/** Saut au toucher : monte en 0.14 s puis retombe avec un ressort amorti. */
+function jumpAt(t, t0) {
+  const d = t - t0; if (d < 0 || d > 1.4) return 0;
+  if (d < 0.14) return d / 0.14;
+  const k = d - 0.14; return Math.max(0, Math.exp(-5 * k) * Math.cos(12 * k));
+}
+/** Pression d'un bouton : 0 -> 1 -> 0 autour de t0. */
+function pressAt(t, t0) { const d = t - t0; return d < 0 || d > 0.35 ? 0 : Math.sin(Math.PI * d / 0.35); }
+
+// Cues sonores lues par music.py (via render-video.mjs).
+const CUES = [];
+const cue = (t, kind) => { CUES.push({ t, kind }); return t; };
+
+// --- Chronologie ---
+const T = {
+  intro: [0, 4.6], live: [4.6, 8.2], care: [8.2, 21.8], party: [21.8, 25], custom: [25, 37.4], grid: [37.4, 39.8], outro: [39.8, 43],
+};
+const TAP = { feed: cue(9.4, 'tap'), play: cue(12.9, 'tap'), pet: cue(16.3, 'tap'), sleep: cue(19.2, 'tap'), wake: cue(21.0, 'tap') };
+cue(1.6, 'pop'); cue(5.4, 'wave'); cue(22.6, 'done'); cue(23.3, 'levelup');
+const SPECIES_AT = [25.6, 26.9, 28.2], PALETTE_AT = [29.6, 30.25, 30.9, 31.55, 32.2, 32.85], ACC_AT = [33.7, 34.4, 35.1, 35.8, 36.5];
+SPECIES_AT.forEach(x => cue(x, 'switch')); PALETTE_AT.forEach(x => cue(x, 'blip')); ACC_AT.forEach(x => cue(x, 'drop'));
+cue(T.grid[0] + 0.1, 'sweep'); cue(T.outro[0] + 0.3, 'outro');
+
+const LOOK = { species: 'CRAB', palette: 'OCEAN', accessory: 'PARTY_HAT' };
+
+// --- Textes ---
+function headline(lines, x, y, k, { size = 84, align = 'left', accent = [lines.length - 1] } = {}) {
+  ctx.save();
+  ctx.globalAlpha = clamp(k * 1.4);
+  const dy = (1 - easeOut(k)) * 40;
+  Deco.title(ctx, lines, x, y + dy, { size, align, accent });
+  ctx.restore();
+}
+function sub(s, x, y, k, { size = 34, color = '#B8B2A7', align = 'left', weight = 500 } = {}) {
+  ctx.save();
+  ctx.globalAlpha = clamp(k * 1.3);
+  ctx.font = `${weight} ${size}px "Inter", "Noto Color Emoji"`; ctx.fillStyle = color; ctx.textAlign = align;
+  ctx.fillText(s, x, y + (1 - easeOut(k)) * 24);
+  ctx.restore();
+}
+/** Carte de légende : icône pixel + titre + effet. */
+function careCard(x, y, icon, label, effect, k, color) {
+  if (k <= 0) return;
+  ctx.save();
+  const e = backOut(clamp(k));
+  ctx.globalAlpha = clamp(k * 2);
+  ctx.translate(x + (1 - e) * 60, y);
+  ctx.fillStyle = 'rgba(43,40,38,0.92)';
+  ctx.beginPath(); ctx.roundRect(0, 0, 640, 150, 75); ctx.fill();
+  ctx.strokeStyle = Deco.hexA(color, 0.6); ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#1F1E1D'; ctx.beginPath(); ctx.arc(75, 75, 52, 0, Math.PI * 2); ctx.fill();
+  Mascot.drawIcon(ctx, icon, 75, 75, 64);
+  ctx.textAlign = 'left';
+  ctx.font = '700 46px "Inter"'; ctx.fillStyle = '#F0EEE6'; ctx.fillText(label, 156, 68);
+  ctx.font = '600 32px "Inter"'; ctx.fillStyle = color; ctx.fillText(effect, 156, 114);
+  ctx.restore();
+}
+/** Pastille de légende (personnalisation). */
+function pill(s, x, y, k, { color = '#D97757', size = 36 } = {}) {
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(k * 2);
+  ctx.font = `700 ${size}px "Inter", "Noto Color Emoji"`;
+  const w = ctx.measureText(s).width + size * 1.4;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x - w / 2, y - size * 0.95, w, size * 1.7, size * 0.85); ctx.fill();
+  ctx.fillStyle = '#1F1E1D'; ctx.textAlign = 'center'; ctx.fillText(s, x, y + size * 0.3);
+  ctx.restore();
+}
+
+/** Onde de toucher dessinée dans l'écran (dp). */
+function ripple(c, x, y, t, t0) {
+  const d = t - t0; if (d < -0.25 || d > 0.6) return;
+  // doigt qui approche
+  if (d < 0) { c.fillStyle = `rgba(255,255,255,${0.35 * (1 + d / 0.25)})`; c.beginPath(); c.arc(x, y, 10, 0, Math.PI * 2); c.fill(); return; }
+  const k = d / 0.6;
+  c.strokeStyle = `rgba(255,255,255,${0.8 * (1 - k)})`; c.lineWidth = 2.5;
+  c.beginPath(); c.arc(x, y, 8 + 22 * easeOut(k), 0, Math.PI * 2); c.stroke();
+  c.fillStyle = `rgba(255,255,255,${0.4 * (1 - k)})`; c.beginPath(); c.arc(x, y, 10, 0, Math.PI * 2); c.fill();
+}
+
+/** Éclats de pixels autour de (x, y). */
+function burst(x, y, t, t0, colors, { n = 18, dist = 160, size = 14, seed = 1 } = {}) {
+  const d = t - t0; if (d < 0 || d > 0.9) return;
+  const k = d / 0.9;
+  for (let i = 0; i < n; i++) {
+    const a = rand(seed * 31 + i) * Math.PI * 2, r = dist * (0.4 + 0.6 * rand(seed * 17 + i)) * easeOut(k);
+    ctx.globalAlpha = 1 - k;
+    ctx.fillStyle = colors[i % colors.length];
+    const s = size * (1 - k * 0.5);
+    ctx.fillRect(x + Math.cos(a) * r - s / 2, y + Math.sin(a) * r - s / 2 + k * k * 60, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Confettis pixel qui tombent. */
+function confetti(t, t0, dur = 2.4) {
+  const d = t - t0; if (d < 0 || d > dur) return;
+  const cols = ['#F2C14E', '#F28AB2', '#6FD3E0', '#5DBB7A', '#D97757', '#A77BE0'];
+  for (let i = 0; i < 90; i++) {
+    const x = rand(i) * W, sp = 380 + rand(i + 99) * 420;
+    const y = -40 + (d - rand(i + 7) * 0.5) * sp;
+    if (y < -40 || y > H) continue;
+    ctx.globalAlpha = clamp((dur - d) * 2);
+    ctx.fillStyle = cols[i % cols.length];
+    const s = 12 + rand(i + 3) * 12;
+    ctx.save(); ctx.translate(x + Math.sin(d * 4 + i) * 30, y); ctx.rotate(d * 3 + i);
+    ctx.fillRect(-s / 2, -s / 2, s, s * 0.6); ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// --- Scènes ---
+
+function sceneIntro(t) {
+  Deco.backdrop(ctx, W, H, { t, fx: 0.5, fy: 0.45 });
+  const px = 30, gx = W / 2 - 6 * px, gy = 250;
+  const k = prog(t, 0.2, 1.6);
+  const face = t > 2.2 && t < 2.35 ? 'CLOSED' : (t > 1.6 ? 'HAPPY' : 'OPEN');
+  const after = t > 1.6 ? spring((t - 1.6) * 0.9) : 0;
+  const b = t > 1.6 ? bounceAt(t, 0.6) * 0.35 : 0;
+  ctx.save();
+  // pop à l'arrivée : écrasement puis rebond
+  const sq = t > 1.6 ? 1 + (1 - after) * 0.18 * Math.sin((t - 1.6) * 14) : 1;
+  ctx.translate(W / 2, gy + 10 * px); ctx.scale(sq, 2 - sq); ctx.translate(-W / 2, -(gy + 10 * px));
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  if (t > 1.4) { ctx.beginPath(); ctx.ellipse(W / 2, gy + 10.6 * px, 4.5 * px * clamp((t - 1.4) * 4), 0.4 * px, 0, 0, Math.PI * 2); ctx.fill(); }
+  Mascot.draw(ctx, LOOK, face, gx, gy - b * px, px, {
+    filter: (p, i, n) => {
+      const d = clamp((k - (i / n) * 0.45) / 0.55);
+      const e = easeOut(d);
+      const a = rand(i) * Math.PI * 2, r = 700 + rand(i + 5) * 500;
+      return { alpha: d > 0 ? 1 : 0, ox: Math.cos(a) * r * (1 - e), oy: Math.sin(a) * r * (1 - e) };
+    },
+  });
+  ctx.restore();
+  burst(W / 2, gy + 5 * px, t, 1.6, ['#5B8DEF', '#F2C14E', '#F28AB2', '#6FD3E0'], { n: 26, dist: 380, size: 18 });
+  const lk = prog(t, 1.9, 2.6);
+  headline(['Agentchi'], W / 2, 720, lk, { size: 150, align: 'center', accent: [] });
+  sub('Un compagnon pixel-art pour tes agents de code', W / 2, 800, prog(t, 2.4, 3.1), { align: 'center', size: 40, color: '#D97757', weight: 600 });
+}
+
+function petScreen(c, t, st) {
+  const r = st.reaction || 'NONE';
+  const excited = ['CELEBRATE', 'PLAY', 'WAVE', 'ALERT'].includes(r);
+  const period = excited ? 0.38 : r === 'SLEEP' ? 2.4 : 1.2;
+  Screens.pet(c, { look: LOOK, bounce: bounceAt(t, period), blink: blinkAt(t), time: '10:09', ...st });
+}
+
+function sceneLive(t) {
+  Deco.backdrop(ctx, W, H, { t, fx: 0.33, fy: 0.5 });
+  const k = easeOut(prog(t, 4.6, 5.5));
+  const cx = lerp(W + 500, 640, k);
+  const wave = t > 5.4 && t < 7.4;
+  Deco.watch(ctx, cx, 540, 330, c => petScreen(c, t, { reaction: wave ? 'WAVE' : 'NONE', moodLine: wave ? 'Coucou !' : undefined }), { glow: k, tilt: (1 - k) * 0.2 });
+  headline(['Il vit sur', 'ta montre'], 1120, 430, prog(t, 5.0, 5.8));
+  sub('Wear OS · tuile · complication · cadran', 1124, 640, prog(t, 5.6, 6.3));
+  sub('Et il réagit à tes agents de code.', 1124, 700, prog(t, 6.1, 6.8), { color: '#F0EEE6' });
+}
+
+function sceneCare(t) {
+  Deco.backdrop(ctx, W, H, { t, fx: 0.33, fy: 0.5 });
+  // jauges animées au fil des soins
+  const satiety = lerp(38, 63, easeOut(prog(t, TAP.feed + 0.1, TAP.feed + 1.2)));
+  const playK = easeOut(prog(t, TAP.play + 0.1, TAP.play + 1.2));
+  const petK = easeOut(prog(t, TAP.pet + 0.1, TAP.pet + 0.8));
+  const happiness = lerp(46, 66, playK) + 3 * petK;
+  const sleepK = easeInOut(prog(t, TAP.sleep + 0.3, TAP.wake - 0.1));
+  const energy = lerp(lerp(58, 48, playK), 100, sleepK);
+  let reaction = 'HUNGRY', moodLine = "J'ai faim…", bubble;
+  if (t >= TAP.feed + 0.05) { reaction = 'EAT'; moodLine = undefined; }
+  if (t >= TAP.feed + 3) { reaction = 'NONE'; }
+  if (t >= TAP.play + 0.05) reaction = 'PLAY';
+  if (t >= TAP.pet + 0.05) reaction = 'LOVE';
+  if (t >= TAP.sleep + 0.05) reaction = 'SLEEP';
+  if (t >= TAP.wake + 0.05) { reaction = 'WAVE'; moodLine = 'Coucou !'; }
+  if (reaction === 'HUNGRY') bubble = '🍽️';
+  const dim = reaction === 'SLEEP' ? clamp((t - TAP.sleep) * 3) * (1 - clamp((t - TAP.wake + 0.3) * 3)) : 0;
+  const enter = easeOut(prog(t, 8.2, 8.8));
+  Deco.watch(ctx, 640, 540, 330, c => {
+    petScreen(c, t, {
+      reaction, moodLine, bubble, satiety, happiness, energy, jump: jumpAt(t, TAP.pet),
+      pressed: { feed: pressAt(t, TAP.feed), play: pressAt(t, TAP.play), sleep: pressAt(t, TAP.sleep) + pressAt(t, TAP.wake) },
+    });
+    if (dim > 0) { c.fillStyle = `rgba(8,10,30,${0.35 * dim})`; c.fillRect(0, 0, 225, 225); }
+    ripple(c, 112.5 - 44, 194, t, TAP.feed);
+    ripple(c, 112.5, 194, t, TAP.play);
+    ripple(c, 112.5, 62, t, TAP.pet);
+    ripple(c, 112.5 + 44, 194, t, TAP.sleep);
+    ripple(c, 112.5 + 44, 194, t, TAP.wake);
+  }, { glow: 1 - dim * 0.7 });
+  // nuit qui passe pendant le sommeil
+  if (dim > 0) {
+    ctx.save(); ctx.globalAlpha = dim;
+    ctx.font = '120px "Noto Color Emoji"'; ctx.textAlign = 'center';
+    ctx.fillText('🌙', 640 + 330 * 0.95, 190 + Math.sin(t * 2) * 8);
+    ctx.restore();
+  }
+  ctx.save(); ctx.globalAlpha = enter;
+  headline(['Prends soin', 'de lui'], 1120, 250, prog(t, 8.3, 9.0));
+  ctx.restore();
+  const beats = [
+    [TAP.feed - 0.4, TAP.play - 0.4, 'FEED', 'Nourris-le', '🍪 +25 satiété', '#E8B04A'],
+    [TAP.play - 0.4, TAP.pet - 0.4, 'PLAY', 'Joue avec lui', '💖 +20 bonheur  ·  ⚡ −10', '#C8E64C'],
+    [TAP.pet - 0.4, TAP.sleep - 0.4, 'HAPPINESS', 'Caresse-le', 'Un toucher : il saute de joie', '#E97CA0'],
+    [TAP.sleep - 0.4, 21.8, 'SLEEP', 'Mets-le au lit', '⚡ +15 énergie par heure', '#7FB3FF'],
+  ];
+  beats.forEach(([a, b, icon, label, effect, color], i) => {
+    const k = prog(t, a, a + 0.5) * (1 - prog(t, b - 0.25, b));
+    const done = t > b - 0.25;
+    if (k > 0) careCard(1120, 470 + i * 0, icon, label, effect, k, color);
+    // pastilles d'étapes
+    ctx.fillStyle = t >= a ? color : 'rgba(240,238,230,0.18)';
+    ctx.beginPath(); ctx.roundRect(1124 + i * 90, 680, 70, 12, 6); ctx.fill();
+  });
+  sub('Ses jauges baissent avec le temps : reviens le voir !', 1124, 760, prog(t, 10.2, 10.9), { size: 30 });
+}
+
+function sceneParty(t) {
+  Deco.backdrop(ctx, W, H, { t, fx: 0.33, fy: 0.5, hue: '#5DBB7A' });
+  const t0 = 22.6;
+  const celebrate = t >= t0;
+  const level = t >= 23.3 ? 4 : 3;
+  Deco.watch(ctx, 640, 540, 330, c => {
+    petScreen(c, t, { reaction: celebrate ? 'CELEBRATE' : 'NONE', level, satiety: 63, happiness: celebrate ? 79 : 69, energy: 100 });
+    // notification qui glisse depuis le haut
+    const nk = easeOut(prog(t, 21.9, 22.4)) * (1 - easeInOut(prog(t, 23.9, 24.4)));
+    if (nk > 0) {
+      c.save(); c.translate(0, (nk - 1) * 120);
+      Screens.rrect(c, 20, 26, 185, 64, 26); c.fillStyle = '#2B2826'; c.fill();
+      c.strokeStyle = 'rgba(93,187,122,0.8)'; c.lineWidth = 1.5; c.stroke();
+      Screens.text(c, '✅ Tâche terminée', 112.5, 50, { size: 13, weight: 700 });
+      Screens.text(c, 'Claude · agentchi', 112.5, 66, { size: 10, color: '#B8B2A7' });
+      Screens.text(c, '+10 XP', 112.5, 81, { size: 10.5, weight: 700, color: '#5DBB7A' });
+      c.restore();
+    }
+  }, { glow: 1 });
+  confetti(t, t0);
+  headline(['Il fête', 'tes victoires'], 1120, 400, prog(t, 21.9, 22.6));
+  sub('Chaque tâche terminée par ton agent :', 1124, 600, prog(t, 22.3, 22.9));
+  sub('+10 XP, +10 bonheur', 1124, 650, prog(t, 22.5, 23.1), { color: '#5DBB7A', weight: 700 });
+  if (t > 23.3) pill('⭐ Niveau 4 !', 1300, 760, backOut(prog(t, 23.3, 23.7)), { color: '#F2C14E' });
+}
+
+function lookAt(t) {
+  let species = 'CRAB', palette = 'OCEAN', accessory = 'NONE';
+  const sp = ['CRAB', 'DOTS', 'GHOST'];
+  SPECIES_AT.forEach((x, i) => { if (t >= x) { species = sp[i]; palette = Mascot.SPECIES[sp[i]].defaultPalette; } });
+  const pal = ['CORAL', 'INK', 'OCEAN', 'MINT', 'LILAC', 'ROSE'];
+  PALETTE_AT.forEach((x, i) => { if (t >= x) palette = pal[i]; });
+  const acc = ['PARTY_HAT', 'BOW', 'SUNGLASSES', 'TOP_HAT', 'CROWN'];
+  ACC_AT.forEach((x, i) => { if (t >= x) accessory = acc[i]; });
+  return { species, palette, accessory };
+}
+function lastSwitch(t) {
+  return [...SPECIES_AT, ...PALETTE_AT, ...ACC_AT].filter(x => x <= t).pop() ?? -9;
+}
+
+function sceneCustom(t) {
+  const look = lookAt(t);
+  const pal = Mascot.PALETTES[look.palette];
+  Deco.backdrop(ctx, W, H, { t, fx: 0.62, fy: 0.5, hue: pal.body });
+  const phase = t < PALETTE_AT[0] - 0.3 ? 'species' : t < ACC_AT[0] - 0.3 ? 'palette' : 'accessory';
+  const sw = lastSwitch(t);
+  // montre à gauche : Paramètres › Mascotte
+  const enter = easeOut(prog(t, 25, 25.6));
+  Deco.watch(ctx, lerp(-400, 470, enter), 600, 280, c => {
+    Screens.mascotSettings(c, { look, level: 5, highlight: phase, pressed: pressAt(t, sw), bounce: bounceAt(t, 1.2), time: '10:10' });
+    const y = { species: 117, palette: 160, accessory: 203 }[phase];
+    ripple(c, 150, y, t, sw);
+  }, { glow: 0.6 });
+  // héros : grande mascotte qui « pop » à chaque changement
+  const hx = 1290, hy = 520, px = 34;
+  const d = t - sw;
+  const pop = d >= 0 && d < 0.6 ? Math.sin(d / 0.6 * Math.PI) * Math.exp(-d * 3) : 0;
+  const isAcc = ACC_AT.includes(sw);
+  const b = bounceAt(t, 1.2);
+  ctx.save();
+  ctx.translate(hx, hy + 5 * px);
+  ctx.scale(1 + pop * 0.22, 1 - pop * 0.18);
+  ctx.translate(-hx, -(hy + 5 * px));
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath(); ctx.ellipse(hx, hy + 5.6 * px, 4.6 * px, 0.45 * px, 0, 0, Math.PI * 2); ctx.fill();
+  const accDrop = isAcc ? (1 - easeOut(clamp(d / 0.35))) * 6 * px : 0;
+  const accCount = accessoryCount(look);
+  Mascot.draw(ctx, look, blinkAt(t) ? 'CLOSED' : 'HAPPY', hx - 6 * px, hy - 5 * px - b * px * 0.35, px, {
+    filter: (p, i, n) => (isAcc && i >= n - accCount) ? { alpha: 1, oy: -accDrop } : null,
+  });
+  ctx.restore();
+  burst(hx, hy, t, sw, [pal.body, pal.accent, '#F2C14E', '#F0EEE6'], { n: 20, dist: 300, size: 16, seed: Math.round(sw * 10) });
+
+  // titres
+  headline(['Fais-le à ton image'], 960, 140, prog(t, 25.1, 25.8), { size: 76, align: 'center', accent: [] });
+  const labels = {
+    species: ['🧬 Base', Mascot.SPECIES[look.species].label, Object.values(Mascot.SPECIES).map(s => s.label)],
+    palette: ['🎨 Couleur', pal.label, null],
+    accessory: ['🎩 Chapeaux & accessoires', Mascot.ACCESSORIES[look.accessory].label, null],
+  };
+  const [cat, val] = labels[phase];
+  const pk = phase === 'species' ? prog(t, 25.3, 25.7) : 1;
+  sub(cat, hx, 820, pk, { align: 'center', size: 34, color: '#B8B2A7', weight: 600 });
+  pill(val, hx, 900, pk, { color: pal.body });
+  // sélecteurs
+  if (phase === 'species') {
+    ['CRAB', 'DOTS', 'GHOST'].forEach((s, i) => {
+      const on = look.species === s, x = hx - 260 + i * 260, y = 270;
+      ctx.globalAlpha = on ? 1 : 0.35;
+      Mascot.drawInBox(ctx, { species: s, palette: Mascot.SPECIES[s].defaultPalette }, 'OPEN', x - 60, y - 45, 120, 90, {});
+      ctx.globalAlpha = 1;
+      if (on) { ctx.strokeStyle = '#F0EEE6'; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(x - 70, y - 50, 140, 100, 24); ctx.stroke(); }
+    });
+  } else if (phase === 'palette') {
+    Object.entries(Mascot.PALETTES).forEach(([key, p], i) => {
+      const x = hx - 300 + i * 120, y = 270, on = key === look.palette;
+      const r = on ? 40 : 30;
+      ctx.fillStyle = p.body; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = p.accent; ctx.beginPath(); ctx.arc(x, y, r, 0.2 * Math.PI, 0.8 * Math.PI); ctx.fill();
+      if (on) { ctx.strokeStyle = '#F0EEE6'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, r + 9, 0, Math.PI * 2); ctx.stroke(); }
+    });
+  } else {
+    const acc = ['PARTY_HAT', 'BOW', 'SUNGLASSES', 'TOP_HAT', 'CROWN'];
+    acc.forEach((a, i) => {
+      const x = hx - 320 + i * 160, y = 270, on = a === look.accessory, info = Mascot.ACCESSORIES[a];
+      ctx.globalAlpha = on ? 1 : 0.4;
+      ctx.fillStyle = '#2B2826'; ctx.beginPath(); ctx.roundRect(x - 62, y - 46, 124, 92, 22); ctx.fill();
+      // mini-mascotte avec l'accessoire
+      Mascot.drawInBox(ctx, { species: look.species, palette: look.palette, accessory: a }, 'HAPPY', x - 58, y - 46, 116, 92, {});
+      ctx.globalAlpha = 1;
+      if (info.level > 1) {
+        ctx.font = '700 20px "Inter"'; ctx.fillStyle = on ? '#F2C14E' : '#B8B2A7'; ctx.textAlign = 'center';
+        ctx.fillText(`niv. ${info.level}`, x, y + 76);
+      }
+      if (on) { ctx.strokeStyle = '#F0EEE6'; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(x - 68, y - 52, 136, 104, 26); ctx.stroke(); }
+    });
+  }
+}
+/** Nombre de cases de l'accessoire : elles sont dessinées en dernier par Mascot.pixels. */
+function accessoryCount(look) {
+  return Mascot.pixels(look, 'HAPPY').length - Mascot.pixels({ ...look, accessory: 'NONE' }, 'HAPPY').length;
+}
+
+function sceneGrid(t) {
+  Deco.backdrop(ctx, W, H, { t, fx: 0.5, fy: 0.5 });
+  const sp = ['CRAB', 'DOTS', 'GHOST'], pal = ['CORAL', 'INK', 'OCEAN', 'MINT', 'LILAC', 'ROSE'], acc = ['PARTY_HAT', 'BOW', 'SUNGLASSES', 'TOP_HAT', 'CROWN', 'NONE'];
+  const cols = 9, rows = 4, cw = 190, ch = 170;
+  const k = prog(t, T.grid[0], T.grid[0] + 1.0);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c;
+    const look = { species: sp[(c + r) % 3], palette: pal[(i * 5 + r) % 6], accessory: acc[(i * 7 + c) % 6] };
+    const d = clamp((k * 1.6 - rand(i) * 0.6));
+    if (d <= 0) continue;
+    const x = W / 2 - (cols * cw) / 2 + c * cw, y = 230 + r * ch;
+    ctx.save(); ctx.globalAlpha = d;
+    const s = backOut(d);
+    ctx.translate(x + cw / 2, y + ch / 2); ctx.scale(s, s); ctx.translate(-(x + cw / 2), -(y + ch / 2));
+    Mascot.drawInBox(ctx, look, blinkAt(t + i * 0.37) ? 'CLOSED' : 'HAPPY', x + 15, y + 10, cw - 30, ch - 30, { bounce: bounceAt(t + i * 0.21, 0.6) });
+    ctx.restore();
+  }
+  headline(['108 combinaisons'], W / 2, 150, prog(t, T.grid[0] + 0.2, T.grid[0] + 0.8), { size: 76, align: 'center', accent: [0] });
+  sub('Et l’icône de l’appli s’accorde à ta mascotte', W / 2, 990, prog(t, T.grid[0] + 0.6, T.grid[0] + 1.2), { align: 'center', size: 36, color: '#F0EEE6' });
+}
+
+function sceneOutro(t) {
+  const look = { species: 'CRAB', palette: 'OCEAN', accessory: 'CROWN' };
+  Deco.backdrop(ctx, W, H, { t, fx: 0.5, fy: 0.4 });
+  const k = easeOut(prog(t, T.outro[0], T.outro[0] + 0.7));
+  Deco.watch(ctx, W / 2, 380, lerp(120, 210, k), c => Screens.pet(c, { look, reaction: 'WAVE', moodLine: 'À tout de suite !', bounce: bounceAt(t, 0.38), level: 5, satiety: 90, energy: 95, happiness: 97 }), { glow: k, strap: false });
+  headline(['Agentchi'], W / 2, 790, prog(t, T.outro[0] + 0.3, T.outro[0] + 0.9), { size: 120, align: 'center', accent: [] });
+  sub('Disponible sur Google Play pour Wear OS', W / 2, 870, prog(t, T.outro[0] + 0.6, T.outro[0] + 1.2), { align: 'center', size: 40, color: '#D97757', weight: 700 });
+  sub('Fonctionne avec Claude Code et Codex · appli non officielle, sans lien avec Anthropic ni OpenAI', W / 2, 1000, prog(t, T.outro[0] + 0.9, T.outro[0] + 1.5), { align: 'center', size: 24 });
+}
+
+const SCENES = [[T.intro, sceneIntro], [T.live, sceneLive], [T.care, sceneCare], [T.party, sceneParty], [T.custom, sceneCustom], [T.grid, sceneGrid], [T.outro, sceneOutro]];
+
+function frame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  const i = SCENES.findIndex(([[a, b]]) => t >= a && t < b);
+  const [[a, b], draw] = SCENES[i < 0 ? SCENES.length - 1 : i];
+  draw(t);
+  // fondus au noir entre les scènes
+  const fade = Math.max(1 - clamp((t - a) / 0.25), clamp((t - (b - 0.2)) / 0.2));
+  if (i > 0 && fade > 0 && t - a < 0.25) { ctx.fillStyle = `rgba(0,0,0,${1 - clamp((t - a) / 0.25)})`; ctx.fillRect(0, 0, W, H); }
+  if (t > DURATION - 0.6) { ctx.fillStyle = `rgba(0,0,0,${clamp((t - (DURATION - 0.6)) / 0.6)})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.ready = (async () => {
+  for (const w of [500, 600, 700, 800]) await document.fonts.load(`${w} 20px "Inter"`);
+  await document.fonts.load('800 20px "Inter Display"');
+  await document.fonts.load('20px "Noto Color Emoji"', '🍪🎾💖🌙');
+})();
+window.frame = frame; window.DURATION = DURATION; window.CUES = CUES;
+
+// Lecture en direct quand on ouvre la page (désactivée par ?render).
+if (!location.search.includes('render')) {
+  window.ready.then(() => {
+    const start = performance.now();
+    const loop = () => { frame(((performance.now() - start) / 1000) % DURATION); requestAnimationFrame(loop); };
+    loop();
+  });
+}
+</script>
+</body>
+</html>

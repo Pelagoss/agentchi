@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agentchi · visuels des stores</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="mascot.js"></script>
+<script src="screens.js"></script>
+<script src="watch.js"></script>
+<script>
+const OCEAN_CRAB = { species: 'CRAB', palette: 'OCEAN', accessory: 'PARTY_HAT' };
+const LILAC_GHOST = { species: 'GHOST', palette: 'LILAC', accessory: 'CROWN' };
+const MINT_DOTS = { species: 'DOTS', palette: 'MINT', accessory: 'SUNGLASSES' };
+
+// Capture Wear OS carrée : l'écran de 225 dp mis à l'échelle de la sortie.
+const wear = (fn) => ({ w: 900, h: 900, draw(ctx) { ctx.scale(900 / Screens.D, 900 / Screens.D); fn(ctx); } });
+
+function variantsRow(ctx, looks, cx, y, size, gap) {
+  const total = looks.length * size + (looks.length - 1) * gap;
+  looks.forEach((look, i) => Mascot.drawInBox(ctx, look, 'HAPPY', cx - total / 2 + i * (size + gap), y, size, size * 0.8, { bounce: (i % 2) * 0.6 }));
+}
+
+function promo(lines, sub, screen, extra) {
+  return {
+    w: 1080, h: 1920, draw(ctx) {
+      Deco.backdrop(ctx, 1080, 1920, { fx: 0.5, fy: 0.58 });
+      Deco.watch(ctx, 540, 1130, 330, screen, { glow: 1 });
+      Deco.title(ctx, lines, 540, 250, { size: 92, accent: [lines.length - 1] });
+      ctx.font = '500 40px "Inter", "Noto Color Emoji"'; ctx.letterSpacing = '0px'; ctx.fillStyle = '#B8B2A7'; ctx.textAlign = 'center';
+      sub.forEach((l, i) => ctx.fillText(l, 540, 250 + lines.length * 100 + 30 + i * 54));
+      extra && extra(ctx);
+      ctx.font = '600 34px "Inter"'; ctx.fillStyle = '#D97757'; ctx.fillText('Agentchi · Wear OS', 540, 1840);
+    },
+  };
+}
+
+const SHOTS = {
+  // --- Captures Wear OS (1:1, sans cadre) ---
+  'captures-wear/01-mascotte': wear(ctx => Screens.pet(ctx, { look: OCEAN_CRAB, reaction: 'NONE' })),
+  'captures-wear/02-nourrir': wear(ctx => Screens.pet(ctx, { look: OCEAN_CRAB, reaction: 'EAT', satiety: 94, bounce: 0.2, pressed: { feed: 0.8 } })),
+  'captures-wear/03-jouer': wear(ctx => Screens.pet(ctx, { look: OCEAN_CRAB, reaction: 'PLAY', happiness: 98, energy: 54, bounce: 0.9 })),
+  'captures-wear/04-dodo': wear(ctx => Screens.pet(ctx, { look: OCEAN_CRAB, reaction: 'SLEEP', energy: 38, bounce: 0.3 })),
+  'captures-wear/05-personnalisation': wear(ctx => Screens.mascotSettings(ctx, { look: LILAC_GHOST, level: 5 })),
+  'captures-wear/06-autorisation': wear(ctx => Screens.permission(ctx)),
+  'captures-wear/07-sessions': wear(ctx => Screens.sessions(ctx)),
+  'captures-wear/08-succes': wear(ctx => Screens.achievements(ctx)),
+
+  // --- Image de présentation (feature graphic) ---
+  'presentation/feature-graphic-1024x500': {
+    w: 1024, h: 500, draw(ctx) {
+      Deco.backdrop(ctx, 1024, 500, { fx: 0.74, fy: 0.5 });
+      Deco.title(ctx, ['Agentchi'], 64, 200, { size: 92, align: 'left' });
+      ctx.font = '600 30px "Inter"'; ctx.fillStyle = '#F0EEE6'; ctx.textAlign = 'left';
+      ctx.fillText('Tes agents de code au poignet,', 66, 262);
+      ctx.fillStyle = '#D97757'; ctx.fillText('avec un compagnon pixel-art.', 66, 302);
+      ctx.font = '500 20px "Inter", "Noto Color Emoji"'; ctx.fillStyle = '#B8B2A7';
+      ctx.fillText('🔔 Notifications  ·  ⌚ Réponses  ·  🍪 Mascotte à soigner', 66, 372);
+      Deco.watch(ctx, 770, 250, 150, c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'NONE' }), { glow: 1 });
+      Mascot.drawInBox(ctx, LILAC_GHOST, 'HAPPY', 905, 40, 96, 78, { bounce: 0.2 });
+      Mascot.drawInBox(ctx, MINT_DOTS, 'HAPPY', 560, 360, 96, 78, { bounce: 0.8 });
+    },
+  },
+
+  // --- Visuels promotionnels 9:16 (emplacement « téléphone », réseaux sociaux, Galaxy Store) ---
+  'promo/01-compagnon': promo(['Un compagnon', 'sur ta montre'], ['Il vit au rythme de tes agents de code'], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'CELEBRATE', bounce: 0.7 })),
+  'promo/02-soins': promo(['Prends soin', 'de lui'], ['🍪 Nourris-le  ·  🎾 Joue  ·  😴 Couche-le'], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'EAT', satiety: 94, pressed: { feed: 0.8 } })),
+  'promo/03-personnalisation': promo(['Fais-le', 'à ton image'], ['3 espèces · 6 couleurs · 5 accessoires'], c => Screens.mascotSettings(c, { look: LILAC_GHOST }), ctx => {
+    variantsRow(ctx, [
+      { species: 'CRAB', palette: 'CORAL', accessory: 'TOP_HAT' }, MINT_DOTS, { species: 'GHOST', palette: 'ROSE', accessory: 'BOW' },
+      { species: 'CRAB', palette: 'INK', accessory: 'CROWN' },
+    ], 540, 1560, 170, 40);
+  }),
+  'promo/04-reponses': promo(['Réponds depuis', 'ton poignet'], ['Autorise, refuse, choisis une option ou dicte', 'ta réponse sans quitter ta montre'], c => Screens.permission(c)),
+};
+
+window.renderShot = async (name, extra) => {
+  for (const w of [400, 500, 600, 700, 800]) await document.fonts.load(`${w} 20px "Inter"`);
+  await document.fonts.load('800 20px "Inter Display"');
+  await document.fonts.load('20px "Noto Color Emoji"', '🍪');
+  await document.fonts.load('500 20px "JetBrains Mono"');
+  const cv = document.getElementById('c');
+  if (name === 'icon') return renderIcon(cv, extra);
+  const s = SHOTS[name];
+  cv.width = s.w; cv.height = s.h;
+  const ctx = cv.getContext('2d');
+  s.draw(ctx);
+  return cv.toDataURL('image/png');
+};
+window.shotNames = () => Object.keys(SHOTS);
+
+// Icône de la fiche : premier plan vectoriel de l'appli (pathData Android = syntaxe SVG) sur fond encre.
+function renderIcon(cv, { paths, size = 512 }) {
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#1F1E1D'; ctx.fillRect(0, 0, size, size);
+  const s = size / 72; // zone visible de l'icône adaptative : 72 dp centrés sur 108
+  ctx.scale(s, s); ctx.translate(-18, -18);
+  for (const p of paths) { ctx.fillStyle = p.fill; ctx.fill(new Path2D(p.d)); }
+  return cv.toDataURL('image/png');
+}
+</script>
+</body>
+</html>
