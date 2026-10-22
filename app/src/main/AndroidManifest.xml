@@ -346,9 +346,10 @@
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
             </intent-filter>
+            <!-- Noms historiques des types : LARGE_IMAGE pour PHOTO_IMAGE (ICON pour MONOCHROMATIC_IMAGE). -->
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="RANGED_VALUE,SHORT_TEXT,SMALL_IMAGE,PHOTO_IMAGE" />
+                android:value="RANGED_VALUE,SHORT_TEXT,SMALL_IMAGE,LARGE_IMAGE" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="900" />
