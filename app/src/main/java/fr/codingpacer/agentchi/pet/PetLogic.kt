@@ -90,9 +90,12 @@ object PetLogic {
                 t.copy(sleeping = false).react(Reaction.ALERT, now, ALERT_MS)
             EventType.SESSION_START -> t.copy(sleeping = false).react(Reaction.WAVE, now, 10_000L)
             EventType.COMPACT -> t.react(Reaction.THINK, now, 10_000L)
-            EventType.SESSION_END, EventType.OTHER -> t
+            EventType.SESSION_END, EventType.OTHER, EventType.PROMPT -> t
         }
     }
+
+    /** Succès débloqué : la mascotte fait la fête. */
+    fun celebrate(s: PetState, now: Long): PetState = tick(s, now).copy(sleeping = false).react(Reaction.CELEBRATE, now, 10_000L)
 
     fun currentReaction(s: PetState, now: Long): Reaction =
         if (s.reaction != Reaction.NONE && now < s.reactionUntil) s.reaction else Reaction.NONE

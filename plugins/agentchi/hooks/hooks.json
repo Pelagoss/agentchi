@@ -27,6 +27,32 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": [
+              "-sS",
+              "-m",
+              "5",
+              "-X",
+              "POST",
+              "-H",
+              "Authorization: Bearer ${user_config.code}",
+              "-H",
+              "Content-Type: application/json",
+              "--data-binary",
+              "@-",
+              "${user_config.server_url}/h"
+            ],
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

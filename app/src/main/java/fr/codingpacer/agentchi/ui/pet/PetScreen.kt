@@ -29,6 +29,10 @@ import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import fr.codingpacer.agentchi.data.IconSet
+import fr.codingpacer.agentchi.data.SessionState
+import fr.codingpacer.agentchi.data.Sessions
+import fr.codingpacer.agentchi.pet.Achievement
+import fr.codingpacer.agentchi.pet.Achievements
 import fr.codingpacer.agentchi.pet.Mood
 import fr.codingpacer.agentchi.pet.PixelIcon
 import fr.codingpacer.agentchi.pet.PetLogic
@@ -40,10 +44,16 @@ fun PetScreen(
     viewModel: CompanionViewModel,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenSessions: () -> Unit,
+    onOpenAchievements: () -> Unit,
 ) {
     val (pet, now) = viewModel.pet.collectAsStateWithLifecycle().value
     val history by viewModel.history.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val sessions by viewModel.sessions.collectAsStateWithLifecycle()
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
+    val visible = Sessions.visible(sessions, now / 1000)
+    val streak = Achievements.currentStreak(progress, now)
     val reaction = PetLogic.currentReaction(pet, now)
     val mood = PetLogic.mood(pet)
     val listState = rememberScalingLazyListState(initialCenterItemIndex = 0)
@@ -104,6 +114,46 @@ fun PetScreen(
                     text = "✅ ${pet.tasksCompleted} tâches accomplies avec toi",
                     style = MaterialTheme.typography.caption3,
                     color = MaterialTheme.colors.onSurfaceVariant,
+                )
+            }
+            item {
+                val waiting = visible.count { it.state == SessionState.WAITING }
+                val working = visible.count { it.state == SessionState.WORKING }
+                Chip(
+                    onClick = onOpenSessions,
+                    label = { Text("Sessions en cours") },
+                    secondaryLabel = {
+                        Text(
+                            when {
+                                visible.isEmpty() -> "Aucune"
+                                else -> listOfNotNull(
+                                    "${visible.size} active${if (visible.size > 1) "s" else ""}",
+                                    "$working au travail".takeIf { working > 0 },
+                                    "$waiting t'attend${if (waiting > 1) "ent" else ""}".takeIf { waiting > 0 },
+                                ).joinToString(" · ")
+                            },
+                        )
+                    },
+                    icon = { Text(if (waiting > 0) "🔔" else "⚙️") },
+                    colors = ChipDefaults.secondaryChipColors(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            item {
+                Chip(
+                    onClick = onOpenAchievements,
+                    label = { Text("Succès") },
+                    secondaryLabel = {
+                        Text(
+                            listOfNotNull(
+                                "🔥 $streak j".takeIf { streak > 0 },
+                                "${progress.unlocked.size} / ${Achievement.entries.size}",
+                            ).joinToString(" · "),
+                        )
+                    },
+                    icon = { Text("🏆") },
+                    colors = ChipDefaults.secondaryChipColors(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             item {

@@ -7,9 +7,11 @@ import fr.codingpacer.agentchi.data.Ask
 import fr.codingpacer.agentchi.data.AskAnswer
 import fr.codingpacer.agentchi.data.AgentEvent
 import fr.codingpacer.agentchi.data.CompanionStore
+import fr.codingpacer.agentchi.data.Sessions
 import fr.codingpacer.agentchi.net.CompanionApi
 import fr.codingpacer.agentchi.net.ServerException
 import fr.codingpacer.agentchi.notify.EventNotifier
+import fr.codingpacer.agentchi.pet.Achievements
 import fr.codingpacer.agentchi.widget.Widgets
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ class AskResponder(
     private val store: CompanionStore,
     private val api: () -> CompanionApi,
     private val notifier: EventNotifier,
+    private val rewards: Rewards,
 ) {
     enum class Result(val message: String?) {
         SENT(null),
@@ -51,7 +54,11 @@ class AskResponder(
             Result.FAILED
         }
         when (result) {
-            Result.SENT -> store.setAnswer(ask.id, answer.summary(ask))
+            Result.SENT -> {
+                store.setAnswer(ask.id, answer.summary(ask))
+                store.updateSessions { Sessions.onAnswer(it, ask.id, answer, System.currentTimeMillis() / 1000) }
+                rewards.record { Achievements.onAnswer(it, ask, answer) }
+            }
             Result.EXPIRED -> store.setAnswer(ask.id, AskAnswer.UNANSWERED)
             Result.FAILED -> Unit
         }

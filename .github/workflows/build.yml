@@ -55,11 +55,11 @@ jobs:
       - name: Tests unitaires
         run: ./gradlew --no-daemon :app:testDebugUnitTest
 
-      - name: Compilation de l'APK montre
-        run: ./gradlew --no-daemon :app:assembleDebug
+      - name: Compilation de l'APK montre et du cadran
+        run: ./gradlew --no-daemon :app:assembleDebug :watchface:assembleDebug
 
       - name: Build de publication (AAB non signé, vérifie R8)
-        run: ./gradlew --no-daemon :app:bundleRelease
+        run: ./gradlew --no-daemon :app:bundleRelease :watchface:bundleRelease
 
       - name: Vérification des plugins Claude Code et Codex
         run: jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/agentchi-codex/plugin.json .agents/plugins/marketplace.json plugins/*/hooks/hooks.json
@@ -68,6 +68,7 @@ jobs:
         run: |
           mkdir -p apk
           cp app/build/outputs/apk/debug/app-debug.apk apk/agentchi-montre.apk
+          cp watchface/build/outputs/apk/debug/watchface-debug.apk apk/agentchi-cadran.apk
 
       - uses: actions/upload-artifact@v4
         with:

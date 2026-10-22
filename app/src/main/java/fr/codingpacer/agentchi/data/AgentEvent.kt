@@ -22,6 +22,8 @@ enum class EventType(
     val emoji: String,
     val urgent: Boolean,
     val defaultEnabled: Boolean,
+    /** Jamais notifié ni gardé dans l'historique : sert seulement à l'écran « Sessions en cours ». */
+    val silent: Boolean = false,
 ) {
     PERMISSION("permission", "Demande d'autorisation", "🔐", urgent = true, defaultEnabled = true),
     INPUT_NEEDED("input", "Réponse attendue", "💬", urgent = true, defaultEnabled = true),
@@ -31,7 +33,8 @@ enum class EventType(
     SESSION_END("session_end", "Session terminée", "🏁", urgent = false, defaultEnabled = true),
     COMPACT("compact", "Compaction du contexte", "🗜️", urgent = false, defaultEnabled = false),
     ERROR("error", "Erreur", "⚠️", urgent = true, defaultEnabled = true),
-    OTHER("other", "Autre notification", "✳️", urgent = false, defaultEnabled = true);
+    OTHER("other", "Autre notification", "✳️", urgent = false, defaultEnabled = true),
+    PROMPT("prompt", "Message envoyé à l'agent", "⌨️", urgent = false, defaultEnabled = false, silent = true);
 
     companion object {
         fun fromKey(key: String?): EventType = entries.firstOrNull { it.key == key } ?: OTHER

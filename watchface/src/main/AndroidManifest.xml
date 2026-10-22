@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cadran Watch Face Format : un paquet de ressources, sans code (exigence du format),
+  installé à côté de l'appli Agentchi dont il affiche la complication.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application
+        android:hasCode="false"
+        android:label="@string/watchface_name">
+        <property
+            android:name="com.google.wear.watchface.format.version"
+            android:value="1" />
+        <property
+            android:name="com.google.wear.watchface.format.publisher"
+            android:value="Agentchi" />
+    </application>
+</manifest>

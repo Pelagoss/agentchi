@@ -42,7 +42,8 @@ func (f *fakePusher) payloads(t *testing.T, token string) []Payload {
 		if err := json.Unmarshal([]byte(p.Payload), &pl); err != nil {
 			t.Fatalf("payload invalide %q", p.Payload)
 		}
-		if p.ID == "" || p.Time == 0 {
+		// Seuls les messages envoyés à l'agent partent sans id (voir Server.push).
+		if (p.ID == "" && pl.Type != typePrompt) || p.Time == 0 {
 			t.Fatalf("push sans id ni date : %+v", p)
 		}
 		out = append(out, pl)
@@ -167,6 +168,23 @@ func TestParcoursComplet(t *testing.T) {
 	}
 }
 
+// Message envoyé à l'agent : sans id, pour que les anciennes appli l'ignorent, et sans réveiller la montre.
+func TestMessageEnvoye(t *testing.T) {
+	e := newTestEnv(t, "")
+	_, token := register(t, e.url, "fcm-A")
+	c := newCode(t, e.url, token, "MacBook")
+	e.hook(t, c.Code, `{"hook_event_name":"UserPromptSubmit","prompt":"mon secret","session_id":"abcdef1234567890","cwd":"/p/projet"}`)
+	e.pusher.mu.Lock()
+	sent := e.pusher.sent["fcm-A"]
+	e.pusher.mu.Unlock()
+	if len(sent) != 1 || sent[0].ID != "" || !sent[0].Normal || sent[0].TTL != promptTTL || strings.Contains(sent[0].Payload, "secret") {
+		t.Fatalf("pushs %+v", sent)
+	}
+	if got := e.pusher.payloads(t, "fcm-A"); got[0].Type != "prompt" || got[0].Session != "abcdef12" || got[0].Project != "projet" {
+		t.Fatalf("%+v", got)
+	}
+}
+
 func TestIsolationEntreMontres(t *testing.T) {
 	e := newTestEnv(t, "")
 	_, tokA := register(t, e.url, "fcm-A")
@@ -265,6 +283,7 @@ func TestToPayload(t *testing.T) {
 		{"erreur API sans texte", HookInput{HookEventName: "StopFailure", Error: "overloaded"}, Payload{Type: "error", Message: "Erreur API (overloaded)"}, true},
 		{"compaction", HookInput{HookEventName: "PreCompact", Trigger: "auto"}, Payload{Type: "compact", Message: "Compaction du contexte (auto)"}, true},
 		{"chemin Windows", HookInput{HookEventName: "SubagentStop", Cwd: `C:\Users\cyril\projet-win\`}, Payload{Type: "subagent", Message: "Un sous-agent a terminé.", Project: "projet-win"}, true},
+		{"message envoyé, sans son texte", HookInput{HookEventName: "UserPromptSubmit", Message: "secret"}, Payload{Type: "prompt", Message: "Message envoyé à Claude"}, true},
 		{"sans événement", HookInput{}, Payload{}, false},
 	}
 	for _, tc := range cases {
