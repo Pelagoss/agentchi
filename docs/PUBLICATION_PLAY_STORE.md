@@ -123,7 +123,7 @@ Vérifie au minimum : ouverture de l'appli, **Paramètres › Serveur › Connec
 
 | Rubrique | Réponse |
 |---|---|
-| **Règles de confidentialité** | URL publique, par ex. `https://github.com/Pelagoss/claude-companion/blob/master/docs/PRIVACY.md` (le dépôt doit rester public). Mieux : une page GitHub Pages |
+| **Règles de confidentialité** | URL publique, par ex. `https://github.com/Pelagoss/agentchi/blob/master/docs/PRIVACY.md` (le dépôt doit rester public). Mieux : une page GitHub Pages |
 | **Accès aux applis** | « Toutes les fonctionnalités sont disponibles sans restriction » (pas de compte) |
 | **Annonces** | Non |
 | **Classification du contenu** | Questionnaire, catégorie *Utilitaire / productivité* ; aucune violence ni contenu sensible → **Tout public / PEGI 3** |

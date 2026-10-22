@@ -1,13 +1,13 @@
 {
   "name": "agentchi",
   "displayName": "Agentchi (montre)",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Envoie les événements de Claude Code à ta montre Agentchi et lui permet d'y répondre, via ton serveur Agentchi.",
   "author": {
     "name": "Pelagoss"
   },
-  "homepage": "https://github.com/Pelagoss/claude-companion",
-  "repository": "https://github.com/Pelagoss/claude-companion",
+  "homepage": "https://github.com/Pelagoss/agentchi",
+  "repository": "https://github.com/Pelagoss/agentchi",
   "license": "MIT",
   "keywords": [
     "wear-os",
@@ -25,7 +25,7 @@
     "code": {
       "type": "string",
       "title": "Code d'appairage",
-      "description": "Montre › Paramètres › Ordinateurs et cloud › Nouveau code (XXXX-XXXX-XXXX)",
+      "description": "Montre › Paramètres › Serveur › Nouveau code (XXXX-XXXX-XXXX)",
       "required": true,
       "sensitive": true
     }

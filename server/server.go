@@ -418,7 +418,7 @@ pre{background:var(--card);border:1px solid var(--line);border-radius:8px;paddin
 
 <h2>2. Claude Code (terminal, IDE, appli Desktop, Remote Control)</h2>
 <p>Une seule commande, avec ton code :</p>
-<pre>claude plugin install agentchi --marketplace Pelagoss/claude-companion \
+<pre>claude plugin install agentchi --marketplace Pelagoss/agentchi \
   --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</pre>
 <p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Sans <code>--config</code>, Claude Code demande les deux valeurs (<code>/plugin</code> › agentchi › Configure options). Il faut <code>curl</code>, présent par défaut sur macOS, Linux et Windows 10+.</p>
 

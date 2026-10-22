@@ -1,3 +1,3 @@
-module github.com/Pelagoss/claude-companion/server
+module github.com/Pelagoss/agentchi/server
 
 go 1.22
