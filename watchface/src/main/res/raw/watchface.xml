@@ -18,7 +18,9 @@
     <!-- La mascotte, en plein écran : masquée en mode veille (écran toujours allumé) pour économiser la batterie. -->
     <ComplicationSlot slotId="0" displayName="Mascotte" x="101" y="118" width="248" height="248"
         supportedTypes="PHOTO_IMAGE SMALL_IMAGE" isCustomizable="TRUE">
-      <DefaultProviderPolicy defaultSystemProvider="EMPTY" defaultSystemProviderType="EMPTY"
+      <!-- Le type de secours doit faire partie de supportedTypes, même sans source système (EMPTY) :
+           sinon Wear OS refuse d'ajouter le cadran. -->
+      <DefaultProviderPolicy defaultSystemProvider="EMPTY" defaultSystemProviderType="SMALL_IMAGE"
           primaryProvider="fr.codingpacer.agentchi/fr.codingpacer.agentchi.widget.PetComplicationService"
           primaryProviderType="PHOTO_IMAGE" />
       <BoundingBox x="0" y="0" width="248" height="248" />
