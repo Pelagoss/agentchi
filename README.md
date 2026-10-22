@@ -88,7 +88,7 @@ Ouvre `https://agentchi.codingpacer.fr` : la page d'accueil donne les commandes 
 Il faut un nom de domaine qui pointe vers ton serveur, avec les ports 80 et 443 ouverts. Caddy obtient le certificat HTTPS tout seul.
 
 ```bash
-git clone https://github.com/Pelagoss/claude-companion && cd claude-companion
+git clone https://github.com/Pelagoss/agentchi && cd agentchi
 sops decrypt --extract '["stringData"]["firebase-service-account.json"]' k8s/0.secrets.yaml > server/firebase-service-account.json
 chmod 644 server/firebase-service-account.json    # lisible par le conteneur
 cd server && CC_DOMAIN=agentchi.example.fr docker compose up -d
@@ -101,7 +101,7 @@ Sans Docker : `go build` dans `server/`, puis lance le binaire derrière ton rev
 Onglet **Actions** du dépôt → dernier build vert → artefact `agentchi-debug`, qui contient `agentchi-montre.apk` (compilé avec les valeurs Firebase de l'étape 1) et le cadran `agentchi-cadran.apk` :
 
 ```bash
-gh run download -R Pelagoss/claude-companion -n agentchi-debug
+gh run download -R Pelagoss/agentchi -n agentchi-debug
 ```
 
 1. Active le débogage : *Paramètres → À propos de la montre → Informations sur le logiciel*, touche 7 fois *Version du logiciel*. Ensuite, dans *Options de développement*, active *Débogage ADB* et *Débogage sans fil* (montre et ordinateur sur le même Wi-Fi).
@@ -123,13 +123,13 @@ Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https:
 Sur la montre : **Paramètres › Serveur › Nouveau code**, nomme l'ordinateur et note le code. Puis, sur l'ordinateur :
 
 ```bash
-claude plugin install agentchi --marketplace Pelagoss/claude-companion \
+claude plugin install agentchi --marketplace Pelagoss/agentchi \
   --config server_url=https://agentchi.codingpacer.fr --config code=XXXX-XXXX-XXXX
 ```
 
 C'est tout, pour tous tes projets. Le code est rangé dans le trousseau du système, pas dans `settings.json`. Sans `--config`, Claude Code demande les deux valeurs (`/plugin` › agentchi › *Configure options*). Le plugin couvre aussi les sessions locales que tu suis en **Remote Control** depuis claude.ai/code ou l'appli mobile.
 
-Tu peux aussi ajouter la marketplace `Pelagoss/claude-companion` dans **claude.ai › Personnaliser › Plugins** : le plugin se synchronise alors sur chaque ordinateur où tu te connectes à Claude Code. Il ne reste qu'à saisir le code.
+Tu peux aussi ajouter la marketplace `Pelagoss/agentchi` dans **claude.ai › Personnaliser › Plugins** : le plugin se synchronise alors sur chaque ordinateur où tu te connectes à Claude Code. Il ne reste qu'à saisir le code.
 
 ### 5. Sessions cloud Claude (claude.ai/code)
 
@@ -154,7 +154,7 @@ echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc
 
 Si tu as déjà un `~/.codex/hooks.json`, fusionne les deux plutôt que de l'écraser. Codex ignore un hook tant que tu ne l'as pas approuvé : lance **`/hooks`** dans Codex et approuve ceux d'Agentchi.
 
-Dans l'appli Codex (desktop), tu peux aussi installer le plugin `agentchi-codex` : `codex plugin marketplace add Pelagoss/claude-companion`, puis l'installer depuis le répertoire des plugins. Il lit le code dans `AGENTCHI_CODE` et l'adresse dans `AGENTCHI_SERVER` (défaut `https://agentchi.codingpacer.fr`).
+Dans l'appli Codex (desktop), tu peux aussi installer le plugin `agentchi-codex` : `codex plugin marketplace add Pelagoss/agentchi`, puis l'installer depuis le répertoire des plugins. Il lit le code dans `AGENTCHI_CODE` et l'adresse dans `AGENTCHI_SERVER` (défaut `https://agentchi.codingpacer.fr`).
 
 Avec Codex, la montre reçoit les fins de tâche, les demandes d'autorisation (commandes, modifications de fichiers, outils MCP) et peut y répondre. Ses questions à choix (`request_user_input`) restent sur l'ordinateur : Codex ne les passe pas aux hooks. Dans *Sessions en cours*, une session Codex ne repasse pas « au travail » quand tu lui écris : ses hooks ne relaient pas l'envoi d'un message.
 

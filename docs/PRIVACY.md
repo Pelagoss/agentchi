@@ -24,4 +24,4 @@ Les données restent sur tes appareils et sur le serveur que tu as choisi. *Hist
 
 ## Contact
 
-Pour toute question : ouvre un ticket sur https://github.com/Pelagoss/claude-companion/issues
+Pour toute question : ouvre un ticket sur https://github.com/Pelagoss/agentchi/issues

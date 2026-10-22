@@ -356,7 +356,7 @@ private fun AboutPage() {
     Page("À propos") {
         item { Setting("⌚ Agentchi", "Version ${BuildConfig.VERSION_NAME}") {} }
         item {
-            Note("Appli non officielle, sans lien avec Anthropic ni OpenAI.\ngithub.com/Pelagoss/claude-companion")
+            Note("Appli non officielle, sans lien avec Anthropic ni OpenAI.\ngithub.com/Pelagoss/agentchi")
         }
     }
 }
