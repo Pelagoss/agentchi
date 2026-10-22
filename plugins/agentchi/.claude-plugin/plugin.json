@@ -25,7 +25,7 @@
     "code": {
       "type": "string",
       "title": "Code d'appairage",
-      "description": "Montre › Paramètres › Ordinateurs et cloud › Nouveau code (XXXX-XXXX-XXXX)",
+      "description": "Montre › Paramètres › Serveur › Nouveau code (XXXX-XXXX-XXXX)",
       "required": true,
       "sensitive": true
     }
