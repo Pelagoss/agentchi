@@ -77,7 +77,8 @@ img, video { height: auto; }
 .skip:hover { color: var(--on-coral); }
 
 /* --- En-tête --- */
-.top { position: sticky; top: 0; z-index: 20; background: rgba(22, 21, 20, 0.92); border-bottom: 1px solid transparent; transition: border-color 0.3s; }
+/* Calque composité permanent : sinon le texte change de lissage au début et à la fin de chaque scroll. */
+.top { position: sticky; top: 0; z-index: 20; background: rgba(22, 21, 20, 0.92); border-bottom: 1px solid transparent; transition: border-color 0.3s; will-change: transform; }
 .top.scrolled { border-bottom-color: var(--line); }
 .top-in { height: var(--header); display: flex; align-items: center; gap: 28px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--cream); text-decoration: none; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }

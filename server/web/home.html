@@ -16,10 +16,10 @@
 <link rel="preload" href="/static/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/site.css?v={{.V}}">
 </head>
-<body>
+<body id="top">
 <a class="skip" href="#installer">Aller au guide d'installation</a>
 
-<header class="top" id="top">
+<header class="top">
   <div class="wrap top-in">
     <a class="brand" href="#top" aria-label="Agentchi, haut de page">
       <canvas class="brand-pet" width="40" height="34" aria-hidden="true" data-mini-pet></canvas>
@@ -187,7 +187,7 @@
   <section class="relay" id="serveur" aria-labelledby="serveur-titre">
     <div class="wrap">
       <h2 id="serveur-titre" class="section-title">Ton serveur, tes données</h2>
-      <p class="section-lead">Agentchi passe par un petit serveur open source que tu héberges toi-même. Celui-ci, par exemple.</p>
+      <p class="section-lead">Agentchi passe par un petit serveur relais open source. Celui d'<b>agentchi.dev</b> est déjà configuré&nbsp;: la montre et les plugins s'y connectent d'emblée, rien à installer ni à héberger. Et si tu préfères garder la main, tu peux toujours <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/self-hosted/README.md">héberger le tien</a>.</p>
       <div class="flow" aria-label="Chemin d'un événement&nbsp;: tes agents, ce serveur, Firebase Cloud Messaging, ta montre">
         <ul class="flow-src">
           <li><b>Claude Code</b><span>terminal, IDE, Desktop, Remote Control · plugin</span></li>
