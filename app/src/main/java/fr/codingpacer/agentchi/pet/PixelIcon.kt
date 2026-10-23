@@ -86,6 +86,33 @@ enum class PixelIcon(val emoji: String, val a: Int, val b: Int, val grid: List<S
             "........",
         ),
     ),
+    CLEAN(
+        "🧽", 0xFFF2C14E.toInt(), 0xFF5DBB7A.toInt(),
+        listOf(
+            "......b.",
+            ".....b.b",
+            "......b.",
+            "aaaaaa..",
+            "abaaba..",
+            "aaaaaa..",
+            "aabaaa..",
+            "aaaaaa..",
+        ),
+    ),
+    /** Caca posé à côté de la mascotte (dessiné dans la scène, pas comme bouton). */
+    POOP(
+        "💩", 0xFF8B5A2B.toInt(), 0xFFB07A45.toInt(),
+        listOf(
+            "........",
+            "....a...",
+            "...aa...",
+            "..abaa..",
+            "..aaaa..",
+            ".abaaba.",
+            "aaaaaaaa",
+            ".aaaaaa.",
+        ),
+    ),
     NOTIFICATIONS(
         "🔔", 0xFFF2C14E.toInt(), 0xFFB4593B.toInt(),
         listOf(

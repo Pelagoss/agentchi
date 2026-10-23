@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Text
 import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.Mood
+import fr.codingpacer.agentchi.pet.PixelIcon
 import fr.codingpacer.agentchi.pet.Reaction
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,6 +48,8 @@ fun Mascot(
     reaction: Reaction,
     look: MascotSprite.Look,
     modifier: Modifier = Modifier,
+    /** Cacas posés à côté de la mascotte. */
+    poops: Int = 0,
     onTap: () -> Unit = {},
 ) {
     val transition = rememberInfiniteTransition(label = "mascot")
@@ -107,6 +110,7 @@ fun Mascot(
                 size = Size(shadowW, px * 0.8f),
             )
             drawMascot(origin, px, look, face, altLegs, sleeping = mood == Mood.SLEEPING, breath = bounce)
+            drawPoops(poops, px, groundY = (size.height + MascotSprite.HEIGHT * px) / 2)
         }
         if (bubble != null) {
             Text(
@@ -116,6 +120,23 @@ fun Mascot(
                     .align(Alignment.TopEnd)
                     .offset(x = (-6).dp, y = (4 - bounce * 4).dp),
             )
+        }
+    }
+}
+
+/** Les cacas, posés au sol de part et d'autre de la mascotte (le troisième devant, à gauche). */
+private fun DrawScope.drawPoops(count: Int, px: Float, groundY: Float) {
+    if (count <= 0) return
+    val cell = px * 0.26f
+    val side = PixelIcon.SIZE * cell
+    val spots = listOf(
+        Offset(0f, groundY - side),
+        Offset(size.width - side, groundY - side),
+        Offset(side * 0.8f, groundY - side * 0.6f),
+    )
+    spots.take(count).forEach { at ->
+        PixelIcon.POOP.pixels().forEach { (x, y, argb) ->
+            drawRect(Color(argb), topLeft = Offset(at.x + x * cell, at.y + y * cell), size = Size(cell + 0.5f, cell + 0.5f))
         }
     }
 }

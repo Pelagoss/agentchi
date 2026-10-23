@@ -22,6 +22,8 @@ data class Progress(
     val plans: Int = 0,
     val questions: Int = 0,
     val feeds: Int = 0,
+    /** Cacas nettoyés. */
+    val cleaned: Int = 0,
     /** Succès débloqués : nom de [Achievement] → date (ms). */
     val unlocked: Map<String, Long> = emptyMap(),
 )
@@ -50,6 +52,7 @@ enum class Achievement(
     FIRST_QUESTION("🧩", "Décideur", "Première question à choix répondue depuis la montre", 1, { p, _ -> p.questions }),
     NIGHT_OWL("🦉", "Oiseau de nuit", "Une tâche terminée entre minuit et 5 h", 1, { p, _ -> p.nightTasks }),
     CARETAKER("🍪", "Aux petits soins", "Nourrir la mascotte 50 fois", 50, { p, _ -> p.feeds }),
+    JANITOR("🧽", "Grand ménage", "Nettoyer 30 cacas", 30, { p, _ -> p.cleaned }),
     LEVEL_5("👑", "Niveau 5", "La mascotte atteint le niveau 5", 5, { _, pet -> PetLogic.level(pet.xp) }),
     LEVEL_10("🌟", "Niveau 10", "La mascotte atteint le niveau 10", 10, { _, pet -> PetLogic.level(pet.xp) }),
 }
@@ -90,6 +93,8 @@ object Achievements {
     }
 
     fun onFeed(p: Progress): Progress = p.copy(feeds = p.feeds + 1)
+
+    fun onClean(p: Progress, poops: Int): Progress = p.copy(cleaned = p.cleaned + poops)
 
     /** Débloque les succès atteints : la progression mise à jour et les nouveaux succès. */
     fun unlock(p: Progress, pet: PetState, now: Long): Pair<Progress, List<Achievement>> {
