@@ -214,6 +214,12 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         updatePet { s, now -> PetLogic.feed(s, now) }
         viewModelScope.launch { app.rewards.record { Achievements.onFeed(it) } }
     }
+    fun clean() {
+        val poops = pet.value.first.poops
+        if (poops == 0) return
+        updatePet { s, now -> PetLogic.clean(s, now) }
+        viewModelScope.launch { app.rewards.record { Achievements.onClean(it, poops) } }
+    }
     fun play() = updatePet { s, now -> PetLogic.play(s, now) }
     fun toggleSleep() = updatePet { s, now -> PetLogic.toggleSleep(s, now) }
     fun caress() = updatePet { s, now -> PetLogic.pet(s, now) }

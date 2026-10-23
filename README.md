@@ -4,7 +4,7 @@ Application **Wear OS** (Galaxy Watch 4 et plus récentes) qui t'accompagne pend
 
 - 🔔 **Leurs événements sur la montre** : demande d'autorisation, réponse attendue, tâche terminée, erreur. Ils viennent des **hooks** (ordinateurs, Remote Control, sessions cloud claude.ai/code), passent par **ton serveur** et arrivent en **push** (Firebase Cloud Messaging). Aucune appli sur le téléphone. Le Markdown des agents est mis en forme : gras, italique, `code`, titres, listes à puces.
 - ⌚ **Leur répondre depuis la montre** : autoriser ou refuser une commande, choisir parmi les options proposées (une ou plusieurs), approuver un plan, ou répondre au clavier ou à la voix quand l'agent a fini.
-- 🦀 **Une mascotte virtuelle à soigner** : nourris-la, joue avec elle, mets-la au lit. Elle fait la fête quand l'agent a fini et s'affole quand il t'attend. **Personnalisable** (espèce, couleurs, accessoires, icônes d'actions), avec sa **tuile**, sa **complication**, son **cadran** où elle s'affiche en grand, et même l'**icône de l'appli** assortie. Des **séries et succès** récompensent les jours d'affilée avec des tâches terminées et les réponses données depuis la montre.
+- 🦀 **Une mascotte virtuelle à soigner** : nourris-la, joue avec elle, mets-la au lit, nettoie ses cacas. Elle fait la fête quand l'agent a fini et s'affole quand il t'attend. **Personnalisable** (espèce, couleurs, accessoires, icônes d'actions), avec sa **tuile**, sa **complication**, son **cadran** où elle s'affiche en grand, et même l'**icône de l'appli** assortie. Des **séries et succès** récompensent les jours d'affilée avec des tâches terminées et les réponses données depuis la montre.
 - 📋 **Les sessions en cours** d'un coup d'œil : au travail, en attente de ta réponse, terminées.
 - ⚙️ **Des paramètres rangés par catégorie** pour choisir quoi recevoir et comment : plein écran, notification normale ou discrète, motif de vibration, son, **résumé groupé** des événements non urgents, heures calmes, **Ne pas déranger et mode Coucher** de la montre.
 
@@ -209,7 +209,9 @@ Toucher une session ouvre la question en attente, ou la session cloud sur le té
 |---|---|---|
 | 🍪 Satiété | −6 / h | Nourrir (+25) |
 | ⚡ Énergie | −5 / h | Dormir (+15 / h) |
-| 💖 Bonheur | −4 / h | Jouer (+20), la caresser (tap), chaque tâche terminée par un agent (+10) |
+| 💖 Bonheur | −4 / h, −2 / h de plus par caca | Jouer (+20), la caresser (tap), nettoyer (+5 par caca), chaque tâche terminée par un agent (+10) |
+
+De temps en temps (toutes les 3 h, deux fois moins vite en dormant, plus tôt après un repas), la mascotte fait **caca** 💩 à côté d'elle, jusqu'à trois. Ils lui sapent le moral, et à partir de deux elle boude (🤢 « Ça sent pas bon ici… ») : le bouton **Nettoyer** apparaît sous les actions pour faire place nette, même quand elle dort (+1 XP par caca).
 
 Chaque tâche terminée rapporte aussi de l'XP (+10). La mascotte monte d'un niveau tous les 100 XP.
 
@@ -241,6 +243,7 @@ Depuis l'écran de la mascotte, **Succès** affiche la **série** en cours (jour
 | 🗺️ 🧩 | Architecte, Décideur | Premier plan approuvé, première question à choix répondue |
 | 🦉 | Oiseau de nuit | Une tâche terminée entre minuit et 5 h |
 | 🍪 | Aux petits soins | Nourrir la mascotte 50 fois |
+| 🧽 | Grand ménage | Nettoyer 30 cacas |
 | 👑 🌟 | Niveau 5, Niveau 10 | Niveaux de la mascotte |
 
 ## Publier sur le Play Store

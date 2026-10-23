@@ -108,9 +108,9 @@ object MascotSprite {
         mood == Mood.SLEEPING -> Face.CLOSED
         reaction == Reaction.ALERT -> Face.WIDE
         blinking -> Face.CLOSED
-        reaction in setOf(Reaction.CELEBRATE, Reaction.LOVE, Reaction.PLAY, Reaction.EAT, Reaction.WAVE) -> Face.HAPPY
+        reaction in setOf(Reaction.CELEBRATE, Reaction.LOVE, Reaction.PLAY, Reaction.EAT, Reaction.WAVE, Reaction.CLEAN) -> Face.HAPPY
         mood == Mood.HAPPY -> Face.HAPPY
-        mood == Mood.SAD || mood == Mood.TIRED -> Face.SAD
+        mood == Mood.SAD || mood == Mood.TIRED || mood == Mood.DIRTY -> Face.SAD
         else -> Face.OPEN
     }
 
@@ -124,7 +124,9 @@ object MascotSprite {
         reaction == Reaction.PLAY -> "🎾"
         reaction == Reaction.WAVE -> "👋"
         reaction == Reaction.THINK -> "💭"
+        reaction == Reaction.CLEAN -> "✨"
         mood == Mood.HUNGRY -> "🍽️"
+        mood == Mood.DIRTY -> "🤢"
         else -> null
     }
 

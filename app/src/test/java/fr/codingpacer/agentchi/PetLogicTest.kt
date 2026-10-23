@@ -61,6 +61,41 @@ class PetLogicTest {
     }
 
     @Test
+    fun `la mascotte fait caca de temps en temps, au plus trois`() {
+        val s = PetLogic.tick(PetState(lastUpdate = t0), t0 + 7 * hour)
+        assertEquals(2, s.poops)
+        assertEquals(1f, s.digestion, 0.01f)
+        val full = PetLogic.tick(PetState(lastUpdate = t0), t0 + 30 * hour)
+        assertEquals(PetLogic.MAX_POOPS, full.poops)
+        // Digestion bloquée tant que ce n'est pas nettoyé : pas de rafale juste après.
+        assertTrue(full.digestion <= PetLogic.POOP_EVERY_HOURS)
+        // Deux fois plus lent pendant le sommeil.
+        assertEquals(1, PetLogic.tick(PetState(sleeping = true, energy = 0f, lastUpdate = t0), t0 + 6 * hour).poops)
+    }
+
+    @Test
+    fun `manger accelere la digestion`() {
+        val s = PetLogic.feed(PetState(digestion = 2.5f, lastUpdate = t0), t0)
+        assertEquals(1, s.poops)
+    }
+
+    @Test
+    fun `les cacas rendent triste et se nettoient`() {
+        val dirty = PetLogic.tick(PetState(poops = 2, digestion = 0f, lastUpdate = t0), t0 + 2 * hour)
+        assertEquals(64f, dirty.happiness, 0.01f)
+        assertEquals(Mood.DIRTY, PetLogic.mood(dirty))
+        val clean = PetLogic.clean(dirty, t0 + 2 * hour)
+        assertEquals(0, clean.poops)
+        assertEquals(74f, clean.happiness, 0.01f)
+        assertEquals(2, clean.xp)
+        assertEquals(Reaction.CLEAN, PetLogic.currentReaction(clean, t0 + 2 * hour + 1_000))
+        // Rien à nettoyer : rien ne change.
+        assertEquals(clean, PetLogic.clean(clean, t0 + 2 * hour))
+        // Nettoyer ne réveille pas la mascotte.
+        assertTrue(PetLogic.clean(PetState(poops = 1, sleeping = true, lastUpdate = t0), t0).sleeping)
+    }
+
+    @Test
     fun humeur() {
         assertEquals(Mood.HUNGRY, PetLogic.mood(PetState(satiety = 10f)))
         assertEquals(Mood.SLEEPING, PetLogic.mood(PetState(sleeping = true)))

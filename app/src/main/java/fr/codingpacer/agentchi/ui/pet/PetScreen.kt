@@ -23,6 +23,7 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
@@ -73,6 +74,7 @@ fun PetScreen(
                     reaction = reaction,
                     look = settings.mascot,
                     modifier = Modifier.size(width = 120.dp, height = 96.dp),
+                    poops = pet.poops,
                     onTap = viewModel::caress,
                 )
             }
@@ -106,6 +108,16 @@ fun PetScreen(
                         settings.iconSet,
                         if (mood == Mood.SLEEPING) "Réveiller" else "Dormir",
                         onClick = viewModel::toggleSleep,
+                    )
+                }
+            }
+            if (pet.poops > 0) {
+                item {
+                    CompactChip(
+                        onClick = viewModel::clean,
+                        label = { Text(if (pet.poops > 1) "Nettoyer (${pet.poops})" else "Nettoyer") },
+                        icon = { ActionIcon(PixelIcon.CLEAN, settings.iconSet, size = 16.dp) },
+                        colors = ChipDefaults.secondaryChipColors(),
                     )
                 }
             }
