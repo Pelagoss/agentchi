@@ -12,4 +12,6 @@ data:
   # Derrière Traefik : adresse du client dans X-Forwarded-For.
   CC_TRUST_PROXY: "true"
   CC_MAX_DEVICES: "1000"
+  # Serveur public : seule instance indexée par les moteurs de recherche (sitemap, pas de noindex).
+  CC_INDEXABLE: "true"
   CC_FCM_CREDENTIALS: /secrets/firebase-service-account.json

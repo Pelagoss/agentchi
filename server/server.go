@@ -22,6 +22,9 @@ type Config struct {
 	// Faire confiance à X-Forwarded-For / X-Forwarded-Proto (derrière un reverse proxy).
 	TrustProxy bool
 	MaxDevices int
+	// Page d'accueil indexable par les moteurs de recherche (plan du site, pas de noindex). Seulement pour le
+	// serveur public : une instance auto-hébergée ne doit pas concurrencer agentchi.dev.
+	Indexable bool
 	// Attente d'une réponse de la montre, à la place du réglage de chaque montre (tests).
 	AskTimeout time.Duration
 }
@@ -57,6 +60,10 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 		asks:          askRegistry{m: map[string]*pendingAsk{}},
 	}
 	s.mux.HandleFunc("GET /{$}", s.handleHome)
+	// Sous-arbre plutôt que « /fr/{$} » : le mux redirige lui-même /fr vers /fr/.
+	s.mux.HandleFunc("GET /fr/", s.handleHomeFR)
+	s.mux.HandleFunc("GET /robots.txt", s.handleRobots)
+	s.mux.HandleFunc("GET /sitemap.xml", s.handleSitemap)
 	s.mux.Handle("GET /static/", staticHandler())
 	// Sans cette route, « /static/ » nettoyé en « /static » redirigerait en boucle vers « /static/ ».
 	s.mux.HandleFunc("GET /static", http.NotFound)
@@ -85,8 +92,12 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// « https://serveur/ » + « /h » donne « //h » : on nettoie sans rediriger,
-	// car curl ne suit pas une redirection de POST.
-	r.URL.Path = path.Clean("/" + r.URL.Path)
+	// car curl ne suit pas une redirection de POST. La barre finale reste (/fr/ n'est pas /fr).
+	clean := path.Clean("/" + r.URL.Path)
+	if strings.HasSuffix(r.URL.Path, "/") && clean != "/" {
+		clean += "/"
+	}
+	r.URL.Path = clean
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	s.mux.ServeHTTP(w, r)
 }

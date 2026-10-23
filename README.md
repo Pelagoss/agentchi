@@ -209,7 +209,7 @@ Full policy: [docs/PRIVACY.md](docs/PRIVACY.md) ([en français](docs/PRIVACY.fr.
 - Server: Go, standard library only
 - `./gradlew :app:testDebugUnitTest`: mascot and sprites, up-to-date app icons, push parsing, filters, Markdown, grouped summary, active sessions, streaks and achievements
 - `./gradlew :watchface:assembleDebug`: the watch face. Its `watchface.xml` follows the [Watch Face Format](https://github.com/google/watchface) schema version 1 (XSD 1.1, validate with Xerces: xmllint can't read this schema)
-- `cd server && go test ./...`: hook translation (Claude Code, Codex), replies from the watch, pairing, isolation between watches, FCM sending (JWT, OAuth, expired token), persistence, up-to-date Codex plugin, home page (install info, language negotiation, static files, mascot scripts in sync with `Stores/source`)
+- `cd server && go test ./...`: hook translation (Claude Code, Codex), replies from the watch, pairing, isolation between watches, FCM sending (JWT, OAuth, expired token), persistence, up-to-date Codex plugin, home page (install info, language routing, SEO tags, robots.txt and sitemap, static files, mascot scripts in sync with `Stores/source`)
 - `claude plugin validate .`: Claude Code marketplace and plugin
 - Generated files: `UPDATE_CODEX_HOOKS=1 go test -run TestPluginCodex` (in `server/`) and `UPDATE_APP_ICONS=1 ./gradlew :app:testDebugUnitTest --tests '*AppIconsTest*'`
 - Store visuals and video, in French and English: `node Stores/source/render-assets.mjs` and `node Stores/source/render-video.mjs [fr|en]` (Playwright, plus ffmpeg and python3 for the video)

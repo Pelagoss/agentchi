@@ -8,6 +8,7 @@
 //	CC_PUBLIC_URL   URL publique, par ex. https://cc.example.fr (sinon déduite de la requête)
 //	CC_TRUST_PROXY  « true » derrière un reverse proxy (X-Forwarded-For / -Proto)
 //	CC_MAX_DEVICES  nombre maximal de montres (défaut 1000, 0 = illimité)
+//	CC_INDEXABLE    « true » pour laisser les moteurs de recherche indexer la page d'accueil (serveur public)
 //	CC_FCM_CREDENTIALS  fichier JSON du compte de service Firebase (push vers les montres)
 package main
 
@@ -48,6 +49,7 @@ func main() {
 		PublicURL:  os.Getenv("CC_PUBLIC_URL"),
 		TrustProxy: os.Getenv("CC_TRUST_PROXY") == "true",
 		MaxDevices: maxDevices,
+		Indexable:  os.Getenv("CC_INDEXABLE") == "true",
 	}, store, pusher)
 
 	addr := env("CC_ADDR", ":8080")

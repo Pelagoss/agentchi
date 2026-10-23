@@ -77,12 +77,15 @@ Run `go build` in `server/`, then start the binary behind your reverse proxy. Va
 | `CC_PUBLIC_URL` | Public address, shown on the home page and in the commands (otherwise inferred from the request) |
 | `CC_TRUST_PROXY` | `true` behind a reverse proxy (`X-Forwarded-For`, `X-Forwarded-Proto`) |
 | `CC_MAX_DEVICES` | Maximum number of watches (default 1000, 0 = unlimited) |
+| `CC_INDEXABLE` | `true` to let search engines index the home page (sitemap, no `noindex`). Leave it unset on a self-hosted server so it doesn't compete with agentchi.dev |
 
 Behind a reverse proxy, let `POST /ask` requests stay open for 5 minutes (Traefik and Caddy do so by default).
 
 ### The home page
 
-Open your server's address: its home page introduces Agentchi and gives every command from the install guide, ready to copy, with **its** address. It's in English by default and in French for browsers that prefer French (`Accept-Language`); the **FR** / **EN** link in the header switches language (`/?lang=fr`, `/?lang=en`) and the choice is remembered in a cookie. Screenshots, video and share image follow the language. It's embedded in the binary (`server/web/`: `home.en.html`, `home.fr.html`) along with its fonts, the mascot scripts (copied from `Stores/source`) and the intro video.
+Open your server's address: its home page introduces Agentchi and gives every command from the install guide, ready to copy, with **its** address. It's in English at `/` and in French at `/fr/`; browsers that prefer French (`Accept-Language`) are sent to `/fr/`, and the **FR** / **EN** link in the header switches language (`/?lang=fr`, `/?lang=en`), remembering the choice in a cookie. Screenshots, video and share image follow the language. It's embedded in the binary (`server/web/`: `home.en.html`, `home.fr.html`, and `seo.html` for the shared canonical, hreflang, Open Graph and structured data tags) along with its fonts, the mascot scripts (copied from `Stores/source`) and the intro video.
+
+The server also serves `robots.txt`, and `sitemap.xml` when `CC_INDEXABLE=true`. Without it, the home page is sent with `noindex`: your instance stays reachable but out of search results.
 
 ## 3. The watch
 
