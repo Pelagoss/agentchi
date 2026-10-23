@@ -14,7 +14,7 @@
       "interface": {
         "displayName": "Agentchi (montre)",
         "shortDescription": "Notifications et réponses depuis ta montre Wear OS",
-        "longDescription": "Relaie à ta montre Agentchi les fins de tâche et les demandes d'autorisation de Codex, et renvoie à Codex les réponses données sur la montre. Code d'appairage dans la variable AGENTCHI_CODE, serveur dans AGENTCHI_SERVER (défaut https://agentchi.codingpacer.fr).",
+        "longDescription": "Relaie à ta montre Agentchi les fins de tâche et les demandes d'autorisation de Codex, et renvoie à Codex les réponses données sur la montre. Code d'appairage dans la variable AGENTCHI_CODE, serveur dans AGENTCHI_SERVER (défaut https://agentchi.dev).",
         "developerName": "Pelagoss",
         "category": "Productivity",
         "websiteURL": "https://github.com/Pelagoss/agentchi",

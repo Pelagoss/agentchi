@@ -8,7 +8,7 @@ metadata:
 data:
   CC_ADDR: ":8080"
   CC_DATA: /data/state.json
-  CC_PUBLIC_URL: https://agentchi.codingpacer.fr
+  CC_PUBLIC_URL: https://agentchi.dev
   # Derrière Traefik : adresse du client dans X-Forwarded-For.
   CC_TRUST_PROXY: "true"
   CC_MAX_DEVICES: "1000"
