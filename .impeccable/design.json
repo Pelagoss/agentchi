@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T12:00:00Z",
+  "title": "Design System: Agentchi",
+  "extensions": {
+    "colorMeta": {
+      "coral": { "role": "primary", "displayName": "Corail Agentchi", "canonical": "oklch(67.2% 0.131 38.8)", "tonalRamp": ["#200000", "#3b1407", "#6e1300", "#8f3412", "#b05233", "#d17050", "#ff9f7e", "#ffe0cf"] },
+      "coral-hi": { "role": "primary", "displayName": "Corail clair", "canonical": "oklch(72.4% 0.125 38.8)", "tonalRamp": ["#1f0000", "#3a1509", "#6c1700", "#8c3618", "#ad5436", "#cf7254", "#ffa181", "#ffe1d0"] },
+      "on-coral": { "role": "neutral", "displayName": "Encre sur corail", "canonical": "oklch(23.6% 0.002 67.7)", "tonalRamp": ["#0b0b0b", "#222121", "#3b3a39", "#565554", "#727170", "#908f8d", "#bfbdbc", "#efeeed"] },
+      "ink-0": { "role": "neutral", "displayName": "Encre profonde", "canonical": "oklch(16.0% 0.003 67.6)", "tonalRamp": ["#0b0b0b", "#222121", "#3b3a39", "#565554", "#737170", "#908f8d", "#bfbdbc", "#efeeed"] },
+      "ink": { "role": "neutral", "displayName": "Encre", "canonical": "oklch(19.6% 0.003 67.7)", "tonalRamp": ["#0b0b0b", "#222121", "#3b3a39", "#565554", "#727170", "#908f8d", "#bfbdbc", "#efeeed"] },
+      "ink-2": { "role": "neutral", "displayName": "Encre relevée", "canonical": "oklch(22.8% 0.005 67.6)", "tonalRamp": ["#0c0b0a", "#222120", "#3c3a38", "#575552", "#73716e", "#918f8c", "#c0bdba", "#efeeed"] },
+      "ink-3": { "role": "neutral", "displayName": "Encre haute", "canonical": "oklch(27.9% 0.006 56.2)", "tonalRamp": ["#0c0b0a", "#232120", "#3d3a38", "#585452", "#74716e", "#928e8c", "#c1bdba", "#f0eeed"] },
+      "ink-4": { "role": "neutral", "displayName": "Encre de survol", "canonical": "oklch(33.6% 0.008 59.4)", "tonalRamp": ["#0c0b0a", "#232120", "#3e3a37", "#595451", "#75716d", "#938e8b", "#c2bdb9", "#f0eeec"] },
+      "bezel": { "role": "neutral", "displayName": "Lunette", "canonical": "oklch(29.2% 0.006 56.2)", "tonalRamp": ["#0c0b0a", "#232120", "#3d3a38", "#585452", "#74716e", "#928e8c", "#c1bdba", "#f0eeed"] },
+      "bezel-edge": { "role": "neutral", "displayName": "Arête de lunette", "canonical": "oklch(37.5% 0.010 61.2)", "tonalRamp": ["#0d0b09", "#23211f", "#3e3936", "#595450", "#76706c", "#948e89", "#c2bcb8", "#f1eeeb"] },
+      "cream": { "role": "neutral", "displayName": "Crème", "canonical": "oklch(94.8% 0.011 95.2)", "tonalRamp": ["#0c0b09", "#22221f", "#3c3b34", "#57554f", "#73726b", "#918f88", "#c0beb6", "#efeeea"] },
+      "muted": { "role": "neutral", "displayName": "Crème atténué", "canonical": "oklch(76.5% 0.017 82.8)", "tonalRamp": ["#0d0b07", "#24211d", "#3f3a31", "#5a554b", "#767167", "#948e84", "#c3bdb2", "#f1eee8"] },
+      "faint": { "role": "neutral", "displayName": "Crème pâle", "canonical": "oklch(69.1% 0.017 82.8)", "tonalRamp": ["#0d0b07", "#24211d", "#3f3a30", "#5a554a", "#777166", "#948e83", "#c3bdb1", "#f1eee8"] },
+      "line": { "role": "neutral", "displayName": "Filet", "canonical": "rgba(240, 238, 230, 0.1)" },
+      "line-2": { "role": "neutral", "displayName": "Filet marqué", "canonical": "rgba(240, 238, 230, 0.18)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Titre unique du héros, en deux temps : crème puis corail sur une nouvelle ligne." },
+      "headline": { "displayName": "Headline", "purpose": "Titres de section." },
+      "title": { "displayName": "Title", "purpose": "Étapes de la journée." },
+      "title-sm": { "displayName": "Title small", "purpose": "Étapes du guide d'installation." },
+      "lead": { "displayName": "Lead", "purpose": "Chapeau du héros (max 34em) ; les chapeaux de section sont un cran plus petits." },
+      "body": { "displayName": "Body", "purpose": "Texte courant, crème atténué pour les paragraphes secondaires." },
+      "button": { "displayName": "Button", "purpose": "Boutons pilule." },
+      "label": { "displayName": "Label", "purpose": "Pastilles, onglets, petites étiquettes." },
+      "mono": { "displayName": "Mono", "purpose": "Commandes, chemins et codes à copier, rien d'autre." }
+    },
+    "shadows": [
+      { "name": "pill-rest", "value": "0 8px 18px -10px rgba(0, 0, 0, 0.7)", "purpose": "Bouton corail au repos." },
+      { "name": "pill-lift", "value": "0 12px 24px -12px rgba(0, 0, 0, 0.8)", "purpose": "Bouton corail au survol, avec une montée de 2 px." },
+      { "name": "heavy-object", "value": "0 0 0 1px rgba(240, 238, 230, 0.1), 0 40px 80px -40px rgba(0, 0, 0, 0.9)", "purpose": "Cadre vidéo ; variante 24-30 px sous les montres en image." },
+      { "name": "inset-line", "value": "inset 0 0 0 1px rgba(240, 238, 230, 0.1)", "purpose": "Contour de toutes les surfaces (cartes, nœuds, blocs de code, rail d'onglets)." },
+      { "name": "inset-selected", "value": "inset 0 0 0 2px #d97757", "purpose": "Contour de l'état choisi (tuile cochée, nœud « Ce serveur »)." },
+      { "name": "bezel", "value": "0 0 0 10px #2e2b29, 0 0 0 11px #45403c", "purpose": "Boîtier de montre tracé autour d'un cercle (6 à 14 px selon la taille)." },
+      { "name": "coral-halo", "value": "radial-gradient(circle, rgba(217, 119, 87, 0.3), rgba(217, 119, 87, 0.08) 45%, transparent 70%)", "purpose": "Halo derrière les montres ; version 12-18 % en fond de héros et d'installation." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Courbe unique des montées, appuis et apparitions." },
+      { "name": "hover-color", "value": "0.2s", "purpose": "Changements de fond et de couleur au survol." },
+      { "name": "hover-lift", "value": "transform 0.25s translateY(-2px)", "purpose": "Montée des boutons corail." },
+      { "name": "step-focus", "value": "opacity 0.5s, 0.38 -> 1", "purpose": "L'étape de la journée en cours s'allume, les autres restent en retrait." },
+      { "name": "travel", "value": "2.4s infinite, décalages 0.5s / 1s", "purpose": "Pixel corail qui voyage sur les fils du schéma du serveur." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Toutes les transitions sous prefers-reduced-motion ; pixel voyageur masqué." }
+    ],
+    "breakpoints": [
+      { "name": "stack", "value": "980px" },
+      { "name": "mobile", "value": "760px" },
+      { "name": "narrow", "value": "420px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pilule corail pour l'action principale de l'écran, avec une icône trait 16 px.",
+      "html": "<a class=\"ds-btn\" href=\"#\">Installer Agentchi <svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M8 3v10M3.5 8.5 8 13l4.5-4.5\"/></svg></a>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 10px; background: #d97757; color: #1f1e1d; font: 700 1.02rem/1 Inter, system-ui, sans-serif; letter-spacing: -0.01em; text-decoration: none; padding: 17px 26px; border-radius: 999px; border: 0; cursor: pointer; box-shadow: 0 8px 18px -10px rgba(0,0,0,0.7); transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), background-color 0.2s, box-shadow 0.25s; } .ds-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-btn:hover { background: #e8896a; transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(0,0,0,0.8); } .ds-btn:active { transform: translateY(0) scale(0.98); } .ds-btn:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Bouton fantôme",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Action secondaire, toujours à côté d'un bouton principal.",
+      "html": "<a class=\"ds-btn-ghost\" href=\"#\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M5 3.5v9l7.5-4.5z\"/></svg> Voir la vidéo · 43 s</a>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 10px; background: transparent; color: #f0eee6; font: 700 1.02rem/1 Inter, system-ui, sans-serif; letter-spacing: -0.01em; text-decoration: none; padding: 17px 26px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px rgba(240,238,230,0.18); transition: background-color 0.2s; } .ds-btn-ghost svg { width: 16px; height: 16px; fill: currentColor; } .ds-btn-ghost:hover { background: #2b2826; } .ds-btn-ghost:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Pastille de soin",
+      "kind": "chip",
+      "refersTo": "chip-care",
+      "description": "Action de soin sur la mascotte, icône pixel 16 px en tête ; corail quand l'état est actif.",
+      "html": "<span class=\"ds-care\"><button type=\"button\"><i class=\"ds-px\"></i>Nourrir</button><button type=\"button\" aria-pressed=\"true\"><i class=\"ds-px\"></i>Dodo</button></span>",
+      "css": ".ds-care { display: flex; gap: 6px; } .ds-care button { display: inline-flex; align-items: center; gap: 7px; background: #2b2826; color: #f0eee6; border: 0; border-radius: 999px; font: 600 0.92rem/1 Inter, system-ui, sans-serif; padding: 9px 14px 9px 10px; cursor: pointer; transition: background-color 0.2s, transform 0.2s cubic-bezier(0.16,1,0.3,1); } .ds-care button:hover { background: #3a3633; } .ds-care button:active { transform: scale(0.95); } .ds-care button[aria-pressed=\"true\"] { background: #d97757; color: #1f1e1d; } .ds-care button:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; } .ds-px { width: 16px; height: 16px; background: linear-gradient(90deg, #f2c14e 50%, #d97757 50%); image-rendering: pixelated; }"
+    },
+    {
+      "name": "Tuile d'option",
+      "kind": "custom",
+      "refersTo": "option-tile",
+      "description": "Choix radio du studio de mascotte ; cochée, contour intérieur corail 2 px.",
+      "html": "<div class=\"ds-opts\"><label class=\"ds-opt\"><input type=\"radio\" name=\"ds-sp\"><span><i class=\"ds-sw\"></i>Fantôme</span></label><label class=\"ds-opt\"><input type=\"radio\" name=\"ds-sp\" checked><span><i class=\"ds-sw\"></i>Corail</span></label></div>",
+      "css": ".ds-opts { display: flex; gap: 8px; } .ds-opt { position: relative; } .ds-opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; } .ds-opt span { display: flex; align-items: center; gap: 9px; background: #1e1c1a; box-shadow: inset 0 0 0 1.5px rgba(240,238,230,0.1); border-radius: 14px; padding: 6px 14px 6px 6px; font: 550 0.92rem/1.6 Inter, system-ui, sans-serif; color: #b8b2a7; transition: box-shadow 0.2s, background-color 0.2s, color 0.2s; } .ds-opt:hover span { background: #2b2826; color: #f0eee6; } .ds-opt input:checked + span { box-shadow: inset 0 0 0 2px #d97757; color: #f0eee6; background: #2b2826; } .ds-opt input:focus-visible + span { outline: 2px solid #e8896a; outline-offset: 3px; } .ds-sw { width: 26px; height: 26px; border-radius: 8px; background: #d97757; box-shadow: inset 0 -6px 0 #b4593b; }"
+    },
+    {
+      "name": "Onglets",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Rail pilule ink-0, onglet sélectionné en corail plein.",
+      "html": "<div class=\"ds-tablist\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">Claude Code</button><button role=\"tab\" aria-selected=\"false\">Sessions cloud</button><button role=\"tab\" aria-selected=\"false\">Codex</button></div>",
+      "css": ".ds-tablist { display: flex; gap: 6px; background: #0e0d0c; padding: 5px; border-radius: 999px; width: fit-content; box-shadow: inset 0 0 0 1px rgba(240,238,230,0.1); } .ds-tablist button { font: 600 0.92rem/1 Inter, system-ui, sans-serif; color: #b8b2a7; background: transparent; border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer; transition: background-color 0.2s, color 0.2s; } .ds-tablist button:hover { color: #f0eee6; } .ds-tablist button[aria-selected=\"true\"] { background: #d97757; color: #1f1e1d; } .ds-tablist button:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Liens de section en pilules discrètes dans l'en-tête collant.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">La journée</a><a href=\"#\">La mascotte</a><a href=\"#\">Vidéo</a><a href=\"#\">Le serveur</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 4px; background: rgba(22,21,20,0.92); padding: 12px; } .ds-nav a { color: #b8b2a7; text-decoration: none; font: 500 0.92rem/1.6 Inter, system-ui, sans-serif; padding: 8px 12px; border-radius: 999px; transition: color 0.2s, background-color 0.2s; } .ds-nav a:hover { color: #f0eee6; background: #2b2826; } .ds-nav a:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Carte d'étape du guide",
+      "kind": "card",
+      "refersTo": "card-guide",
+      "description": "Étape numérotée de l'installation : carte ink-2 à filet intérieur, numéro carré corail.",
+      "html": "<ol class=\"ds-guide\"><li><h3>Un code par ordinateur</h3><p>Sur la montre : <b>Paramètres › Serveur › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>.</p></li></ol>",
+      "css": ".ds-guide { list-style: none; margin: 0; padding: 0; counter-reset: s; } .ds-guide > li { counter-increment: s; position: relative; background: #1e1c1a; box-shadow: inset 0 0 0 1px rgba(240,238,230,0.1); border-radius: 22px; padding: 26px 28px 26px 84px; color: #b8b2a7; font: 400 1rem/1.6 Inter, system-ui, sans-serif; } .ds-guide > li::before { content: counter(s); position: absolute; left: 24px; top: 22px; width: 40px; height: 40px; display: grid; place-items: center; background: #d97757; color: #1f1e1d; font: 800 1.15rem/1 Inter, system-ui, sans-serif; border-radius: 12px; } .ds-guide h3 { margin: 0; padding-top: 6px; color: #f0eee6; font: 800 1.4rem/1.25 Inter, system-ui, sans-serif; letter-spacing: -0.02em; } .ds-guide p { margin: 12px 0 0; } .ds-guide b { color: #f0eee6; font-weight: 600; } .ds-guide code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em; background: #2b2826; border-radius: 6px; padding: 0.1em 0.4em; color: #f0eee6; }"
+    },
+    {
+      "name": "Bloc de code",
+      "kind": "custom",
+      "refersTo": "code-block",
+      "description": "Commande à copier, mono sur ink-0, bouton Copier en coin qui passe au corail.",
+      "html": "<div class=\"ds-code\"><pre><code>adb connect &lt;ip&gt;:&lt;port&gt;\nadb install agentchi-montre.apk</code></pre><button type=\"button\" class=\"ds-copy\">Copier</button></div>",
+      "css": ".ds-code { position: relative; } .ds-code pre { margin: 0; background: #0e0d0c; box-shadow: inset 0 0 0 1px rgba(240,238,230,0.1); border-radius: 14px; padding: 48px 18px 16px; overflow-x: auto; color: #f0eee6; font: 500 0.86em/1.65 'JetBrains Mono', ui-monospace, monospace; } .ds-copy { position: absolute; top: 10px; right: 10px; font: 600 0.82rem/1 Inter, system-ui, sans-serif; color: #f0eee6; background: #2b2826; border: 0; border-radius: 999px; padding: 8px 12px; cursor: pointer; transition: background-color 0.2s, color 0.2s; } .ds-copy:hover { background: #3a3633; } .ds-copy:active { background: #d97757; color: #1f1e1d; } .ds-copy:focus-visible { outline: 2px solid #e8896a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Montre vivante",
+      "kind": "custom",
+      "refersTo": "watch-stage",
+      "description": "Signature : montre ronde sur halo corail. Sur la page, l'écran est dessiné en canvas depuis les grilles réelles de l'appli ; ici seulement le boîtier et le halo.",
+      "html": "<div class=\"ds-stage\"><div class=\"ds-watch\"><span>12:39</span></div></div>",
+      "css": ".ds-stage { position: relative; width: 280px; aspect-ratio: 1 / 1.08; display: grid; place-items: center; } .ds-stage::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle, rgba(217,119,87,0.3), rgba(217,119,87,0.08) 45%, transparent 70%); } .ds-watch { position: relative; width: 62%; aspect-ratio: 1; border-radius: 50%; background: #000; box-shadow: 0 0 0 14px #2e2b29, 0 0 0 15px #45403c, 0 30px 60px -24px rgba(0,0,0,0.8); display: grid; place-items: start center; padding-top: 12%; } .ds-watch span { color: #f0eee6; font: 700 0.82rem/1 Inter, system-ui, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le poignet en direct",
+    "overview": "Le site prolonge les visuels des stores : une nuit d'encre chaude, une montre ronde qui brille d'un halo corail au milieu, et une mascotte pixel-art qui vit dessus. La montre n'est pas une illustration : elle est dessinée en canvas à partir des vraies grilles de l'appli (`mascot.js`, `screens.js`, `watch.js`, copiés de `Stores/source`). Tout le reste de la page sert de décor sobre à cet objet vivant.\n\nLe ton visuel est chaleureux, sûr de lui et joueur sans être enfantin. Les titres sont gras et serrés, le texte courant est calme et crème sur encre, le corail ne sert qu'à agir et à choisir. Deux matières cohabitent : l'interface (pilules, cartes aux coins doux, filets fins) et le pixel (carrés nets, rendu `pixelated`, jamais lissé). La densité est aérée : grandes sections séparées par un filet, colonnes en grille asymétrique, montre collante qui accompagne le défilement.\n\nLa profondeur vient de la lumière et des tons d'encre, pas des ombres : halos corail radiaux derrière la montre et en haut de l'installation, fond de trame pixel discrète (un point 2×2 tous les 28 px), surfaces qui montent d'un cran d'encre.",
+    "keyCharacteristics": [
+      "Encre chaude, jamais de gris neutre ni de noir pur (sauf l'écran de la montre).",
+      "Un seul accent, le corail, réservé aux actions, aux sélections et à la seconde ligne des titres.",
+      "Inter 800 serrée pour les titres, Inter 400 pour lire, JetBrains Mono seulement pour les commandes.",
+      "Pilules pour tout ce qui se touche, coins doux pour ce qui contient, carrés nets pour le pixel.",
+      "Montres canvas fidèles à l'appli, au centre de chaque section clé."
+    ],
+    "rules": [
+      { "name": "The Coral Voice Rule", "body": "Le corail veut dire « agis ici » ou « c'est choisi ». Il ne sert jamais de décor plat, seulement de lumière diffuse (halo) ou d'état. Un écran porte un bouton corail plein à la fois, plus les états sélectionnés.", "section": "colors" },
+      { "name": "The Warm Ink Rule", "body": "Tous les neutres tirent vers le brun chaud (teinte autour de 60-95° en OKLCH). Pas de gris froid, pas de `#000` hors de l'écran de la montre, qui est l'objet lui-même.", "section": "colors" },
+      { "name": "The Heavy Tight Rule", "body": "Tout titre est en 800 avec un interlettrage négatif (-0.02em à -0.04em) et `text-wrap: balance`. Pas de titre en graisse légère.", "section": "typography" },
+      { "name": "The Mono Means Command Rule", "body": "JetBrains Mono est réservée à ce que l'utilisateur tape ou copie. Jamais pour un titre, une étiquette ou un effet « tech ».", "section": "typography" },
+      { "name": "The Halo Not Shadow Rule", "body": "Pour faire ressortir quelque chose, éclaire-le d'un halo corail ou monte-le d'un cran d'encre. Les ombres portées restent sous les objets qu'on pourrait prendre en main.", "section": "elevation" },
+      { "name": "The Inset Border Rule", "body": "Les contours sont des `box-shadow` intérieurs, jamais des `border` qui décalent la mise en page. Les `border` ne servent qu'aux filets de séparation.", "section": "elevation" },
+      { "name": "The Pixel Stays Square Rule", "body": "Ce qui vient de la grille pixel (mascotte, icônes 16 px des pastilles, pixel voyageur, trame de fond) ne s'arrondit pas et ne se lisse pas. L'arrondi est réservé à l'interface.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do dessine chaque écran de montre à partir des grilles réelles de `mascot.js` et `screens.js`, en canvas `pixelated`, avec une capture de l'appli en repli.",
+      "Do réserve le corail plein aux actions et aux états choisis, et éclaire les objets clés par un halo corail radial (12-30 % d'opacité).",
+      "Do détoure les surfaces par un filet intérieur `inset 0 0 0 1px` en `line`, et marque la sélection par un contour intérieur corail de 2 px.",
+      "Do écris les titres en Inter 800 avec un interlettrage de -0.02em à -0.04em et `text-wrap: balance`.",
+      "Do mets du texte encre sur corail (on-coral), jamais du blanc.",
+      "Do respecte `prefers-reduced-motion` : transitions à 0.01 ms et pixel voyageur masqué."
+    ],
+    "donts": [
+      "Don't utilise de gris froid ni de `#000` hors de l'écran de la montre.",
+      "Don't arrondis ni ne lisses le pixel-art (mascottes, icônes, pixel voyageur).",
+      "Don't utilise JetBrains Mono pour autre chose que des commandes, des chemins ou des codes.",
+      "Don't pose une ombre portée sur une carte ou un nœud : monte d'un cran d'encre à la place.",
+      "Don't dessine une montre ou un écran inventé qui n'existe pas dans l'appli."
+    ]
+  }
+}

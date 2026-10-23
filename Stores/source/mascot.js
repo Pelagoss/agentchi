@@ -128,12 +128,25 @@
     ctx.ellipse(bx + w / 2, by + (h + HEIGHT * px) / 2 + px * 0.2 + px * 0.4, shadowW / 2, px * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
     draw(ctx, look, face, ox, oy, px, { altLegs: o.altLegs, stretch: o.stretch, filter: o.filter, alpha: o.alpha });
+    if (o.poops) drawPoops(ctx, o.poops, bx, w, px, by + (h + HEIGHT * px) / 2);
     if (o.bubble) {
       ctx.font = `${Math.round(px * 2.9)}px "Noto Color Emoji"`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(o.bubble, bx + w - px * 1.9, by + px * 2.2 - bounce * px * 0.6);
     }
     return px;
+  }
+
+  /** Comme drawPoops de Mascot.kt : les cacas au sol de part et d'autre de la mascotte (le troisième devant, à gauche). */
+  function drawPoops(ctx, count, bx, w, px, groundY) {
+    const cell = px * 0.26, side = 8 * cell;
+    const spots = [[bx, groundY - side], [bx + w - side, groundY - side], [bx + side * 0.8, groundY - side * 0.6]];
+    const ic = ICONS.POOP;
+    spots.slice(0, Math.min(count, 3)).forEach(([x0, y0]) => ic.grid.forEach((row, y) => [...row].forEach((c, x) => {
+      if (c === '.') return;
+      ctx.fillStyle = c === 'a' ? ic.a : ic.b;
+      ctx.fillRect(x0 + x * cell, y0 + y * cell, cell + 0.5, cell + 0.5);
+    })));
   }
 
   const ICONS = {
@@ -145,6 +158,8 @@
     HAPPINESS: { a: '#E97CA0', b: '#F0EEE6', grid: ['.aa..aa.', 'abaaaaaa', 'aaaaaaaa', 'aaaaaaaa', '.aaaaaa.', '..aaaa..', '...aa...', '........'] },
     NOTIFICATIONS: { a: '#F2C14E', b: '#B4593B', grid: ['...aa...', '..aaaa..', '.aaaaaa.', '.aaaaaa.', '.aaaaaa.', 'aaaaaaaa', '........', '...bb...'] },
     SETTINGS: { a: '#B0AEA5', b: '#B0AEA5', grid: ['..a..a..', '.aaaaaa.', 'aaa..aaa', '.a....a.', '.a....a.', 'aaa..aaa', '.aaaaaa.', '..a..a..'] },
+    CLEAN: { a: '#F2C14E', b: '#5DBB7A', grid: ['......b.', '.....b.b', '......b.', 'aaaaaa..', 'abaaba..', 'aaaaaa..', 'aabaaa..', 'aaaaaa..'] },
+    POOP: { a: '#8B5A2B', b: '#B07A45', grid: ['........', '....a...', '...aa...', '..abaa..', '..aaaa..', '.abaaba.', 'aaaaaaaa', '.aaaaaa.'] },
   };
   ICONS.SATIETY = ICONS.FEED;
 

@@ -94,13 +94,14 @@
   const MOOD_LINE = {
     NONE: 'Tout va bien !', EAT: 'Miam !', PLAY: 'Youpi !', LOVE: '♥', CELEBRATE: 'Tâche terminée, bravo !',
     ALERT: 'On a besoin de toi !', WAVE: 'Coucou !', SLEEP: 'Zzz…', HUNGRY: "J'ai faim…", SAD: 'On joue ?',
+    DIRTY: 'Ça sent pas bon ici…', CLEAN: 'Tout propre !',
   };
-  const BUBBLE = { EAT: '🍪', PLAY: '🎾', LOVE: '💖', CELEBRATE: '🎉', ALERT: '❗', WAVE: '👋', SLEEP: '💤', HUNGRY: '🍽️' };
-  const FACE = { EAT: 'HAPPY', PLAY: 'HAPPY', LOVE: 'HAPPY', CELEBRATE: 'HAPPY', WAVE: 'HAPPY', ALERT: 'WIDE', SLEEP: 'CLOSED', HUNGRY: 'OPEN', SAD: 'SAD', NONE: 'HAPPY' };
+  const BUBBLE = { EAT: '🍪', PLAY: '🎾', LOVE: '💖', CELEBRATE: '🎉', ALERT: '❗', WAVE: '👋', SLEEP: '💤', HUNGRY: '🍽️', DIRTY: '🤢', CLEAN: '✨' };
+  const FACE = { EAT: 'HAPPY', PLAY: 'HAPPY', LOVE: 'HAPPY', CELEBRATE: 'HAPPY', WAVE: 'HAPPY', ALERT: 'WIDE', SLEEP: 'CLOSED', HUNGRY: 'OPEN', SAD: 'SAD', DIRTY: 'SAD', CLEAN: 'HAPPY', NONE: 'HAPPY' };
 
   /**
    * Écran principal de la mascotte. st : { look, reaction, name, level, satiety, energy, happiness,
-   * bounce, jump, blink, pressed: { feed, play, sleep } (0..1), dim (0..1) }.
+   * bounce, jump, blink, poops (0..3), scroll (dp, défilement de la liste), pressed: { feed, play, sleep, clean } (0..1), dim (0..1) }.
    */
   function pet(ctx, st) {
     frame(ctx, st.time);
@@ -109,9 +110,11 @@
     const excited = ['CELEBRATE', 'PLAY', 'WAVE', 'ALERT'].includes(r);
     const face = st.blink && !sleeping && r !== 'ALERT' ? 'CLOSED' : FACE[r];
     const bounce = st.bounce ?? 0.5;
+    ctx.save();
+    if (st.scroll) ctx.translate(0, -st.scroll);
     Mascot.drawInBox(ctx, st.look, face, C - 58, 18, 116, 86, {
       bounce, jump: st.jump || 0, excited, altLegs: excited && bounce > 0.5,
-      stretch: sleeping ? 1 + bounce * 0.04 : 1, bubble: st.bubble === undefined ? BUBBLE[r] : st.bubble,
+      stretch: sleeping ? 1 + bounce * 0.04 : 1, bubble: st.bubble === undefined ? BUBBLE[r] : st.bubble, poops: st.poops || 0,
     });
     text(ctx, `${st.name || 'Chi'} · niv. ${st.level || 3}`, C, 116, { size: 15, weight: 600, color: COL.orange });
     text(ctx, st.moodLine || MOOD_LINE[r], C, 131, { size: 11, weight: 500 });
@@ -122,7 +125,25 @@
     roundButton(ctx, C - 44, 194, 'FEED', { pressed: p.feed || 0, enabled: !sleeping });
     roundButton(ctx, C, 194, 'PLAY', { pressed: p.play || 0, enabled: !sleeping });
     roundButton(ctx, C + 44, 194, sleeping ? 'WAKE' : 'SLEEP', { pressed: p.sleep || 0 });
+    if (st.poops) cleanChip(ctx, st.poops, p.clean || 0);
+    ctx.restore();
+    if (st.scroll) {
+      // La liste passe sous l'heure, qui reste en haut (TimeText).
+      const fade = ctx.createLinearGradient(0, 0, 0, 30);
+      fade.addColorStop(0, '#000'); fade.addColorStop(0.6, '#000'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = fade; ctx.fillRect(0, 0, D, 30);
+      text(ctx, st.time || '10:09', C, 17, { size: 11, weight: 600 });
+    }
     if (st.dim) { ctx.fillStyle = `rgba(0,0,0,${0.45 * st.dim})`; ctx.fillRect(0, 0, D, D); }
+  }
+
+  /** CompactChip « Nettoyer » sous les actions, quand des cacas traînent (PetScreen). */
+  function cleanChip(ctx, poops, pressed) {
+    const w = 124, h = 30, x = C - w / 2, y = 222;
+    rrect(ctx, x, y, w, h, h / 2); ctx.fillStyle = COL.surface; ctx.fill();
+    if (pressed > 0) { ctx.fillStyle = `rgba(255,255,255,${0.18 * pressed})`; ctx.fill(); }
+    Mascot.drawIcon(ctx, 'CLEAN', x + 20, y + h / 2, 15);
+    text(ctx, poops > 1 ? `Nettoyer (${poops})` : 'Nettoyer', x + 34, y + h / 2 + 4.5, { size: 12, weight: 600, align: 'left' });
   }
 
   /** Paramètres › Mascotte, avec l'aperçu en direct. st : { look, name, level, highlight: 'species'|'palette'|'accessory', pressed, bounce } */

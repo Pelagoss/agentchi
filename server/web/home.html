@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="fr" class="no-js">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.className = 'js';</script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agentchi · tes agents de code au poignet</title>
+<meta name="description" content="Les demandes de Claude Code et de Codex arrivent sur ta montre Wear OS, tu y réponds d'un geste, et une mascotte pixel-art vit au rythme de tes sessions.">
+<meta name="theme-color" content="#161514">
+<meta property="og:title" content="Agentchi · tes agents de code au poignet">
+<meta property="og:description" content="Notifications, réponses depuis la montre et un compagnon pixel-art à chouchouter.">
+<meta property="og:image" content="{{.URL}}/static/img/og.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="/static/img/icon-512.png?v={{.V}}">
+<link rel="apple-touch-icon" href="/static/img/icon-180.png?v={{.V}}">
+<link rel="preload" href="/static/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/site.css?v={{.V}}">
+</head>
+<body>
+<a class="skip" href="#installer">Aller au guide d'installation</a>
+
+<header class="top" id="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#top" aria-label="Agentchi, haut de page">
+      <canvas class="brand-pet" width="40" height="34" aria-hidden="true" data-mini-pet></canvas>
+      <span>Agentchi</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#journee">La journée</a>
+      <a href="#mascotte">La mascotte</a>
+      <a href="#video">Vidéo</a>
+      <a href="#serveur">Le serveur</a>
+    </nav>
+    <a class="btn btn-sm" href="#installer">Installer</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <h1>Tes agents de code au poignet, <span class="accent">avec un compagnon pixel&#8209;art.</span></h1>
+        <p class="lead">Demande d'autorisation, question, tâche terminée&nbsp;: tout arrive sur ta montre Wear&nbsp;OS et tu réponds d'un geste. Pendant ce temps, Chi vit au rythme de tes sessions.</p>
+        <div class="actions">
+          <a class="btn" href="#installer">Installer Agentchi
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5"/></svg></a>
+          <a class="btn btn-ghost" href="#video">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" class="fill"/></svg>
+            Voir la vidéo <span class="dur">43&nbsp;s</span></a>
+        </div>
+        <p class="compat">Pour <b>Claude Code</b> et <b>Codex</b> · Montres Wear OS avec les services Google Play, Galaxy Watch 4 et plus récentes</p>
+      </div>
+      <figure class="hero-watch">
+        <div class="stage" data-stage="hero">
+          <img class="fallback" src="/static/img/01-mascotte.png?v={{.V}}" alt="La mascotte Chi sur la montre, avec ses jauges et ses actions" width="480" height="480">
+          <canvas data-watch="hero" role="img" aria-label="Montre Agentchi&nbsp;: la mascotte Chi, ses trois jauges et ses boutons Nourrir, Jouer et Dormir"></canvas>
+        </div>
+        <figcaption>
+          <span class="try">Essaie&nbsp;:</span>
+          <span class="care" role="group" aria-label="Prendre soin de Chi">
+            <button type="button" data-care="feed"><canvas width="16" height="16" data-icon="FEED" aria-hidden="true"></canvas>Nourrir</button>
+            <button type="button" data-care="play"><canvas width="16" height="16" data-icon="PLAY" aria-hidden="true"></canvas>Jouer</button>
+            <button type="button" data-care="pet"><canvas width="16" height="16" data-icon="HAPPINESS" aria-hidden="true"></canvas>Câlin</button>
+            <button type="button" data-care="sleep" aria-pressed="false"><canvas width="16" height="16" data-icon="SLEEP" aria-hidden="true"></canvas><span>Dodo</span></button>
+            <button type="button" data-care="clean" hidden><canvas width="16" height="16" data-icon="CLEAN" aria-hidden="true"></canvas><span>Nettoyer</span></button>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="day" id="journee" aria-labelledby="journee-titre">
+    <div class="wrap">
+      <h2 id="journee-titre" class="section-title">Une journée avec ton agent</h2>
+      <p class="section-lead">Tu lances une tâche et tu te lèves. Voilà ce que ta montre te montre ensuite.</p>
+    </div>
+    <div class="wrap day-in">
+      <div class="day-watch" aria-hidden="true">
+        <div class="stage" data-stage="day">
+          <img class="fallback" src="/static/img/03-jouer.png?v={{.V}}" alt="" width="480" height="480">
+          <canvas data-watch="day"></canvas>
+        </div>
+      </div>
+      <ol class="steps">
+        <li class="step" data-screen="permission">
+          <h3>Il te demande la permission</h3>
+          <p>L'agent veut lancer une commande. Autorise, refuse avec ou sans explication, ou choisis «&nbsp;toujours&nbsp;» pour ne plus être dérangé pour ça. Un compte à rebours te dit combien de temps il t'attend.</p>
+        </li>
+        <li class="step" data-screen="question">
+          <h3>Il hésite, tu choisis</h3>
+          <p>Une question à choix arrive avec ses options&nbsp;: coche-en une ou plusieurs, ou dicte une autre réponse. Un plan à valider&nbsp;? Approuve-le ou demande des changements.</p>
+        </li>
+        <li class="step" data-screen="sessions">
+          <h3>Tu sais qui travaille</h3>
+          <p>Les sessions en cours, d'un coup d'œil&nbsp;: au travail, en attente de ta réponse, terminées. Celles qui t'attendent passent en premier.</p>
+        </li>
+        <li class="step" data-screen="celebrate">
+          <h3>Il fête tes victoires</h3>
+          <p>Tâche terminée&nbsp;: Chi fait la fête et gagne de l'expérience. En montant de niveau, il débloque de nouveaux accessoires. Tu peux répondre au clavier, à la voix ou d'une réponse rapide.</p>
+        </li>
+        <li class="step" data-screen="hungry">
+          <h3>Et il a faim</h3>
+          <p>Satiété, énergie, bonheur&nbsp;: ses jauges baissent avec le temps. Nourris-le, joue avec lui, fais-lui un câlin. Il s'affole quand ton agent a besoin de toi.</p>
+          <p>Et ce qui rentre finit par sortir&nbsp;: de temps en temps, il fait caca à côté de lui. À partir de deux, il boude. Un toucher sur <b>Nettoyer</b> et tout est propre, même pendant qu'il dort.</p>
+        </li>
+        <li class="step" data-screen="achievements">
+          <h3>Tes séries comptent</h3>
+          <p>Jours d'affilée avec des tâches terminées, réponses données depuis la montre&nbsp;: les succès se débloquent au fil des sessions.</p>
+        </li>
+        <li class="step" data-screen="sleep">
+          <h3>Il respecte tes nuits</h3>
+          <p>Heures calmes, <i>Ne pas déranger</i> et mode Coucher de la montre&nbsp;: les notifications se font discrètes. Les événements non urgents se regroupent en un seul résumé, et seules les urgences passent.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="studio" id="mascotte" aria-labelledby="mascotte-titre">
+    <div class="wrap studio-in">
+      <div class="studio-copy">
+        <h2 id="mascotte-titre" class="section-title">Fais-le à ton image</h2>
+        <p class="section-lead">3 espèces, 6 couleurs, 5 accessoires. Compose le tien&nbsp;: il remplace Chi sur toute la page, comme il le fera sur ta montre, sa tuile, sa complication, son cadran et même l'icône de l'appli.</p>
+        <form class="picker" data-picker>
+          <fieldset>
+            <legend>Espèce</legend>
+            <div class="opts" data-opts="species"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Couleurs</legend>
+            <div class="opts opts-swatch" data-opts="palette"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Accessoire <span class="hint">débloqué en montant de niveau</span></legend>
+            <div class="opts" data-opts="accessory"></div>
+          </fieldset>
+        </form>
+        <p class="studio-note" data-look-label aria-live="polite"></p>
+      </div>
+      <div class="studio-watch">
+        <div class="stage" data-stage="studio">
+          <img class="fallback" src="/static/img/05-personnalisation.png?v={{.V}}" alt="Paramètres › Mascotte sur la montre&nbsp;: espèce, couleurs et accessoire" width="480" height="480">
+          <canvas data-watch="studio" role="img" aria-label="Aperçu de ta mascotte dans Paramètres › Mascotte"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="film" id="video" aria-labelledby="video-titre">
+    <div class="wrap">
+      <h2 id="video-titre" class="section-title">Regarde Chi prendre vie</h2>
+      <div class="film-frame">
+        <video controls preload="none" playsinline poster="/static/video/poster.jpg?v={{.V}}" width="1920" height="1080">
+          <source src="/static/video/agentchi-companion.mp4?v={{.V}}" type="video/mp4">
+          <a href="/static/video/agentchi-companion.mp4?v={{.V}}">Télécharger la vidéo de présentation (MP4, 8,5 Mo)</a>
+        </video>
+        <button type="button" class="play" data-play hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z"/></svg>
+          <span data-play-label>Lancer la vidéo</span> <span class="dur" data-play-dur>43&nbsp;s</span>
+        </button>
+      </div>
+      <p class="film-cap">Il s'assemble pixel par pixel, vit sur ta montre, se fait soigner, fête une tâche terminée et change de look. Musique chiptune synthétisée pour l'occasion.</p>
+    </div>
+  </section>
+
+  <section class="more" aria-labelledby="more-titre">
+    <div class="wrap">
+      <h2 id="more-titre" class="section-title">Et tout le reste, au poignet</h2>
+      <div class="more-in">
+      <ul class="faces">
+        <li><img src="/static/img/01-mascotte.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>Il vit sur ta montre</span></li>
+        <li><img src="/static/img/03-jouer.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>Il joue avec toi</span></li>
+        <li><img src="/static/img/04-dodo.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>Il dort quand tu le couches</span></li>
+        <li><img src="/static/img/05-personnalisation.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>Il change de look</span></li>
+      </ul>
+      <dl class="specs">
+        <div><dt>Tuile, complication, cadran</dt><dd>Ta mascotte s'affiche en grand sur le cadran Agentchi&nbsp;; la tuile et la complication signalent une question en attente et y mènent d'un toucher.</dd></div>
+        <div><dt>Texte mis en forme</dt><dd>Gras, italique, <code>code</code>, titres et listes&nbsp;: le Markdown des agents reste lisible sur l'écran rond.</dd></div>
+        <div><dt>Alertes à ton goût</dt><dd>Plein écran, notification normale ou discrète, motif de vibration et son, séparément pour les urgences et le reste.</dd></div>
+        <div><dt>Historique</dt><dd>Ce que tu as répondu reste sous chaque question.</dd></div>
+        <div><dt>Icônes au choix</dt><dd>Actions en pixel-art ou en emojis, et une icône d'appli assortie à ta mascotte.</dd></div>
+        <div><dt>Aucune appli téléphone</dt><dd>La montre reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.</dd></div>
+      </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="relay" id="serveur" aria-labelledby="serveur-titre">
+    <div class="wrap">
+      <h2 id="serveur-titre" class="section-title">Ton serveur, tes données</h2>
+      <p class="section-lead">Agentchi passe par un petit serveur open source que tu héberges toi-même. Celui-ci, par exemple.</p>
+      <div class="flow" aria-label="Chemin d'un événement&nbsp;: tes agents, ce serveur, Firebase Cloud Messaging, ta montre">
+        <ul class="flow-src">
+          <li><b>Claude Code</b><span>terminal, IDE, Desktop, Remote Control · plugin</span></li>
+          <li><b>Session cloud</b><span>claude.ai/code · hook http du dépôt</span></li>
+          <li><b>Codex</b><span>CLI, appli, IDE · ~/.codex/hooks.json</span></li>
+        </ul>
+        <div class="flow-wire" aria-hidden="true"><i></i></div>
+        <div class="flow-node flow-here"><b>Ce serveur</b><code>{{.Host}}</code></div>
+        <div class="flow-wire" aria-hidden="true"><i></i></div>
+        <div class="flow-node"><b>FCM</b><span>Firebase Cloud Messaging</span></div>
+        <div class="flow-wire" aria-hidden="true"><i></i></div>
+        <div class="flow-node flow-watch"><canvas width="44" height="38" aria-hidden="true" data-mini-pet></canvas><b>Ta montre</b></div>
+      </div>
+      <ul class="pledges">
+        <li><b>Rien ne s'accumule.</b> Les événements filent aussitôt vers la bonne montre, sans être conservés&nbsp;; le serveur ne garde que les montres enregistrées et leurs codes.</li>
+        <li><b>Un code par ordinateur.</b> Chaque ordinateur ou environnement cloud a le sien, révocable depuis la montre.</li>
+        <li><b>Pas de compte, pas de publicité.</b> Chaque montre s'enregistre toute seule et ne reçoit que ses événements.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="install" id="installer" aria-labelledby="installer-titre">
+    <div class="wrap install-in">
+      <div class="install-head">
+        <h2 id="installer-titre" class="section-title">Installer Agentchi</h2>
+        <p class="section-lead">Ce serveur relaie les hooks de Claude Code et de Codex vers ta montre, et lui permet d'y répondre. Les commandes ci-dessous contiennent déjà son adresse.</p>
+        <div class="addr">
+          <span>Adresse du serveur</span>
+          <code class="k" id="server-url">{{.URL}}</code>
+          <button type="button" class="copy" data-copy="#server-url">Copier</button>
+        </div>
+      </div>
+
+      <ol class="guide">
+        <li>
+          <h3>L'appli sur ta montre</h3>
+          <p>Agentchi s'installera depuis le Google Play Store, directement sur ta montre Wear&nbsp;OS.</p>
+          <p class="store">
+            <span class="btn-store" role="link" aria-disabled="true" aria-describedby="store-soon">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>
+              <span><small>Disponible sur</small>Google Play</span>
+            </span>
+            <span class="soon" id="store-soon">Bientôt</span>
+          </p>
+          <p>Ouvre <b>Agentchi</b>, accepte les notifications, puis <b>Paramètres › Serveur</b>&nbsp;: saisis <code class="k">{{.URL}}</code> et touche <b>Connecter la montre</b>.</p>
+        </li>
+
+        <li>
+          <h3>Un code par ordinateur</h3>
+          <p>Sur la montre&nbsp;: <b>Paramètres › Serveur › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud&nbsp;: chacun se révoque séparément.</p>
+        </li>
+
+        <li>
+          <h3>Branche tes agents</h3>
+          <div class="tabs" data-tabs>
+            <div class="tablist" role="tablist" aria-label="Où tourne ton agent">
+              <button type="button" role="tab" id="tab-claude" aria-controls="panel-claude" aria-selected="true">Claude Code</button>
+              <button type="button" role="tab" id="tab-cloud" aria-controls="panel-cloud" aria-selected="false" tabindex="-1">Sessions cloud</button>
+              <button type="button" role="tab" id="tab-codex" aria-controls="panel-codex" aria-selected="false" tabindex="-1">Codex</button>
+            </div>
+
+            <div class="panel" role="tabpanel" id="panel-claude" aria-labelledby="tab-claude">
+              <h4>Claude Code (terminal, IDE, appli Desktop, Remote Control)</h4>
+              <p>Une seule commande, avec ton code&nbsp;:</p>
+              <div class="code"><pre><code>claude plugin install agentchi --marketplace Pelagoss/agentchi \
+  --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</code></pre><button type="button" class="copy">Copier</button></div>
+              <p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Sans <code>--config</code>, Claude Code demande les deux valeurs (<code>/plugin</code> › agentchi › Configure options). Il faut <code>curl</code>, présent par défaut sur macOS, Linux et Windows 10+.</p>
+            </div>
+
+            <div class="panel" role="tabpanel" id="panel-cloud" aria-labelledby="tab-cloud">
+              <h4>Sessions cloud Claude (claude.ai/code)</h4>
+              <p>Les sessions cloud ne chargent pas les plugins. Ajoute ce bloc au <code>.claude/settings.json</code> du dépôt (<a href="/v1/cloud-settings.json">télécharger</a>), puis, dans les paramètres de ton environnement cloud&nbsp;:</p>
+              <ul>
+                <li>variable d'environnement <code>AGENTCHI_CODE=&lt;ton code&gt;</code>&nbsp;;</li>
+                <li>accès réseau personnalisé autorisant <code>{{.URL}}</code>.</li>
+              </ul>
+              <p>Chaque personne qui travaille sur le dépôt met son propre code&nbsp;: sans code, le hook ne fait rien.</p>
+              <div class="code code-tall"><pre><code>{{.Cloud}}</code></pre><button type="button" class="copy">Copier</button></div>
+            </div>
+
+            <div class="panel" role="tabpanel" id="panel-codex" aria-labelledby="tab-codex">
+              <h4>Codex (CLI, appli, IDE&nbsp;; macOS, Linux, WSL)</h4>
+              <p>Enregistre les hooks Codex (<a href="/v1/codex-hooks.json">télécharger</a>) et rends ton code visible de Codex&nbsp;:</p>
+              <div class="code"><pre><code>curl -fsS {{.URL}}/v1/codex-hooks.json -o ~/.codex/hooks.json
+echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc</code></pre><button type="button" class="copy">Copier</button></div>
+              <p>Si tu as déjà un <code>~/.codex/hooks.json</code>, fusionne les deux plutôt que de l'écraser. Codex ignore un hook tant que tu ne l'as pas approuvé : lance <code>/hooks</code> dans Codex et approuve ceux d'Agentchi. Avec Codex, la montre reçoit les fins de tâche et les demandes d'autorisation, et peut y répondre&nbsp;; les questions à choix restent sur l'ordinateur (Codex ne les passe pas aux hooks).</p>
+            </div>
+          </div>
+        </li>
+
+        <li>
+          <h3>Vérifie, puis éloigne-toi</h3>
+          <p><b>Paramètres › Serveur › Tester le push</b>&nbsp;: le serveur envoie une notification et la montre affiche l'erreur si elle ne part pas. Puis active <b>Paramètres › Réponses › Répondre depuis la montre</b> quand tu quittes ton écran.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="foot-brand"><img src="/static/img/icon-512.png?v={{.V}}" alt="" width="28" height="28"> Agentchi</p>
+    <p>Appli non officielle, sans lien avec Anthropic ni OpenAI. Claude et Claude Code sont des marques d'Anthropic&nbsp;; Codex et OpenAI sont des marques d'OpenAI. Les écrans de montre de cette page sont redessinés à partir de l'appli.</p>
+    <nav class="foot-links" aria-label="Liens">
+      <a href="https://github.com/Pelagoss/agentchi">Code source</a>
+      <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/PRIVACY.md">Confidentialité</a>
+      <a href="/v1/cloud-settings.json">cloud-settings.json</a>
+      <a href="/v1/codex-hooks.json">codex-hooks.json</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="/static/js/mascot.js?v={{.V}}" defer></script>
+<script src="/static/js/screens.js?v={{.V}}" defer></script>
+<script src="/static/js/watch.js?v={{.V}}" defer></script>
+<script src="/static/home.js?v={{.V}}" defer></script>
+</body>
+</html>

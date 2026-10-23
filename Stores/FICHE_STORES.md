@@ -286,3 +286,5 @@ npm run video               # → assets/video/agentchi-companion.mp4 et poster.
 ```
 
 L'icône de la fiche est lue directement dans `app/src/main/res/drawable/` (`ic_mascot_crab_ocean_foreground.xml` et `ic_launcher_foreground.xml`) : elle reste identique à celle de la montre.
+
+**Page d'accueil du serveur** : `server/web/static/` embarque une copie de `mascot.js`, `screens.js` et `watch.js` (les montres de la page sont dessinées en direct), ainsi que l'icône, l'image de présentation, quatre captures réduites à 480 px, la vidéo et son poster en JPEG. Après une modification de ces scripts, recopie-les : `cp Stores/source/{mascot,screens,watch}.js server/web/static/js/` (le test `TestScriptsMascotteSynchronises` le vérifie).
