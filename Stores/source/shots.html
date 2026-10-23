@@ -7,10 +7,12 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<script>document.documentElement.lang = new URLSearchParams(location.search).get('lang') || 'fr'; // ?lang=en : visuels en anglais</script>
 <script src="mascot.js"></script>
 <script src="screens.js"></script>
 <script src="watch.js"></script>
 <script>
+const tr = Mascot.tr;
 const OCEAN_CRAB = { species: 'CRAB', palette: 'OCEAN', accessory: 'PARTY_HAT' };
 const LILAC_GHOST = { species: 'GHOST', palette: 'LILAC', accessory: 'CROWN' };
 const MINT_DOTS = { species: 'DOTS', palette: 'MINT', accessory: 'SUNGLASSES' };
@@ -54,10 +56,10 @@ const SHOTS = {
       Deco.backdrop(ctx, 1024, 500, { fx: 0.74, fy: 0.5 });
       Deco.title(ctx, ['Agentchi'], 64, 200, { size: 92, align: 'left' });
       ctx.font = '600 30px "Inter"'; ctx.fillStyle = '#F0EEE6'; ctx.textAlign = 'left';
-      ctx.fillText('Tes agents de code au poignet,', 66, 262);
-      ctx.fillStyle = '#D97757'; ctx.fillText('avec un compagnon pixel-art.', 66, 302);
+      ctx.fillText(tr('Tes agents de code au poignet,', 'Your coding agents on your wrist,'), 66, 262);
+      ctx.fillStyle = '#D97757'; ctx.fillText(tr('avec un compagnon pixel-art.', 'with a pixel-art companion.'), 66, 302);
       ctx.font = '500 20px "Inter", "Noto Color Emoji"'; ctx.fillStyle = '#B8B2A7';
-      ctx.fillText('🔔 Notifications  ·  ⌚ Réponses  ·  🍪 Mascotte à soigner', 66, 372);
+      ctx.fillText(tr('🔔 Notifications  ·  ⌚ Réponses  ·  🍪 Mascotte à soigner', '🔔 Notifications  ·  ⌚ Replies  ·  🍪 A pet to care for'), 66, 372);
       Deco.watch(ctx, 770, 250, 150, c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'NONE' }), { glow: 1 });
       Mascot.drawInBox(ctx, LILAC_GHOST, 'HAPPY', 905, 40, 96, 78, { bounce: 0.2 });
       Mascot.drawInBox(ctx, MINT_DOTS, 'HAPPY', 560, 360, 96, 78, { bounce: 0.8 });
@@ -65,15 +67,15 @@ const SHOTS = {
   },
 
   // --- Visuels promotionnels 9:16 (emplacement « téléphone », réseaux sociaux, Galaxy Store) ---
-  'promo/01-compagnon': promo(['Un compagnon', 'sur ta montre'], ['Il vit au rythme de tes agents de code'], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'CELEBRATE', bounce: 0.7 })),
-  'promo/02-soins': promo(['Prends soin', 'de lui'], ['🍪 Nourris-le  ·  🎾 Joue  ·  😴 Couche-le'], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'EAT', satiety: 94, pressed: { feed: 0.8 } })),
-  'promo/03-personnalisation': promo(['Fais-le', 'à ton image'], ['3 espèces · 6 couleurs · 5 accessoires'], c => Screens.mascotSettings(c, { look: LILAC_GHOST }), ctx => {
+  'promo/01-compagnon': promo(tr(['Un compagnon', 'sur ta montre'], ['A companion', 'on your watch']), [tr('Il vit au rythme de tes agents de code', 'It lives in sync with your coding agents')], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'CELEBRATE', bounce: 0.7 })),
+  'promo/02-soins': promo(tr(['Prends soin', 'de lui'], ['Take good', 'care of it']), [tr('🍪 Nourris-le  ·  🎾 Joue  ·  😴 Couche-le', '🍪 Feed it  ·  🎾 Play  ·  😴 Tuck it in')], c => Screens.pet(c, { look: OCEAN_CRAB, reaction: 'EAT', satiety: 94, pressed: { feed: 0.8 } })),
+  'promo/03-personnalisation': promo(tr(['Fais-le', 'à ton image'], ['Make it', 'your own']), [tr('3 espèces · 6 couleurs · 5 accessoires', '3 species · 6 colors · 5 accessories')], c => Screens.mascotSettings(c, { look: LILAC_GHOST }), ctx => {
     variantsRow(ctx, [
       { species: 'CRAB', palette: 'CORAL', accessory: 'TOP_HAT' }, MINT_DOTS, { species: 'GHOST', palette: 'ROSE', accessory: 'BOW' },
       { species: 'CRAB', palette: 'INK', accessory: 'CROWN' },
     ], 540, 1560, 170, 40);
   }),
-  'promo/04-reponses': promo(['Réponds depuis', 'ton poignet'], ['Autorise, refuse, choisis une option ou dicte', 'ta réponse sans quitter ta montre'], c => Screens.permission(c)),
+  'promo/04-reponses': promo(tr(['Réponds depuis', 'ton poignet'], ['Reply from', 'your wrist']), tr(['Autorise, refuse, choisis une option ou dicte', 'ta réponse sans quitter ta montre'], ['Allow, deny, pick an option or dictate', 'your reply without leaving your watch']), c => Screens.permission(c)),
 };
 
 window.renderShot = async (name, extra) => {

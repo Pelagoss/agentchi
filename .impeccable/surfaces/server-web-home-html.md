@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "server-web-home-html"
-primary_target: "server/web/home.html"
-related_targets: ["server"]
+primary_target: "server/web/home.en.html"
+related_targets: ["server", "server/web/home.fr.html"]
 ---
 
 # Surface : page d'accueil du serveur (`GET /`)

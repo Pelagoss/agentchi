@@ -4,6 +4,7 @@
   'use strict';
   const C = Screens.C, COL = Screens.COL;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tr = Mascot.tr; // textes selon <html lang>
   const dpr = () => Math.min(window.devicePixelRatio || 1, 2.5);
 
   // --- Mascotte choisie (Crabe Océan, comme l'icône de l'appli) ---
@@ -90,7 +91,7 @@
       const kind = b.dataset.care;
       if (kind === 'sleep') {
         b.setAttribute('aria-pressed', String(pet.sleeping));
-        b.querySelector('span').textContent = pet.sleeping ? 'Réveil' : 'Dodo';
+        b.querySelector('span').textContent = pet.sleeping ? tr('Réveil', 'Wake up') : tr('Dodo', 'Sleep');
       } else if (kind === 'clean') {
         b.hidden = pet.poops === 0;
         b.querySelector('span').textContent = pet.poops > 1 ? `Nettoyer (${pet.poops})` : 'Nettoyer';
@@ -109,7 +110,7 @@
     } else if (kind === 'sleep') {
       pet.press.sleep = t;
       pet.sleeping = !pet.sleeping;
-      if (pet.sleeping) react('SLEEP', 0); else { g.energy = 100; react('WAVE', 2.2, 'Coucou !'); }
+      if (pet.sleeping) react('SLEEP', 0); else { g.energy = 100; react('WAVE', 2.2, tr('Coucou !', 'Hi there!')); }
     } else if (pet.sleeping) {
       return;
     } else if (kind === 'feed') {
@@ -172,7 +173,7 @@
       const reaction = p < 1.8 ? 'HUNGRY' : p < 4 ? 'EAT' : poops >= 2 ? 'DIRTY' : p >= 7.9 && p < 9.8 ? 'CLEAN' : 'NONE';
       const scroll = SCROLL * (p < 6 ? 0 : p < 8.1 ? easeOut((p - 6) / 0.7) : 1 - easeOut((p - 8.1) / 0.7));
       Screens.pet(c, {
-        look, time: '12:40', reaction, moodLine: reaction === 'HUNGRY' ? "J'ai faim…" : undefined, poops, scroll,
+        look, time: '12:40', reaction, moodLine: reaction === 'HUNGRY' ? tr("J'ai faim…", 'I’m hungry…') : undefined, poops, scroll,
         satiety: p < 1.8 ? 18 : lerp(18, 62, easeOut((p - 1.8) / 1.2)), energy: 60,
         happiness: poops ? lerp(70, 52, easeOut((p - 4.6) / 2)) : p >= 7.9 ? lerp(52, 72, easeOut((p - 7.9) / 1.2)) : 70,
         bounce: bounceAt(t, periodFor(reaction)), blink: blinkAt(t), pressed: { feed: pressAt(p, 1.8), clean: pressAt(p, 7.6) },
@@ -191,10 +192,10 @@
     Screens.text(c, '10:14', C, 17, { size: 11, weight: 600 });
     Screens.text(c, '❓ Question', C, 42, { size: 11.5, weight: 600, color: COL.orange });
     Screens.text(c, 'Claude · agentchi · ⏱ 1:58', C, 55, { size: 10, color: COL.variant });
-    Screens.text(c, 'Quelle base pour les tests ?', C, 74, { size: 12.5 });
-    Screens.chip(c, 84, 42, { icon: picked ? '☑️' : '⬜', label: 'SQLite', secondary: 'En mémoire, rapide', primary: picked, width: 184, pressed: pressAt(p, 2) });
-    Screens.chip(c, 131, 42, { icon: '⬜', label: 'PostgreSQL', secondary: 'Comme en production', width: 184 });
-    Screens.chip(c, 178, 38, { icon: '✍️', label: 'Autre réponse', width: 184 });
+    Screens.text(c, tr('Quelle base pour les tests ?', 'Which database for the tests?'), C, 74, { size: 12.5 });
+    Screens.chip(c, 84, 42, { icon: picked ? '☑️' : '⬜', label: 'SQLite', secondary: tr('En mémoire, rapide', 'In memory, fast'), primary: picked, width: 184, pressed: pressAt(p, 2) });
+    Screens.chip(c, 131, 42, { icon: '⬜', label: 'PostgreSQL', secondary: tr('Comme en production', 'Same as production'), width: 184 });
+    Screens.chip(c, 178, 38, { icon: '✍️', label: tr('Autre réponse', 'Other answer'), width: 184 });
   }
 
   const day = { key: 'permission', since: 0, prev: null, prevSince: 0, fadeAt: -9 };
@@ -252,7 +253,7 @@
         }
         const text = document.createElement('span'); text.textContent = it.label;
         label.append(text);
-        if (it.level > 1) { const sm = document.createElement('small'); sm.textContent = `niv. ${it.level}`; label.append(' ', sm); }
+        if (it.level > 1) { const sm = document.createElement('small'); sm.textContent = `${tr('niv.', 'Lv.')} ${it.level}`; label.append(' ', sm); }
         input.addEventListener('change', () => {
           look = { ...look, [group]: it.id };
           studio.changedAt = now(); studio.highlight = group;
@@ -269,8 +270,9 @@
       if (!note) return;
       const s = Mascot.SPECIES[look.species].label, p = Mascot.PALETTES[look.palette].label, a = Mascot.ACCESSORIES[look.accessory];
       note.innerHTML = '';
-      const b = document.createElement('b'); b.textContent = `${s} ${p}`;
-      note.append(b, look.accessory === 'NONE' ? ', sans accessoire' : `, ${a.label.toLowerCase()}`, ' · une combinaison sur 108.');
+      const b = document.createElement('b'); b.textContent = tr(`${s} ${p}`, `${p} ${s}`);
+      note.append(b, look.accessory === 'NONE' ? tr(', sans accessoire', ', no accessory') : `, ${a.label.toLowerCase()}`,
+        tr(' · une combinaison sur 108.', ' · one of 108 combinations.'));
     }
     drawPreviews(); describe();
     window.addEventListener('resize', drawPreviews);
@@ -309,13 +311,13 @@
         const text = target.innerText.trim();
         try {
           await navigator.clipboard.writeText(text);
-          btn.textContent = 'Copié'; btn.classList.add('done');
+          btn.textContent = tr('Copié', 'Copied'); btn.classList.add('done');
         } catch (e) {
           const range = document.createRange(); range.selectNodeContents(target);
           const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
-          btn.textContent = 'Sélectionné';
+          btn.textContent = tr('Sélectionné', 'Selected');
         }
-        setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('done'); }, 1800);
+        setTimeout(() => { btn.textContent = tr('Copier', 'Copy'); btn.classList.remove('done'); }, 1800);
       });
     });
   }
@@ -346,11 +348,11 @@
         if (mode === 'idle') {
           mode = 'auto';
           video.muted = true; video.loop = true; video.preload = 'auto';
-          label.textContent = 'Activer le son'; dur.hidden = true;
+          label.textContent = tr('Activer le son', 'Turn on sound'); dur.hidden = true;
           btn.querySelector('svg').innerHTML = '<path d="M2 6h3l4-3.5v11L5 10H2z"/><path class="wave" d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.5a6 6 0 0 1 0 9"/>';
           btn.classList.add('sound');
         }
-        if (mode === 'auto') video.play().catch(() => { mode = 'idle'; label.textContent = 'Lancer la vidéo'; dur.hidden = false; });
+        if (mode === 'auto') video.play().catch(() => { mode = 'idle'; label.textContent = tr('Lancer la vidéo', 'Play the video'); dur.hidden = false; });
       } else if (!video.paused) {
         video.pause();
       }

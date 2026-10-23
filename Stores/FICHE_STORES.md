@@ -19,6 +19,8 @@ Tout ce qu'il faut copier-coller pour publier Agentchi, champ par champ, avec le
 
 Tous les fichiers sont dans [`assets/`](assets/). Ils sont dessinés à partir des vraies grilles de la mascotte (`MascotSprite.kt`, `PixelIcon.kt`) et de la mise en page des écrans Compose.
 
+Les mêmes visuels existent en anglais dans [`assets/en/`](assets/en/) (mêmes noms de fichiers, sauf les icônes, sans texte) : à envoyer avec la fiche en anglais (section 3).
+
 | Fichier | Format | Où l'envoyer |
 |---|---|---|
 | `icone/icon-512.png` | 512 × 512, PNG | **Icône de l'appli** (Play et Galaxy Store) : Crabe Océan, une couleur sans lien avec une marque |
@@ -281,10 +283,10 @@ Les sources sont dans [`source/`](source/) :
 ```bash
 cd Stores/source
 npm install                 # Playwright (utilise Chromium : npx playwright install chromium si besoin)
-npm run assets              # → assets/icone, presentation, captures-wear, promo
-npm run video               # → assets/video/agentchi-companion.mp4 et poster.png (ffmpeg et python3 requis, ~2 min)
+npm run assets              # → assets/icone, presentation, captures-wear, promo (et assets/en/ en anglais)
+npm run video               # → assets/video/ et assets/en/video/ : agentchi-companion.mp4 et poster.png (ffmpeg et python3 requis, ~2 min par langue)
 ```
 
 L'icône de la fiche est lue directement dans `app/src/main/res/drawable/` (`ic_mascot_crab_ocean_foreground.xml` et `ic_launcher_foreground.xml`) : elle reste identique à celle de la montre.
 
-**Page d'accueil du serveur** : `server/web/static/` embarque une copie de `mascot.js`, `screens.js` et `watch.js` (les montres de la page sont dessinées en direct), ainsi que l'icône, l'image de présentation, quatre captures réduites à 480 px, la vidéo et son poster en JPEG. Après une modification de ces scripts, recopie-les : `cp Stores/source/{mascot,screens,watch}.js server/web/static/js/` (le test `TestScriptsMascotteSynchronises` le vérifie).
+**Page d'accueil du serveur** : `server/web/static/` embarque une copie de `mascot.js`, `screens.js` et `watch.js` (les montres de la page sont dessinées en direct), ainsi que l'icône et, pour chaque langue (`img/fr`, `img/en`, `video/fr`, `video/en`), l'image de présentation, quatre captures réduites à 480 px, la vidéo et son poster en JPEG. Après une modification de ces scripts, recopie-les : `cp Stores/source/{mascot,screens,watch}.js server/web/static/js/` (le test `TestScriptsMascotteSynchronises` le vérifie).

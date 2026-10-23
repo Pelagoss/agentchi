@@ -1,35 +1,40 @@
 // Portage JS de app/.../pet/MascotSprite.kt et PixelIcon.kt : mêmes grilles, mêmes couleurs.
 // Sert aux captures, visuels et à la vidéo du dossier Stores. Garder synchronisé avec le Kotlin.
 (function (global) {
+  // Langue des textes dessinés : celle de la page (<html lang="en">), français sinon.
+  const LANG = /^en\b/i.test(document.documentElement.lang) ? 'en' : 'fr';
+  /** Texte selon la langue : tr('Nourrir', 'Feed'). */
+  const tr = (fr, en) => (LANG === 'en' ? en : fr);
+
   const WIDTH = 12, HEIGHT = 10, TOP = 2;
 
   const INK_DARK = '#1F1E1D', TEAR = '#7FB3FF', GOLD = '#F2C14E', PINK = '#F28AB2', PINK_DARK = '#C25A7E',
     CYAN = '#6FD3E0', HAT = '#5A524C', RED = '#D9534F', SHADES = '#111111', WHITE = '#F0EEE6';
 
   const PALETTES = {
-    CORAL: { label: 'Corail', body: '#D97757', accent: '#B4593B', eye: INK_DARK },
-    INK: { label: 'Encre', body: '#F0EEE6', accent: '#B9B5AA', eye: INK_DARK },
-    OCEAN: { label: 'Océan', body: '#5B8DEF', accent: '#3D6AC4', eye: INK_DARK },
-    MINT: { label: 'Menthe', body: '#5DBB7A', accent: '#3E8E58', eye: INK_DARK },
-    LILAC: { label: 'Lilas', body: '#A77BE0', accent: '#7E55B8', eye: INK_DARK },
+    CORAL: { label: tr('Corail', 'Coral'), body: '#D97757', accent: '#B4593B', eye: INK_DARK },
+    INK: { label: tr('Encre', 'Ink'), body: '#F0EEE6', accent: '#B9B5AA', eye: INK_DARK },
+    OCEAN: { label: tr('Océan', 'Ocean'), body: '#5B8DEF', accent: '#3D6AC4', eye: INK_DARK },
+    MINT: { label: tr('Menthe', 'Mint'), body: '#5DBB7A', accent: '#3E8E58', eye: INK_DARK },
+    LILAC: { label: tr('Lilas', 'Lilac'), body: '#A77BE0', accent: '#7E55B8', eye: INK_DARK },
     ROSE: { label: 'Rose', body: '#E97CA0', accent: '#C25A7E', eye: INK_DARK },
   };
 
   const SPECIES = {
     CRAB: {
-      label: 'Crabe',
+      label: tr('Crabe', 'Crab'),
       body: ['..########..', '..########..', '..########..', '++########++', '++########++', '..########..', '..########..'],
       legsA: '..+.+..+.+..', legsB: '...+.+..+.+.',
       leftEye: 3, rightEye: 8, eyeRow: 1, round: false, defaultPalette: 'CORAL',
     },
     DOTS: {
-      label: 'Points',
+      label: tr('Points', 'Dots'),
       body: ['...######...', '..########..', '.##########.', '.##########.', '.##########.', '..########..', '...######...'],
       legsA: '....+..+....', legsB: '...+....+...',
       leftEye: 3, rightEye: 8, eyeRow: 2, round: true, defaultPalette: 'INK',
     },
     GHOST: {
-      label: 'Fantôme',
+      label: tr('Fantôme', 'Ghost'),
       body: ['...######...', '..########..', '.##########.', '.##########.', '.##########.', '.##########.', '.##########.'],
       legsA: '.+.++..++.+.', legsB: '.++.++.++.+.',
       leftEye: 3, rightEye: 8, eyeRow: 2, round: false, defaultPalette: 'LILAC',
@@ -37,12 +42,12 @@
   };
 
   const ACCESSORIES = {
-    NONE: { label: 'Aucun', level: 1 },
-    PARTY_HAT: { label: 'Chapeau de fête', level: 1 },
-    BOW: { label: 'Nœud', level: 1 },
-    SUNGLASSES: { label: 'Lunettes de soleil', level: 2 },
-    TOP_HAT: { label: 'Haut-de-forme', level: 3 },
-    CROWN: { label: 'Couronne', level: 5 },
+    NONE: { label: tr('Aucun', 'None'), level: 1 },
+    PARTY_HAT: { label: tr('Chapeau de fête', 'Party hat'), level: 1 },
+    BOW: { label: tr('Nœud', 'Bow'), level: 1 },
+    SUNGLASSES: { label: tr('Lunettes de soleil', 'Sunglasses'), level: 2 },
+    TOP_HAT: { label: tr('Haut-de-forme', 'Top hat'), level: 3 },
+    CROWN: { label: tr('Couronne', 'Crown'), level: 5 },
   };
 
   const P = (x, y, c, h = 1, dy = 0, round = false) => ({ x, y, c, h, dy, round });
@@ -175,5 +180,5 @@
     ctx.globalAlpha = 1;
   }
 
-  global.Mascot = { WIDTH, HEIGHT, TOP, PALETTES, SPECIES, ACCESSORIES, ICONS, pixels, draw, drawInBox, drawIcon };
+  global.Mascot = { LANG, tr, WIDTH, HEIGHT, TOP, PALETTES, SPECIES, ACCESSORIES, ICONS, pixels, draw, drawInBox, drawIcon };
 })(window);

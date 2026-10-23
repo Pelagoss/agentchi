@@ -1,117 +1,117 @@
-# Héberger ton propre serveur Agentchi
+# Host your own Agentchi server
 
-Par défaut, l'appli et les commandes du [README](../../README.md) passent par le serveur public **https://agentchi.dev**. Ce guide sert à faire tourner ta propre instance : ton projet Firebase, ton serveur, et une montre compilée pour lui.
+By default, the app and the commands in the [README](../../README.md) go through the public server **https://agentchi.dev**. This guide is for running your own instance: your Firebase project, your server, and a watch build pointed at it.
 
 ```
-Claude Code (ordinateur, Remote Control) ──plugin agentchi──────────┐
-Session cloud claude.ai/code ─────────────hook http du dépôt────────┼──HTTPS──▶ ton serveur ──FCM──▶ montre
-Codex (CLI, appli, IDE) ──────────────────~/.codex/hooks.json───────┘   (server/)
+Claude Code (computer, Remote Control) ──agentchi plugin──────────┐
+claude.ai/code cloud session ───────────repo http hook────────────┼──HTTPS──▶ your server ──FCM──▶ watch
+Codex (CLI, app, IDE) ──────────────────~/.codex/hooks.json───────┘   (server/)
 ```
 
-Le serveur (`server/`) est un petit binaire Go, sans dépendance. Il relaie aussitôt les événements à la bonne montre par Firebase Cloud Messaging, sans les conserver : il ne garde que les montres enregistrées et l'empreinte de leurs codes. **Multi-utilisateur** : chaque montre s'y enregistre toute seule et ne reçoit que ses événements.
+The server (`server/`) is a small Go binary with no dependencies. It relays events right away to the right watch through Firebase Cloud Messaging, without keeping them: it only stores registered watches and a hash of their codes. **Multi-user**: each watch registers itself and only receives its own events.
 
-## 1. Firebase (une fois)
+## 1. Firebase (once)
 
-Le push passe par Firebase Cloud Messaging, gratuit.
+Push goes through Firebase Cloud Messaging, which is free.
 
-1. Sur https://console.firebase.google.com, crée un projet (ou reprends le tien : son nom n'a pas d'importance), puis ajoute une **appli Android** avec le package `fr.codingpacer.agentchi`.
-2. Télécharge `google-services.json`. Il ne sert qu'à lire quatre valeurs, il ne se versionne pas :
+1. On https://console.firebase.google.com, create a project (or reuse yours: its name doesn't matter), then add an **Android app** with the package `fr.codingpacer.agentchi`.
+2. Download `google-services.json`. It's only used to read four values and is not committed:
 
-   | Variable (ou propriété Gradle) | Champ de `google-services.json` |
+   | Variable (or Gradle property) | Field in `google-services.json` |
    |---|---|
    | `FIREBASE_APP_ID` (`-PfirebaseAppId`) | `client[0].client_info.mobilesdk_app_id` |
    | `FIREBASE_API_KEY` (`-PfirebaseApiKey`) | `client[0].api_key[0].current_key` |
    | `FIREBASE_PROJECT_ID` (`-PfirebaseProjectId`) | `project_info.project_id` |
    | `FIREBASE_SENDER_ID` (`-PfirebaseSenderId`) | `project_info.project_number` |
 
-   Reporte-les, avec `COMPANION_SERVER` (adresse du serveur), dans `app/build.secrets.env`, chiffré avec [sops](https://github.com/getsops/sops) :
+   Copy them, along with `COMPANION_SERVER` (the server address), into `app/build.secrets.env`, encrypted with [sops](https://github.com/getsops/sops):
 
    ```bash
    sops edit app/build.secrets.env
    ```
 
-   La CI le déchiffre avant de compiler la montre : elle produit un APK prêt à l'emploi. Une valeur laissée à `A_REMPLACER` est ignorée.
-3. **Paramètres du projet › Comptes de service › Générer une nouvelle clé privée** : c'est la clé que le serveur utilise pour envoyer les pushs. Colle son contenu JSON à la place de l'exemple dans `k8s/0.secrets.yaml`, lui aussi chiffré :
+   CI decrypts it before building the watch app: it produces a ready-to-use APK. A value left as `A_REMPLACER` is ignored.
+3. **Project settings › Service accounts › Generate new private key**: this is the key the server uses to send pushes. Paste its JSON content in place of the example in `k8s/0.secrets.yaml`, which is encrypted too:
 
    ```bash
    sops edit k8s/0.secrets.yaml
    ```
 
-**sops** : les deux fichiers sont chiffrés pour la clé age de `.sops.yaml`, la même que Pelagoss/chess-analyzer. Pour les éditer, il faut la clé privée correspondante en local (`~/.config/sops/age/keys.txt` ou `SOPS_AGE_KEY`), et dans le dépôt GitHub le secret **`DECRYPTING_KEY`** pour que la CI puisse les lire.
+**sops**: both files are encrypted for the age key in `.sops.yaml`, the same one as Pelagoss/chess-analyzer. To edit them, you need the matching private key locally (`~/.config/sops/age/keys.txt` or `SOPS_AGE_KEY`), and in the GitHub repo the **`DECRYPTING_KEY`** secret so CI can read them.
 
-## 2. Le serveur
+## 2. The server
 
-### Kubernetes (déploiement par défaut)
+### Kubernetes (default deployment)
 
-Même chaîne que Pelagoss/chess-analyzer : le workflow **Deploy** construit l'image `server/Dockerfile`, la pousse sur `harbor.codingpacer.fr/prod/agentchi-server`, déchiffre `k8s/*.secrets.yaml` avec sops puis applique `k8s/` dans le namespace `claude-companion` (nom d'origine, conservé : le volume `state.json` et le Secret chiffré y sont rattachés). Il part à chaque tag `X.Y.Z`, ou à la main (*Actions › Deploy › Run workflow*).
+Same pipeline as Pelagoss/chess-analyzer: the **Deploy** workflow builds the `server/Dockerfile` image, pushes it to `harbor.codingpacer.fr/prod/agentchi-server`, decrypts `k8s/*.secrets.yaml` with sops, then applies `k8s/` in the `claude-companion` namespace (original name, kept because the `state.json` volume and the encrypted Secret are attached to it). It runs on every `X.Y.Z` tag, or manually (*Actions › Deploy › Run workflow*).
 
-| Fichier | Contenu |
+| File | Contents |
 |---|---|
-| `k8s/0.secrets.yaml` | Secret `firebase-service-account` (chiffré sops), monté en `/secrets/firebase-service-account.json` |
-| `k8s/config.yaml` | Configuration du serveur, dont `CC_PUBLIC_URL` |
-| `k8s/server.yaml` | Deployment (une réplique), volume persistant pour `state.json`, Service |
-| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `agentchi.dev` |
+| `k8s/0.secrets.yaml` | `firebase-service-account` Secret (sops-encrypted), mounted at `/secrets/firebase-service-account.json` |
+| `k8s/config.yaml` | Server configuration, including `CC_PUBLIC_URL` |
+| `k8s/server.yaml` | Deployment (one replica), persistent volume for `state.json`, Service |
+| `k8s/ingress.yaml` | Traefik Ingress + cert-manager on `agentchi.dev` |
 
-Secrets GitHub du dépôt nécessaires : `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `KUBE_CONFIG` et `DECRYPTING_KEY`. Pour un autre domaine, change-le dans `k8s/ingress.yaml`, `k8s/config.yaml` et `app/build.secrets.env`.
+Required GitHub repo secrets: `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `KUBE_CONFIG` and `DECRYPTING_KEY`. For another domain, change it in `k8s/ingress.yaml`, `k8s/config.yaml` and `app/build.secrets.env`.
 
-### Docker Compose (autre serveur)
+### Docker Compose (any other server)
 
-Il faut un nom de domaine qui pointe vers ton serveur, avec les ports 80 et 443 ouverts. Caddy obtient le certificat HTTPS tout seul.
+You need a domain name pointing at your server, with ports 80 and 443 open. Caddy obtains the HTTPS certificate on its own.
 
 ```bash
 git clone https://github.com/Pelagoss/agentchi && cd agentchi
 sops decrypt --extract '["stringData"]["firebase-service-account.json"]' k8s/0.secrets.yaml > server/firebase-service-account.json
-chmod 644 server/firebase-service-account.json    # lisible par le conteneur
-cd server && CC_DOMAIN=agentchi.example.fr docker compose up -d
+chmod 644 server/firebase-service-account.json    # readable by the container
+cd server && CC_DOMAIN=agentchi.example.com docker compose up -d
 ```
 
-### Sans Docker
+### Without Docker
 
-`go build` dans `server/`, puis lance le binaire derrière ton reverse proxy. Variables :
+Run `go build` in `server/`, then start the binary behind your reverse proxy. Variables:
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `CC_FCM_CREDENTIALS` | Chemin de la clé du compte de service, **obligatoire** pour les pushs |
-| `CC_ADDR` | Adresse d'écoute (défaut `:8080`) |
-| `CC_DATA` | Fichier d'état (défaut `data/state.json`) |
-| `CC_PUBLIC_URL` | Adresse publique, affichée sur la page d'accueil et dans les commandes (sinon déduite de la requête) |
-| `CC_TRUST_PROXY` | `true` derrière un reverse proxy (`X-Forwarded-For`, `X-Forwarded-Proto`) |
-| `CC_MAX_DEVICES` | Nombre maximal de montres (défaut 1000, 0 = illimité) |
+| `CC_FCM_CREDENTIALS` | Path to the service account key, **required** for pushes |
+| `CC_ADDR` | Listen address (default `:8080`) |
+| `CC_DATA` | State file (default `data/state.json`) |
+| `CC_PUBLIC_URL` | Public address, shown on the home page and in the commands (otherwise inferred from the request) |
+| `CC_TRUST_PROXY` | `true` behind a reverse proxy (`X-Forwarded-For`, `X-Forwarded-Proto`) |
+| `CC_MAX_DEVICES` | Maximum number of watches (default 1000, 0 = unlimited) |
 
-Derrière un reverse proxy, laisse les requêtes `POST /ask` ouvertes 5 minutes (Traefik et Caddy le font par défaut).
+Behind a reverse proxy, let `POST /ask` requests stay open for 5 minutes (Traefik and Caddy do so by default).
 
-### La page d'accueil
+### The home page
 
-Ouvre l'adresse de ton serveur : sa page d'accueil présente Agentchi et donne toutes les commandes du guide d'installation, prêtes à copier, avec **son** adresse. Elle est embarquée dans le binaire (`server/web/`) avec ses polices, les scripts de la mascotte (copiés depuis `Stores/source`) et la vidéo de présentation.
+Open your server's address: its home page introduces Agentchi and gives every command from the install guide, ready to copy, with **its** address. It's in English by default and in French for browsers that prefer French (`Accept-Language`); the **FR** / **EN** link in the header switches language (`/?lang=fr`, `/?lang=en`) and the choice is remembered in a cookie. Screenshots, video and share image follow the language. It's embedded in the binary (`server/web/`: `home.en.html`, `home.fr.html`) along with its fonts, the mascot scripts (copied from `Stores/source`) and the intro video.
 
-## 3. La montre
+## 3. The watch
 
-Tant que l'appli n'est pas sur Google Play, ou pour une montre reliée à ton serveur, installe l'APK de la CI. Onglet **Actions** du dépôt → dernier build vert → artefact `agentchi-debug`, qui contient `agentchi-montre.apk` (compilé avec les valeurs Firebase de l'étape 1) et le cadran `agentchi-cadran.apk` :
+Until the app is on Google Play, or for a watch tied to your server, install the APK built by CI. **Actions** tab of the repo → latest green build → `agentchi-debug` artifact, which contains `agentchi-montre.apk` (built with the Firebase values from step 1) and the `agentchi-cadran.apk` watch face:
 
 ```bash
 gh run download -R Pelagoss/agentchi -n agentchi-debug
 ```
 
-1. Active le débogage : *Paramètres → À propos de la montre → Informations sur le logiciel*, touche 7 fois *Version du logiciel*. Ensuite, dans *Options de développement*, active *Débogage ADB* et *Débogage sans fil* (montre et ordinateur sur le même Wi-Fi).
-2. Installe :
+1. Enable debugging: *Settings → About watch → Software information*, tap *Software version* 7 times. Then, in *Developer options*, turn on *ADB debugging* and *Wireless debugging* (watch and computer on the same Wi-Fi).
+2. Install:
    ```bash
-   adb pair <ip>:<port-appairage>      # code affiché sur la montre
+   adb pair <ip>:<pairing-port>        # code shown on the watch
    adb connect <ip>:<port>
    adb install agentchi-montre.apk
-   adb install agentchi-cadran.apk     # facultatif : le cadran Agentchi
+   adb install agentchi-cadran.apk     # optional: the Agentchi watch face
    ```
-3. Ouvre **Agentchi** sur la montre, accepte les notifications, puis **Paramètres › Serveur** : saisis l'adresse de ton serveur et touche **Connecter la montre**.
+3. Open **Agentchi** on the watch, allow notifications, then go to **Settings › Server**: enter your server's address and tap **Connect the watch**.
 
-La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
+The watch needs Google Play services (Galaxy Watches have them). It receives pushes over Wi-Fi, LTE or through the phone it's paired with.
 
-Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://agentchi.example.fr -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
+To build it yourself: `./gradlew :app:assembleDebug -PcompanionServer=https://agentchi.example.com -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
 
-## 4. Brancher tes agents
+## 4. Hook up your agents
 
-Suis l'[installation du README](../../README.md#installer-agentchi) en remplaçant `https://agentchi.dev` par l'adresse de ton serveur, ou copie directement les commandes de sa page d'accueil :
+Follow the [README install steps](../../README.md#install-agentchi), replacing `https://agentchi.dev` with your server's address, or copy the commands straight from its home page:
 
-- **Claude Code** : `--config server_url=https://agentchi.example.fr` ;
-- **Sessions cloud** : le bloc de `https://agentchi.example.fr/v1/cloud-settings.json`, et l'accès réseau qui autorise ton domaine ;
-- **Codex** : `curl -fsS https://agentchi.example.fr/v1/codex-hooks.json -o ~/.codex/hooks.json`. Avec le plugin `agentchi-codex`, définis `AGENTCHI_SERVER=https://agentchi.example.fr`.
+- **Claude Code**: `--config server_url=https://agentchi.example.com`;
+- **Cloud sessions**: the block from `https://agentchi.example.com/v1/cloud-settings.json`, and network access that allows your domain;
+- **Codex**: `curl -fsS https://agentchi.example.com/v1/codex-hooks.json -o ~/.codex/hooks.json`. With the `agentchi-codex` plugin, set `AGENTCHI_SERVER=https://agentchi.example.com`.
 
-Puis **Paramètres › Serveur › Tester le push** : le serveur envoie une notification par FCM et affiche l'erreur sur la montre si elle ne part pas (clé du compte de service absente, jeton refusé…).
+Then **Settings › Server › Test push**: the server sends a notification through FCM and shows the error on the watch if it doesn't go through (missing service account key, rejected token…).

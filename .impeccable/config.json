@@ -13,7 +13,8 @@
         "rule": "cramped-padding",
         "value": "*",
         "files": [
-          "server/web/home.html"
+          "server/web/home.en.html",
+          "server/web/home.fr.html"
         ],
         "createdAt": "2026-10-23T10:32:15.698Z",
         "reason": "sections carry 64-120px vertical padding in site.css; static scan misreads border-top sections"

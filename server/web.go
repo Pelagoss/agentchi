@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -19,7 +20,51 @@ import (
 //go:embed web
 var webFiles embed.FS
 
-var homeTemplate = template.Must(template.ParseFS(webFiles, "web/home.html"))
+// Page d'accueil en anglais par défaut, en français sur demande ; captures, vidéo et image de partage suivent la langue
+// (web/static/img/<langue>, web/static/video/<langue>).
+var homeTemplates = map[string]*template.Template{
+	"en": template.Must(template.ParseFS(webFiles, "web/home.en.html")),
+	"fr": template.Must(template.ParseFS(webFiles, "web/home.fr.html")),
+}
+
+const (
+	defaultLang = "en"
+	langCookie  = "agentchi_lang"
+)
+
+// homeLang choisit la langue de la page : ?lang=, puis le cookie posé par ce choix, puis Accept-Language, sinon l'anglais.
+// chosen indique un choix explicite (?lang=), à retenir dans le cookie.
+func homeLang(r *http.Request) (lang string, chosen bool) {
+	if l := r.URL.Query().Get("lang"); homeTemplates[l] != nil {
+		return l, true
+	}
+	if c, err := r.Cookie(langCookie); err == nil && homeTemplates[c.Value] != nil {
+		return c.Value, false
+	}
+	if l := acceptLanguage(r.Header.Get("Accept-Language")); l != "" {
+		return l, false
+	}
+	return defaultLang, false
+}
+
+// acceptLanguage renvoie la langue disponible la mieux notée de l'en-tête Accept-Language (« fr-FR,fr;q=0.9,en;q=0.8 »), ou "".
+func acceptLanguage(header string) string {
+	best, bestQ := "", 0.0
+	for _, part := range strings.Split(header, ",") {
+		tag, params, _ := strings.Cut(strings.TrimSpace(part), ";")
+		q := 1.0
+		if v, ok := strings.CutPrefix(strings.TrimSpace(params), "q="); ok {
+			if f, err := strconv.ParseFloat(v, 64); err == nil {
+				q = f
+			}
+		}
+		base, _, _ := strings.Cut(strings.ToLower(strings.TrimSpace(tag)), "-")
+		if homeTemplates[base] != nil && q > bestQ {
+			best, bestQ = base, q
+		}
+	}
+	return best
+}
 
 // assetVersion change à chaque modification de web/static : les URL versionnées contournent le cache.
 var assetVersion = func() string {
@@ -39,8 +84,9 @@ var assetVersion = func() string {
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	url := s.publicURL(r)
 	pretty, _ := json.MarshalIndent(CloudSettings(url), "", "  ")
+	lang, chosen := homeLang(r)
 	var buf bytes.Buffer
-	err := homeTemplate.Execute(&buf, map[string]string{
+	err := homeTemplates[lang].Execute(&buf, map[string]string{
 		"URL":   url,
 		"Host":  strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://"),
 		"Cloud": string(pretty),
@@ -51,7 +97,12 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusInternalServerError, "page indisponible")
 		return
 	}
+	if chosen {
+		http.SetCookie(w, &http.Cookie{Name: langCookie, Value: lang, Path: "/", MaxAge: 365 * 24 * 3600, SameSite: http.SameSiteLaxMode})
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Language", lang)
+	w.Header().Set("Vary", "Accept-Language, Cookie")
 	_, _ = buf.WriteTo(w)
 }
 

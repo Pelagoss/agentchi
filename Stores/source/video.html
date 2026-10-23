@@ -7,6 +7,7 @@
 </head>
 <body>
 <canvas id="c" width="1920" height="1080"></canvas>
+<script>document.documentElement.lang = new URLSearchParams(location.search).get('lang') || 'fr'; // ?lang=en : vidéo en anglais</script>
 <script src="mascot.js"></script>
 <script src="screens.js"></script>
 <script src="watch.js"></script>
@@ -14,6 +15,7 @@
 // Vidéo motion design (1920 x 1080, ~43 s) : frame(t) dessine l'image à l'instant t (secondes).
 // Ouvrir ce fichier dans un navigateur la joue en boucle ; render-video.mjs l'exporte image par image.
 const W = 1920, H = 1080, DURATION = 43;
+const tr = Mascot.tr;
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -165,7 +167,7 @@ function sceneIntro(t) {
   burst(W / 2, gy + 5 * px, t, 1.6, ['#5B8DEF', '#F2C14E', '#F28AB2', '#6FD3E0'], { n: 26, dist: 380, size: 18 });
   const lk = prog(t, 1.9, 2.6);
   headline(['Agentchi'], W / 2, 720, lk, { size: 150, align: 'center', accent: [] });
-  sub('Un compagnon pixel-art pour tes agents de code', W / 2, 800, prog(t, 2.4, 3.1), { align: 'center', size: 40, color: '#D97757', weight: 600 });
+  sub(tr('Un compagnon pixel-art pour tes agents de code', 'A pixel-art companion for your coding agents'), W / 2, 800, prog(t, 2.4, 3.1), { align: 'center', size: 40, color: '#D97757', weight: 600 });
 }
 
 function petScreen(c, t, st) {
@@ -180,10 +182,10 @@ function sceneLive(t) {
   const k = easeOut(prog(t, 4.6, 5.5));
   const cx = lerp(W + 500, 640, k);
   const wave = t > 5.4 && t < 7.4;
-  Deco.watch(ctx, cx, 540, 330, c => petScreen(c, t, { reaction: wave ? 'WAVE' : 'NONE', moodLine: wave ? 'Coucou !' : undefined }), { glow: k, tilt: (1 - k) * 0.2 });
-  headline(['Il vit sur', 'ta montre'], 1120, 430, prog(t, 5.0, 5.8));
-  sub('Wear OS · tuile · complication · cadran', 1124, 640, prog(t, 5.6, 6.3));
-  sub('Et il réagit à tes agents de code.', 1124, 700, prog(t, 6.1, 6.8), { color: '#F0EEE6' });
+  Deco.watch(ctx, cx, 540, 330, c => petScreen(c, t, { reaction: wave ? 'WAVE' : 'NONE', moodLine: wave ? tr('Coucou !', 'Hi there!') : undefined }), { glow: k, tilt: (1 - k) * 0.2 });
+  headline(tr(['Il vit sur', 'ta montre'], ['It lives on', 'your watch']), 1120, 430, prog(t, 5.0, 5.8));
+  sub(tr('Wear OS · tuile · complication · cadran', 'Wear OS · tile · complication · watch face'), 1124, 640, prog(t, 5.6, 6.3));
+  sub(tr('Et il réagit à tes agents de code.', 'And it reacts to your coding agents.'), 1124, 700, prog(t, 6.1, 6.8), { color: '#F0EEE6' });
 }
 
 function sceneCare(t) {
@@ -195,13 +197,13 @@ function sceneCare(t) {
   const happiness = lerp(46, 66, playK) + 3 * petK;
   const sleepK = easeInOut(prog(t, TAP.sleep + 0.3, TAP.wake - 0.1));
   const energy = lerp(lerp(58, 48, playK), 100, sleepK);
-  let reaction = 'HUNGRY', moodLine = "J'ai faim…", bubble;
+  let reaction = 'HUNGRY', moodLine = tr("J'ai faim…", 'I’m hungry…'), bubble;
   if (t >= TAP.feed + 0.05) { reaction = 'EAT'; moodLine = undefined; }
   if (t >= TAP.feed + 3) { reaction = 'NONE'; }
   if (t >= TAP.play + 0.05) reaction = 'PLAY';
   if (t >= TAP.pet + 0.05) reaction = 'LOVE';
   if (t >= TAP.sleep + 0.05) reaction = 'SLEEP';
-  if (t >= TAP.wake + 0.05) { reaction = 'WAVE'; moodLine = 'Coucou !'; }
+  if (t >= TAP.wake + 0.05) { reaction = 'WAVE'; moodLine = tr('Coucou !', 'Hi there!'); }
   if (reaction === 'HUNGRY') bubble = '🍽️';
   const dim = reaction === 'SLEEP' ? clamp((t - TAP.sleep) * 3) * (1 - clamp((t - TAP.wake + 0.3) * 3)) : 0;
   const enter = easeOut(prog(t, 8.2, 8.8));
@@ -225,13 +227,13 @@ function sceneCare(t) {
     ctx.restore();
   }
   ctx.save(); ctx.globalAlpha = enter;
-  headline(['Prends soin', 'de lui'], 1120, 250, prog(t, 8.3, 9.0));
+  headline(tr(['Prends soin', 'de lui'], ['Take good', 'care of it']), 1120, 250, prog(t, 8.3, 9.0));
   ctx.restore();
   const beats = [
-    [TAP.feed - 0.4, TAP.play - 0.4, 'FEED', 'Nourris-le', '🍪 +25 satiété', '#E8B04A'],
-    [TAP.play - 0.4, TAP.pet - 0.4, 'PLAY', 'Joue avec lui', '💖 +20 bonheur  ·  ⚡ −10', '#C8E64C'],
-    [TAP.pet - 0.4, TAP.sleep - 0.4, 'HAPPINESS', 'Caresse-le', 'Un toucher : il saute de joie', '#E97CA0'],
-    [TAP.sleep - 0.4, 21.8, 'SLEEP', 'Mets-le au lit', '⚡ +15 énergie par heure', '#7FB3FF'],
+    [TAP.feed - 0.4, TAP.play - 0.4, 'FEED', tr('Nourris-le', 'Feed it'), tr('🍪 +25 satiété', '🍪 +25 fullness'), '#E8B04A'],
+    [TAP.play - 0.4, TAP.pet - 0.4, 'PLAY', tr('Joue avec lui', 'Play with it'), tr('💖 +20 bonheur  ·  ⚡ −10', '💖 +20 happiness  ·  ⚡ −10'), '#C8E64C'],
+    [TAP.pet - 0.4, TAP.sleep - 0.4, 'HAPPINESS', tr('Caresse-le', 'Pet it'), tr('Un toucher : il saute de joie', 'One tap: it jumps for joy'), '#E97CA0'],
+    [TAP.sleep - 0.4, 21.8, 'SLEEP', tr('Mets-le au lit', 'Put it to bed'), tr('⚡ +15 énergie par heure', '⚡ +15 energy per hour'), '#7FB3FF'],
   ];
   beats.forEach(([a, b, icon, label, effect, color], i) => {
     const k = prog(t, a, a + 0.5) * (1 - prog(t, b - 0.25, b));
@@ -241,7 +243,7 @@ function sceneCare(t) {
     ctx.fillStyle = t >= a ? color : 'rgba(240,238,230,0.18)';
     ctx.beginPath(); ctx.roundRect(1124 + i * 90, 680, 70, 12, 6); ctx.fill();
   });
-  sub('Ses jauges baissent avec le temps : reviens le voir !', 1124, 760, prog(t, 10.2, 10.9), { size: 30 });
+  sub(tr('Ses jauges baissent avec le temps : reviens le voir !', 'Its gauges drop over time: come back and check on it!'), 1124, 760, prog(t, 10.2, 10.9), { size: 30 });
 }
 
 function sceneParty(t) {
@@ -257,17 +259,17 @@ function sceneParty(t) {
       c.save(); c.translate(0, (nk - 1) * 120);
       Screens.rrect(c, 20, 26, 185, 64, 26); c.fillStyle = '#2B2826'; c.fill();
       c.strokeStyle = 'rgba(93,187,122,0.8)'; c.lineWidth = 1.5; c.stroke();
-      Screens.text(c, '✅ Tâche terminée', 112.5, 50, { size: 13, weight: 700 });
+      Screens.text(c, tr('✅ Tâche terminée', '✅ Task done'), 112.5, 50, { size: 13, weight: 700 });
       Screens.text(c, 'Claude · agentchi', 112.5, 66, { size: 10, color: '#B8B2A7' });
       Screens.text(c, '+10 XP', 112.5, 81, { size: 10.5, weight: 700, color: '#5DBB7A' });
       c.restore();
     }
   }, { glow: 1 });
   confetti(t, t0);
-  headline(['Il fête', 'tes victoires'], 1120, 400, prog(t, 21.9, 22.6));
-  sub('Chaque tâche terminée par ton agent :', 1124, 600, prog(t, 22.3, 22.9));
-  sub('+10 XP, +10 bonheur', 1124, 650, prog(t, 22.5, 23.1), { color: '#5DBB7A', weight: 700 });
-  if (t > 23.3) pill('⭐ Niveau 4 !', 1300, 760, backOut(prog(t, 23.3, 23.7)), { color: '#F2C14E' });
+  headline(tr(['Il fête', 'tes victoires'], ['It celebrates', 'your wins']), 1120, 400, prog(t, 21.9, 22.6));
+  sub(tr('Chaque tâche terminée par ton agent :', 'Every task your agent finishes:'), 1124, 600, prog(t, 22.3, 22.9));
+  sub(tr('+10 XP, +10 bonheur', '+10 XP, +10 happiness'), 1124, 650, prog(t, 22.5, 23.1), { color: '#5DBB7A', weight: 700 });
+  if (t > 23.3) pill(tr('⭐ Niveau 4 !', '⭐ Level 4!'), 1300, 760, backOut(prog(t, 23.3, 23.7)), { color: '#F2C14E' });
 }
 
 function lookAt(t) {
@@ -318,11 +320,11 @@ function sceneCustom(t) {
   burst(hx, hy, t, sw, [pal.body, pal.accent, '#F2C14E', '#F0EEE6'], { n: 20, dist: 300, size: 16, seed: Math.round(sw * 10) });
 
   // titres
-  headline(['Fais-le à ton image'], 960, 140, prog(t, 25.1, 25.8), { size: 76, align: 'center', accent: [] });
+  headline([tr('Fais-le à ton image', 'Make it your own')], 960, 140, prog(t, 25.1, 25.8), { size: 76, align: 'center', accent: [] });
   const labels = {
-    species: ['🧬 Base', Mascot.SPECIES[look.species].label, Object.values(Mascot.SPECIES).map(s => s.label)],
-    palette: ['🎨 Couleur', pal.label, null],
-    accessory: ['🎩 Chapeaux & accessoires', Mascot.ACCESSORIES[look.accessory].label, null],
+    species: [tr('🧬 Base', '🧬 Species'), Mascot.SPECIES[look.species].label, Object.values(Mascot.SPECIES).map(s => s.label)],
+    palette: [tr('🎨 Couleur', '🎨 Color'), pal.label, null],
+    accessory: [tr('🎩 Chapeaux & accessoires', '🎩 Hats & accessories'), Mascot.ACCESSORIES[look.accessory].label, null],
   };
   const [cat, val] = labels[phase];
   const pk = phase === 'species' ? prog(t, 25.3, 25.7) : 1;
@@ -356,7 +358,7 @@ function sceneCustom(t) {
       ctx.globalAlpha = 1;
       if (info.level > 1) {
         ctx.font = '700 20px "Inter"'; ctx.fillStyle = on ? '#F2C14E' : '#B8B2A7'; ctx.textAlign = 'center';
-        ctx.fillText(`niv. ${info.level}`, x, y + 76);
+        ctx.fillText(`${tr('niv.', 'Lv.')} ${info.level}`, x, y + 76);
       }
       if (on) { ctx.strokeStyle = '#F0EEE6'; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(x - 68, y - 52, 136, 104, 26); ctx.stroke(); }
     });
@@ -384,18 +386,18 @@ function sceneGrid(t) {
     Mascot.drawInBox(ctx, look, blinkAt(t + i * 0.37) ? 'CLOSED' : 'HAPPY', x + 15, y + 10, cw - 30, ch - 30, { bounce: bounceAt(t + i * 0.21, 0.6) });
     ctx.restore();
   }
-  headline(['108 combinaisons'], W / 2, 150, prog(t, T.grid[0] + 0.2, T.grid[0] + 0.8), { size: 76, align: 'center', accent: [0] });
-  sub('Et l’icône de l’appli s’accorde à ta mascotte', W / 2, 990, prog(t, T.grid[0] + 0.6, T.grid[0] + 1.2), { align: 'center', size: 36, color: '#F0EEE6' });
+  headline([tr('108 combinaisons', '108 combinations')], W / 2, 150, prog(t, T.grid[0] + 0.2, T.grid[0] + 0.8), { size: 76, align: 'center', accent: [0] });
+  sub(tr('Et l’icône de l’appli s’accorde à ta mascotte', 'And the app icon matches your mascot'), W / 2, 990, prog(t, T.grid[0] + 0.6, T.grid[0] + 1.2), { align: 'center', size: 36, color: '#F0EEE6' });
 }
 
 function sceneOutro(t) {
   const look = { species: 'CRAB', palette: 'OCEAN', accessory: 'CROWN' };
   Deco.backdrop(ctx, W, H, { t, fx: 0.5, fy: 0.4 });
   const k = easeOut(prog(t, T.outro[0], T.outro[0] + 0.7));
-  Deco.watch(ctx, W / 2, 380, lerp(120, 210, k), c => Screens.pet(c, { look, reaction: 'WAVE', moodLine: 'À tout de suite !', bounce: bounceAt(t, 0.38), level: 5, satiety: 90, energy: 95, happiness: 97 }), { glow: k, strap: false });
+  Deco.watch(ctx, W / 2, 380, lerp(120, 210, k), c => Screens.pet(c, { look, reaction: 'WAVE', moodLine: tr('À tout de suite !', 'See you soon!'), bounce: bounceAt(t, 0.38), level: 5, satiety: 90, energy: 95, happiness: 97 }), { glow: k, strap: false });
   headline(['Agentchi'], W / 2, 790, prog(t, T.outro[0] + 0.3, T.outro[0] + 0.9), { size: 120, align: 'center', accent: [] });
-  sub('Disponible sur Google Play pour Wear OS', W / 2, 870, prog(t, T.outro[0] + 0.6, T.outro[0] + 1.2), { align: 'center', size: 40, color: '#D97757', weight: 700 });
-  sub('Fonctionne avec Claude Code et Codex · appli non officielle, sans lien avec Anthropic ni OpenAI', W / 2, 1000, prog(t, T.outro[0] + 0.9, T.outro[0] + 1.5), { align: 'center', size: 24 });
+  sub(tr('Disponible sur Google Play pour Wear OS', 'Available on Google Play for Wear OS'), W / 2, 870, prog(t, T.outro[0] + 0.6, T.outro[0] + 1.2), { align: 'center', size: 40, color: '#D97757', weight: 700 });
+  sub(tr('Fonctionne avec Claude Code et Codex · appli non officielle, sans lien avec Anthropic ni OpenAI', 'Works with Claude Code and Codex · unofficial app, not affiliated with Anthropic or OpenAI'), W / 2, 1000, prog(t, T.outro[0] + 0.9, T.outro[0] + 1.5), { align: 'center', size: 24 });
 }
 
 const SCENES = [[T.intro, sceneIntro], [T.live, sceneLive], [T.care, sceneCare], [T.party, sceneParty], [T.custom, sceneCustom], [T.grid, sceneGrid], [T.outro, sceneOutro]];

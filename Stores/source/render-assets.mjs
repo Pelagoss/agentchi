@@ -1,4 +1,4 @@
-// Génère les PNG de Stores/assets à partir de shots.html.
+// Génère les PNG de Stores/assets à partir de shots.html : en français dans Stores/assets, en anglais dans Stores/assets/en.
 // Usage (depuis la racine du dépôt) : node Stores/source/render-assets.mjs
 import { chromium } from 'playwright';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -14,8 +14,8 @@ function vectorPaths(file) {
   return [...xml.matchAll(/android:fillColor="(#[0-9A-Fa-f]+)"\s+android:pathData="([^"]+)"/g)].map(m => ({ fill: m[1], d: m[2] }));
 }
 
-function save(name, dataUrl) {
-  const file = join(out, `${name}.png`);
+function save(name, dataUrl, dir = out) {
+  const file = join(dir, `${name}.png`);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
   console.log('✓', file);
@@ -23,10 +23,11 @@ function save(name, dataUrl) {
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto(pathToFileURL(join(here, 'shots.html')).href);
-
-for (const name of await page.evaluate(() => window.shotNames())) {
-  save(name, await page.evaluate(n => window.renderShot(n), name));
+for (const [lang, dir] of [['fr', out], ['en', join(out, 'en')]]) {
+  await page.goto(pathToFileURL(join(here, 'shots.html')).href + `?lang=${lang}`);
+  for (const name of await page.evaluate(() => window.shotNames())) {
+    save(name, await page.evaluate(n => window.renderShot(n), name), dir);
+  }
 }
 // Icônes : celle de la fiche (Crabe Océan, hors couleur de marque) et la classique de l'appli.
 save('icone/icon-512', await page.evaluate(a => window.renderShot('icon', a), { paths: vectorPaths('ic_mascot_crab_ocean_foreground.xml') }));
