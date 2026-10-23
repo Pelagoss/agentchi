@@ -77,7 +77,7 @@ Même chaîne que Pelagoss/chess-analyzer : le workflow **Deploy** construit l'i
 | `k8s/0.secrets.yaml` | Secret `firebase-service-account` (chiffré sops), monté en `/secrets/firebase-service-account.json` |
 | `k8s/config.yaml` | Configuration du serveur, dont `CC_PUBLIC_URL` |
 | `k8s/server.yaml` | Deployment (une réplique), volume persistant pour `state.json`, Service |
-| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `agentchi.dev` (et les anciens `agentchi.codingpacer.fr` et `claude-companion.codingpacer.fr`, le temps de la transition) |
+| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `agentchi.dev` |
 
 Secrets GitHub du dépôt nécessaires : `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `KUBE_CONFIG` et `DECRYPTING_KEY`. Pour un autre domaine, change-le dans `k8s/ingress.yaml`, `k8s/config.yaml` et `app/build.secrets.env`.
 
