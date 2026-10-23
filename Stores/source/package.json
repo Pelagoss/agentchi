@@ -1,0 +1,13 @@
+{
+  "name": "agentchi-stores",
+  "private": true,
+  "type": "module",
+  "description": "Génère les visuels et la vidéo des fiches stores d'Agentchi",
+  "scripts": {
+    "assets": "node render-assets.mjs",
+    "video": "node render-video.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

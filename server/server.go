@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net"
@@ -58,6 +57,9 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 		asks:          askRegistry{m: map[string]*pendingAsk{}},
 	}
 	s.mux.HandleFunc("GET /{$}", s.handleHome)
+	s.mux.Handle("GET /static/", staticHandler())
+	// Sans cette route, « /static/ » nettoyé en « /static » redirigerait en boucle vers « /static/ ».
+	s.mux.HandleFunc("GET /static", http.NotFound)
 	s.mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { io.WriteString(w, "ok\n") })
 	s.mux.HandleFunc("GET /v1/cloud-settings.json", s.handleCloudSettings)
 	s.mux.HandleFunc("GET /v1/codex-hooks.json", s.handleCodexHooks)
@@ -390,54 +392,6 @@ func (s *Server) handleCloudSettings(w http.ResponseWriter, r *http.Request) {
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(CloudSettings(s.publicURL(r)))
 }
-
-func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
-	pretty, _ := json.MarshalIndent(CloudSettings(s.publicURL(r)), "", "  ")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = homeTemplate.Execute(w, map[string]string{"URL": s.publicURL(r), "Cloud": string(pretty)})
-}
-
-var homeTemplate = template.Must(template.New("home").Parse(`<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Agentchi</title>
-<style>
-:root{color-scheme:light dark;--bg:#faf9f5;--fg:#1a1918;--muted:#5e5d59;--card:#fff;--line:#e5e3dc;--accent:#d97757}
-@media (prefers-color-scheme:dark){:root{--bg:#1a1918;--fg:#f5f4ef;--muted:#a8a69e;--card:#262624;--line:#3a3936}}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,sans-serif}
-main{max-width:720px;margin:0 auto;padding:32px 16px}
-h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.1rem;margin:32px 0 8px}
-p,li{color:var(--muted)}code,pre{font-family:ui-monospace,Menlo,monospace;font-size:.88rem}
-pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;color:var(--fg)}
-.k{color:var(--accent);font-weight:600}
-</style></head><body><main>
-<h1>⌚ Agentchi</h1>
-<p>Ce serveur relaie les hooks de Claude Code et de Codex vers ta montre, et lui permet d'y répondre. Adresse du serveur : <code class="k">{{.URL}}</code></p>
-
-<h2>1. Sur la montre</h2>
-<p><b>Paramètres › Serveur › Nouveau code</b>. Note le code <code>XXXX-XXXX-XXXX</code>. Prévois un code par ordinateur ou par environnement cloud : chacun se révoque séparément.</p>
-
-<h2>2. Claude Code (terminal, IDE, appli Desktop, Remote Control)</h2>
-<p>Une seule commande, avec ton code :</p>
-<pre>claude plugin install agentchi --marketplace Pelagoss/agentchi \
-  --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</pre>
-<p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Sans <code>--config</code>, Claude Code demande les deux valeurs (<code>/plugin</code> › agentchi › Configure options). Il faut <code>curl</code>, présent par défaut sur macOS, Linux et Windows 10+.</p>
-
-<h2>3. Sessions cloud Claude (claude.ai/code)</h2>
-<p>Les sessions cloud ne chargent pas les plugins. Ajoute ce bloc au <code>.claude/settings.json</code> du dépôt (<a href="/v1/cloud-settings.json">télécharger</a>), puis, dans les paramètres de ton environnement cloud :</p>
-<ul>
-<li>variable d'environnement <code>AGENTCHI_CODE=&lt;ton code&gt;</code> ;</li>
-<li>accès réseau personnalisé autorisant <code>{{.URL}}</code>.</li>
-</ul>
-<p>Chaque personne qui travaille sur le dépôt met son propre code : sans code, le hook ne fait rien.</p>
-<pre>{{.Cloud}}</pre>
-
-<h2>4. Codex (CLI, appli, IDE ; macOS, Linux, WSL)</h2>
-<p>Enregistre les hooks Codex (<a href="/v1/codex-hooks.json">télécharger</a>) et rends ton code visible de Codex :</p>
-<pre>curl -fsS {{.URL}}/v1/codex-hooks.json -o ~/.codex/hooks.json
-echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc</pre>
-<p>Si tu as déjà un <code>~/.codex/hooks.json</code>, fusionne les deux plutôt que de l'écraser. Codex ignore un hook tant que tu ne l'as pas approuvé : lance <code>/hooks</code> dans Codex et approuve ceux d'Agentchi. Avec Codex, la montre reçoit les fins de tâche et les demandes d'autorisation, et peut y répondre ; les questions à choix restent sur l'ordinateur (Codex ne les passe pas aux hooks).</p>
-</main></body></html>
-`))
 
 // --- Utilitaires ---
 

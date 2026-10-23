@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-23T10:32:14.319Z",
+        "reason": "Stores/ visuals (the brief's binding assets) are set in Inter / Inter Display; the user asked to reuse them"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "server/web/home.html"
+        ],
+        "createdAt": "2026-10-23T10:32:15.698Z",
+        "reason": "sections carry 64-120px vertical padding in site.css; static scan misreads border-top sections"
+      }
+    ]
+  }
+}

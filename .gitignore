@@ -17,3 +17,7 @@ keystore/release.properties
 # Serveur : état local
 server/data/
 server/firebase-service-account.json
+
+# Impeccable : captures de relecture et cache du hook
+.impeccable/review/
+.impeccable/hook.cache.json
