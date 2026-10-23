@@ -193,10 +193,6 @@ Depuis l'écran de la mascotte, **Succès** affiche la **série** en cours (jour
 | 🧽 | Grand ménage | Nettoyer 30 cacas |
 | 👑 🌟 | Niveau 5, Niveau 10 | Niveaux de la mascotte |
 
-## Publier sur le Play Store
-
-Le guide pas à pas est dans [`docs/PUBLICATION_PLAY_STORE.md`](docs/PUBLICATION_PLAY_STORE.md), et la politique de confidentialité dans [`docs/PRIVACY.md`](docs/PRIVACY.md). Les textes des fiches (Google Play, Galaxy Store), les captures, l'image de présentation et la vidéo de présentation sont dans [`Stores/`](Stores/FICHE_STORES.md).
-
 ## Confidentialité
 
 - **Serveur** : agentchi.dev, ou [le tien](docs/self-hosted/README.md). Il reçoit les événements en HTTPS (nom du dossier, identifiant court de session, 300 premiers caractères du dernier message de l'agent) et les transmet aussitôt à Firebase, sans les stocker. Le hook `UserPromptSubmit` lui envoie aussi ton message à l'agent : il n'en garde rien et ne le transmet pas à la montre, seulement le fait qu'un message est parti. Les hooks envoient du JSON brut : pas de chiffrement de bout en bout, la confiance repose sur le serveur et sur Firebase Cloud Messaging (Google), qui achemine le push.
@@ -222,11 +218,6 @@ docs/             publication Play Store, confidentialité, serveur auto-héberg
 plugins/          plugin Claude Code agentchi (.claude-plugin/marketplace.json) et Codex agentchi-codex (.agents/plugins/marketplace.json)
 keystore/         clé de debug (même signature d'un build à l'autre)
 ```
-
-## Idées pour la suite
-
-- Répondre à plusieurs sessions en parallèle depuis la tuile
-- D'autres espèces et accessoires de mascotte
 
 ## Héberger ton propre serveur
 
