@@ -14,7 +14,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }
@@ -33,7 +33,7 @@
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/ask"
+            "url": "https://agentchi.dev/ask"
           }
         ]
       }
@@ -52,7 +52,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }
@@ -72,7 +72,7 @@
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/ask"
+            "url": "https://agentchi.dev/ask"
           }
         ]
       }
@@ -91,7 +91,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }
@@ -110,7 +110,7 @@
             },
             "timeout": 310,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/ask"
+            "url": "https://agentchi.dev/ask"
           }
         ]
       }
@@ -129,7 +129,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }
@@ -148,7 +148,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }
@@ -167,7 +167,7 @@
             },
             "timeout": 5,
             "type": "http",
-            "url": "https://agentchi.codingpacer.fr/h"
+            "url": "https://agentchi.dev/h"
           }
         ]
       }

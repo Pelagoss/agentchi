@@ -77,11 +77,11 @@ Même chaîne que Pelagoss/chess-analyzer : le workflow **Deploy** construit l'i
 | `k8s/0.secrets.yaml` | Secret `firebase-service-account` (chiffré sops), monté en `/secrets/firebase-service-account.json` |
 | `k8s/config.yaml` | Configuration du serveur, dont `CC_PUBLIC_URL` |
 | `k8s/server.yaml` | Deployment (une réplique), volume persistant pour `state.json`, Service |
-| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `agentchi.codingpacer.fr` (et l'ancien `claude-companion.codingpacer.fr`, le temps de la transition) |
+| `k8s/ingress.yaml` | Ingress Traefik + cert-manager sur `agentchi.dev` (et les anciens `agentchi.codingpacer.fr` et `claude-companion.codingpacer.fr`, le temps de la transition) |
 
 Secrets GitHub du dépôt nécessaires : `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`, `KUBE_CONFIG` et `DECRYPTING_KEY`. Pour un autre domaine, change-le dans `k8s/ingress.yaml`, `k8s/config.yaml` et `app/build.secrets.env`.
 
-Ouvre `https://agentchi.codingpacer.fr` : la page d'accueil donne les commandes prêtes à copier, avec l'adresse du serveur.
+Ouvre `https://agentchi.dev` : la page d'accueil donne les commandes prêtes à copier, avec l'adresse du serveur.
 
 #### Docker Compose (autre serveur)
 
@@ -116,7 +116,7 @@ gh run download -R Pelagoss/agentchi -n agentchi-debug
 
 La montre doit avoir les services Google Play (c'est le cas des Galaxy Watch). Elle reçoit les pushs en Wi-Fi, en LTE ou via le téléphone auquel elle est appairée.
 
-Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://agentchi.codingpacer.fr -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
+Pour compiler toi-même : `./gradlew :app:assembleDebug -PcompanionServer=https://agentchi.dev -PfirebaseAppId=… -PfirebaseApiKey=… -PfirebaseProjectId=… -PfirebaseSenderId=…`.
 
 ### 4. Claude Code, sur chaque ordinateur
 
@@ -124,7 +124,7 @@ Sur la montre : **Paramètres › Serveur › Nouveau code**, nomme l'ordinateur
 
 ```bash
 claude plugin install agentchi --marketplace Pelagoss/agentchi \
-  --config server_url=https://agentchi.codingpacer.fr --config code=XXXX-XXXX-XXXX
+  --config server_url=https://agentchi.dev --config code=XXXX-XXXX-XXXX
 ```
 
 C'est tout, pour tous tes projets. Le code est rangé dans le trousseau du système, pas dans `settings.json`. Sans `--config`, Claude Code demande les deux valeurs (`/plugin` › agentchi › *Configure options*). Le plugin couvre aussi les sessions locales que tu suis en **Remote Control** depuis claude.ai/code ou l'appli mobile.
@@ -135,11 +135,11 @@ Tu peux aussi ajouter la marketplace `Pelagoss/agentchi` dans **claude.ai › Pe
 
 Les sessions cloud ne chargent pas les plugins, mais elles exécutent les hooks du dépôt :
 
-1. Ajoute à `.claude/settings.json` du dépôt le bloc que donne `https://agentchi.codingpacer.fr/v1/cloud-settings.json`. C'est un hook `http` qui envoie `Authorization: Bearer $AGENTCHI_CODE`.
+1. Ajoute à `.claude/settings.json` du dépôt le bloc que donne `https://agentchi.dev/v1/cloud-settings.json`. C'est un hook `http` qui envoie `Authorization: Bearer $AGENTCHI_CODE`.
 2. Sur la montre, crée un code pour cet environnement cloud.
 3. Dans les paramètres de l'environnement cloud sur claude.ai/code :
    - variable d'environnement `AGENTCHI_CODE=XXXX-XXXX-XXXX` ;
-   - accès réseau **personnalisé** qui autorise `agentchi.codingpacer.fr`.
+   - accès réseau **personnalisé** qui autorise `agentchi.dev`.
 
 Chaque personne qui travaille sur le dépôt met **son propre code** dans **son** environnement. Sans code, le hook ne fait rien et n'affiche pas d'erreur. Sur un ordinateur, la variable n'est pas définie, donc pas de doublon avec le plugin.
 
@@ -148,13 +148,13 @@ Chaque personne qui travaille sur le dépôt met **son propre code** dans **son*
 Codex lit ses hooks dans `~/.codex/hooks.json` (CLI, appli et extension IDE ; macOS, Linux ou WSL). Le serveur les fournit, avec son adresse :
 
 ```bash
-curl -fsS https://agentchi.codingpacer.fr/v1/codex-hooks.json -o ~/.codex/hooks.json
+curl -fsS https://agentchi.dev/v1/codex-hooks.json -o ~/.codex/hooks.json
 echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc
 ```
 
 Si tu as déjà un `~/.codex/hooks.json`, fusionne les deux plutôt que de l'écraser. Codex ignore un hook tant que tu ne l'as pas approuvé : lance **`/hooks`** dans Codex et approuve ceux d'Agentchi.
 
-Dans l'appli Codex (desktop), tu peux aussi installer le plugin `agentchi-codex` : `codex plugin marketplace add Pelagoss/agentchi`, puis l'installer depuis le répertoire des plugins. Il lit le code dans `AGENTCHI_CODE` et l'adresse dans `AGENTCHI_SERVER` (défaut `https://agentchi.codingpacer.fr`).
+Dans l'appli Codex (desktop), tu peux aussi installer le plugin `agentchi-codex` : `codex plugin marketplace add Pelagoss/agentchi`, puis l'installer depuis le répertoire des plugins. Il lit le code dans `AGENTCHI_CODE` et l'adresse dans `AGENTCHI_SERVER` (défaut `https://agentchi.dev`).
 
 Avec Codex, la montre reçoit les fins de tâche, les demandes d'autorisation (commandes, modifications de fichiers, outils MCP) et peut y répondre. Ses questions à choix (`request_user_input`) restent sur l'ordinateur : Codex ne les passe pas aux hooks. Dans *Sessions en cours*, une session Codex ne repasse pas « au travail » quand tu lui écris : ses hooks ne relaient pas l'envoi d'un message.
 

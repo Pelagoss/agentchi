@@ -19,7 +19,7 @@
     "server_url": {
       "type": "string",
       "title": "Adresse du serveur",
-      "description": "Serveur Agentchi, par ex. https://agentchi.codingpacer.fr (affiché sur la montre)",
+      "description": "Serveur Agentchi, par ex. https://agentchi.dev (affiché sur la montre)",
       "required": true
     },
     "code": {

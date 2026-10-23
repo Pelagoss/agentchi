@@ -1,7 +1,8 @@
 # TLS terminé par Traefik (cert-manager), comme Pelagoss/chess-analyzer.
 # Le domaine doit correspondre à CC_PUBLIC_URL (config.yaml) et à
-# COMPANION_SERVER (app/build.secrets.env). L'ancien domaine claude-companion.codingpacer.fr
-# reste servi le temps que les plugins et hooks cloud passent au nouveau.
+# COMPANION_SERVER (app/build.secrets.env). Les anciens domaines agentchi.codingpacer.fr
+# et claude-companion.codingpacer.fr restent servis le temps que les plugins,
+# hooks cloud et montres déjà installées passent au nouveau.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -13,6 +14,16 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
+    - host: agentchi.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: server
+                port:
+                  number: 80
     - host: agentchi.codingpacer.fr
       http:
         paths:
@@ -35,6 +46,7 @@ spec:
                   number: 80
   tls:
     - hosts:
+        - agentchi.dev
         - agentchi.codingpacer.fr
         - claude-companion.codingpacer.fr
       secretName: agentchi-letsencrypt

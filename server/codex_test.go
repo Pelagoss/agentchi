@@ -12,7 +12,7 @@ import (
 )
 
 // Le plugin Codex du dépôt lit l'adresse du serveur dans AGENTCHI_SERVER.
-const codexPluginServer = "${AGENTCHI_SERVER:-https://agentchi.codingpacer.fr}"
+const codexPluginServer = "${AGENTCHI_SERVER:-https://agentchi.dev}"
 
 func codexHooksJSON(t *testing.T, server string) []byte {
 	t.Helper()
