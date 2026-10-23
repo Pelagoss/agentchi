@@ -1,5 +1,5 @@
 {
-  "description": "Relaie les événements Claude Code au serveur Agentchi, et les réponses données sur la montre (curl, sans script).",
+  "description": "Relays Claude Code events to the Agentchi server, and the answers given on the watch (curl, no script).",
   "hooks": {
     "Notification": [
       {

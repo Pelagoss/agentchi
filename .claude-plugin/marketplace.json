@@ -3,12 +3,12 @@
   "owner": {
     "name": "Pelagoss"
   },
-  "description": "Plugins d'Agentchi (montre Wear OS)",
+  "description": "Agentchi plugins (Wear OS watch)",
   "plugins": [
     {
       "name": "agentchi",
       "source": "./plugins/agentchi",
-      "description": "Envoie les événements de Claude Code (autorisation, réponse attendue, tâche terminée…) à ta montre Agentchi, et lui permet d'y répondre."
+      "description": "Sends Claude Code events (permission requests, replies expected, finished tasks…) to your Agentchi watch, and lets you answer them from it."
     }
   ]
 }

@@ -1,20 +1,20 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "agentchi-codex",
-  "version": "1.0.1",
-  "description": "Envoie les événements de Codex à ta montre Agentchi et lui permet d'y répondre, via ton serveur Agentchi.",
+  "version": "1.0.2",
+  "description": "Sends Codex events to your Agentchi watch and lets you answer them from it, through your Agentchi server.",
   "author": { "name": "Pelagoss" },
   "homepage": "https://github.com/Pelagoss/agentchi",
   "repository": "https://github.com/Pelagoss/agentchi",
   "license": "MIT",
-  "keywords": ["wear-os", "notifications", "montre", "agentchi"],
+  "keywords": ["wear-os", "notifications", "watch", "agentchi"],
   "extensions": {
     "com.openai": {
       "hooks": "./hooks/hooks.json",
       "interface": {
-        "displayName": "Agentchi (montre)",
-        "shortDescription": "Notifications et réponses depuis ta montre Wear OS",
-        "longDescription": "Relaie à ta montre Agentchi les fins de tâche et les demandes d'autorisation de Codex, et renvoie à Codex les réponses données sur la montre. Code d'appairage dans la variable AGENTCHI_CODE, serveur dans AGENTCHI_SERVER (défaut https://agentchi.dev).",
+        "displayName": "Agentchi (watch)",
+        "shortDescription": "Notifications and replies from your Wear OS watch",
+        "longDescription": "Relays Codex task completions and permission requests to your Agentchi watch, and sends the answers you give on the watch back to Codex. Pairing code in the AGENTCHI_CODE variable, server in AGENTCHI_SERVER (default https://agentchi.dev).",
         "developerName": "Pelagoss",
         "category": "Productivity",
         "websiteURL": "https://github.com/Pelagoss/agentchi",
