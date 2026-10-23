@@ -10,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.wear.remote.interactions.RemoteActivityHelper
 import fr.codingpacer.agentchi.data.AgentEvent
+import fr.codingpacer.agentchi.text.tr
 
 /**
  * Ouvre le lien d'une session cloud (claude.ai/code) dans le navigateur du téléphone appairé.
@@ -27,7 +28,7 @@ object PhoneLink {
         future.addListener(
             {
                 val ok = runCatching { future.get() }.isSuccess
-                Toast.makeText(app, if (ok) "📱 Ouvert sur le téléphone" else "Téléphone injoignable", Toast.LENGTH_SHORT).show()
+                Toast.makeText(app, if (ok) tr("📱 Ouvert sur le téléphone", "📱 Opened on phone") else tr("Téléphone injoignable", "Phone unreachable"), Toast.LENGTH_SHORT).show()
             },
             ContextCompat.getMainExecutor(app),
         )

@@ -23,6 +23,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TitleCard
 import fr.codingpacer.agentchi.notify.PhoneLink
 import fr.codingpacer.agentchi.text.markdownAnnotated
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.ask.AskActivity
 
@@ -41,7 +42,7 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
             if (history.isEmpty()) {
                 item {
                     Text(
-                        "Rien pour le moment. Les événements de Claude Code et de Codex apparaîtront ici.",
+                        tr("Rien pour le moment. Les événements de Claude Code et de Codex apparaîtront ici.", "Nothing yet. Claude Code and Codex events will show up here."),
                         style = MaterialTheme.typography.caption2,
                     )
                 }
@@ -66,8 +67,8 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                 ) {
                     Text(event.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     when {
-                        pending -> Text("⌚ Toucher pour répondre", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
-                        event.openableOnPhone -> Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                        pending -> Text(tr("⌚ Toucher pour répondre", "⌚ Tap to reply"), style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                        event.openableOnPhone -> Text(tr("📱 Toucher pour ouvrir sur le téléphone", "📱 Tap to open on phone"), style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
                     }
                     Text(markdownAnnotated(event.message), maxLines = 4, overflow = TextOverflow.Ellipsis)
                     event.answer?.let {
@@ -79,7 +80,7 @@ fun HistoryScreen(viewModel: CompanionViewModel) {
                 item {
                     Chip(
                         onClick = viewModel::clearHistory,
-                        label = { Text("Tout effacer") },
+                        label = { Text(tr("Tout effacer", "Clear all")) },
                         colors = ChipDefaults.secondaryChipColors(),
                     )
                 }

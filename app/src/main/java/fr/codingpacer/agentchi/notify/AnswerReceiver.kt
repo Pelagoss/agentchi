@@ -10,6 +10,7 @@ import fr.codingpacer.agentchi.CompanionApp
 import fr.codingpacer.agentchi.data.Ask
 import fr.codingpacer.agentchi.data.AskAnswer
 import fr.codingpacer.agentchi.net.EventParser
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.coroutines.launch
 
 /**
@@ -65,7 +66,7 @@ class AnswerReceiver : BroadcastReceiver() {
         /** Action « Répondre » : clavier, dictée ou réponse rapide ([choices]), directement depuis la notification. */
         fun replyAction(context: Context, ask: Ask, index: Int, choices: List<String>): NotificationCompat.Action {
             val input = RemoteInput.Builder(KEY_REPLY)
-                .setLabel("Ta réponse")
+                .setLabel(tr("Ta réponse", "Your reply"))
                 .apply { if (choices.isNotEmpty()) setChoices(choices.toTypedArray()) }
                 .build()
             // La saisie est ajoutée à l'intent par le système : il doit rester modifiable.
@@ -75,7 +76,7 @@ class AnswerReceiver : BroadcastReceiver() {
                 intent(context, ask),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
             )
-            return NotificationCompat.Action.Builder(0, "💬 Répondre", pending)
+            return NotificationCompat.Action.Builder(0, tr("💬 Répondre", "💬 Reply"), pending)
                 .addRemoteInput(input)
                 .setAllowGeneratedReplies(false)
                 .build()

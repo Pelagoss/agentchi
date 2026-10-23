@@ -1,5 +1,7 @@
 package fr.codingpacer.agentchi.pet
 
+import fr.codingpacer.agentchi.text.tr
+
 /**
  * Dessin pixel-art de la mascotte, sans dépendance Android : partagé par l'appli (Compose),
  * la tuile (bitmap) et les icônes d'appli (vecteurs générés). Grille de [WIDTH] x [HEIGHT] :
@@ -18,7 +20,8 @@ object MascotSprite {
      * [round] : pixels dessinés en points ronds.
      */
     enum class Species(
-        val label: String,
+        private val fr: String,
+        private val en: String,
         val body: List<String>,
         val legsA: String,
         val legsB: String,
@@ -29,7 +32,7 @@ object MascotSprite {
         val defaultPalette: Palette,
     ) {
         CRAB(
-            "Crabe",
+            "Crabe", "Crab",
             listOf(
                 "..########..",
                 "..########..",
@@ -44,7 +47,7 @@ object MascotSprite {
             leftEye = 3, rightEye = 8, eyeRow = 1, round = false, defaultPalette = Palette.CORAL,
         ),
         DOTS(
-            "Points",
+            "Points", "Dots",
             listOf(
                 "...######...",
                 "..########..",
@@ -59,7 +62,7 @@ object MascotSprite {
             leftEye = 3, rightEye = 8, eyeRow = 2, round = true, defaultPalette = Palette.INK,
         ),
         GHOST(
-            "Fantôme",
+            "Fantôme", "Ghost",
             listOf(
                 "...######...",
                 "..########..",
@@ -72,27 +75,33 @@ object MascotSprite {
             ".+.++..++.+.",
             ".++.++.++.+.",
             leftEye = 3, rightEye = 8, eyeRow = 2, round = false, defaultPalette = Palette.LILAC,
-        ),
+        );
+
+        val label: String get() = tr(fr, en)
     }
 
     /** Couleurs ARGB : corps, secondaire (bras, pattes), yeux. */
-    enum class Palette(val label: String, val body: Int, val accent: Int, val eye: Int) {
-        CORAL("Corail", 0xFFD97757.toInt(), 0xFFB4593B.toInt(), INK_DARK),
-        INK("Encre", 0xFFF0EEE6.toInt(), 0xFFB9B5AA.toInt(), INK_DARK),
-        OCEAN("Océan", 0xFF5B8DEF.toInt(), 0xFF3D6AC4.toInt(), INK_DARK),
-        MINT("Menthe", 0xFF5DBB7A.toInt(), 0xFF3E8E58.toInt(), INK_DARK),
-        LILAC("Lilas", 0xFFA77BE0.toInt(), 0xFF7E55B8.toInt(), INK_DARK),
-        ROSE("Rose", 0xFFE97CA0.toInt(), 0xFFC25A7E.toInt(), INK_DARK),
+    enum class Palette(private val fr: String, private val en: String, val body: Int, val accent: Int, val eye: Int) {
+        CORAL("Corail", "Coral", 0xFFD97757.toInt(), 0xFFB4593B.toInt(), INK_DARK),
+        INK("Encre", "Ink", 0xFFF0EEE6.toInt(), 0xFFB9B5AA.toInt(), INK_DARK),
+        OCEAN("Océan", "Ocean", 0xFF5B8DEF.toInt(), 0xFF3D6AC4.toInt(), INK_DARK),
+        MINT("Menthe", "Mint", 0xFF5DBB7A.toInt(), 0xFF3E8E58.toInt(), INK_DARK),
+        LILAC("Lilas", "Lilac", 0xFFA77BE0.toInt(), 0xFF7E55B8.toInt(), INK_DARK),
+        ROSE("Rose", "Rose", 0xFFE97CA0.toInt(), 0xFFC25A7E.toInt(), INK_DARK);
+
+        val label: String get() = tr(fr, en)
     }
 
     /** Accessoire porté au-dessus du corps (ou sur les yeux), débloqué au niveau [level]. */
-    enum class Accessory(val label: String, val level: Int) {
-        NONE("Aucun", 1),
-        PARTY_HAT("Chapeau de fête", 1),
-        BOW("Nœud", 1),
-        SUNGLASSES("Lunettes de soleil", 2),
-        TOP_HAT("Haut-de-forme", 3),
-        CROWN("Couronne", 5),
+    enum class Accessory(private val fr: String, private val en: String, val level: Int) {
+        NONE("Aucun", "None", 1),
+        PARTY_HAT("Chapeau de fête", "Party hat", 1),
+        BOW("Nœud", "Bow", 1),
+        SUNGLASSES("Lunettes de soleil", "Sunglasses", 2),
+        TOP_HAT("Haut-de-forme", "Top hat", 3),
+        CROWN("Couronne", "Crown", 5);
+
+        val label: String get() = tr(fr, en)
     }
 
     data class Look(

@@ -53,7 +53,7 @@ Your agents send their events through their **hooks** to the Agentchi server, wh
 
 ## Install Agentchi
 
-> The watch app is currently in French only: the menu names below are translated (*Settings › Server* is *Paramètres › Serveur* on the watch).
+> The watch app is in English, or in French when the watch is set to French (Wear OS 4+ also lets you pick the app's language in the system settings).
 
 ### 1. The app on your watch
 

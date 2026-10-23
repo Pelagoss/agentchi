@@ -38,6 +38,7 @@ import fr.codingpacer.agentchi.data.EventType
 import fr.codingpacer.agentchi.data.next
 import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.PetLogic
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.pet.Mascot
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.common.rememberTextInput
@@ -74,22 +75,22 @@ fun NavGraphBuilder.settingsPages(viewModel: CompanionViewModel, navigate: (Stri
 private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Unit, onOpenPairing: () -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val (pet, _) = viewModel.pet.collectAsStateWithLifecycle().value
-    Page("Paramètres") {
+    Page(tr("Paramètres", "Settings")) {
         item {
             Category("📥", "Sources", (Agent.entries.filter { it !in settings.mutedAgents }.map { it.label } +
-                listOfNotNull("Ordinateurs".takeIf { settings.localSessions }, "Cloud".takeIf { settings.cloudSessions }))
-                .joinToString(" · ").ifEmpty { "Aucune source" }) { navigate(SettingsRoute.SOURCES) }
+                listOfNotNull(tr("Ordinateurs", "Computers").takeIf { settings.localSessions }, "Cloud".takeIf { settings.cloudSessions }))
+                .joinToString(" · ").ifEmpty { tr("Aucune source", "No source") }) { navigate(SettingsRoute.SOURCES) }
         }
         item {
-            Category("⌚", "Réponses", if (settings.remoteAnswers) "Activées · ${settings.answerDelay.label}" else "Désactivées") {
+            Category("⌚", tr("Réponses", "Replies"), if (settings.remoteAnswers) tr("Activées", "On") + " · ${settings.answerDelay.label}" else tr("Désactivées", "Off")) {
                 navigate(SettingsRoute.ANSWERS)
             }
         }
         item {
             val summary = listOfNotNull(
-                "${settings.enabledEvents.size} événements",
-                "Résumé groupé".takeIf { settings.groupInfo },
-                "Calme ${settings.quietStart}h → ${settings.quietEnd}h".takeIf { settings.quietHoursEnabled },
+                tr("${settings.enabledEvents.size} événements", "${settings.enabledEvents.size} events"),
+                tr("Résumé groupé", "Grouped summary").takeIf { settings.groupInfo },
+                (tr("Calme", "Quiet") + " ${settings.quietStart}h → ${settings.quietEnd}h").takeIf { settings.quietHoursEnabled },
             ).joinToString(" · ")
             Category("🔔", "Notifications", summary) {
                 navigate(SettingsRoute.NOTIFICATIONS)
@@ -97,11 +98,11 @@ private fun SettingsMenu(viewModel: CompanionViewModel, navigate: (String) -> Un
         }
         // Une seule page pour le serveur : adresse, connexion de la montre et codes des ordinateurs.
         item {
-            Category("🔗", "Serveur", if (settings.isConnected) "Ordinateurs et cloud" else "Montre non connectée", onClick = onOpenPairing)
+            Category("🔗", tr("Serveur", "Server"), if (settings.isConnected) tr("Ordinateurs et cloud", "Computers and cloud") else tr("Montre non connectée", "Watch not connected"), onClick = onOpenPairing)
         }
-        item { Category("🦀", "Mascotte", "${pet.name} · ${settings.mascot.species.label} · ${settings.mascot.palette.label}") { navigate(SettingsRoute.MASCOT) } }
-        item { Category("🧪", "Tests", "Simuler une notification") { navigate(SettingsRoute.TESTS) } }
-        item { Category("ℹ️", "À propos", "Version ${BuildConfig.VERSION_NAME}") { navigate(SettingsRoute.ABOUT) } }
+        item { Category("🦀", tr("Mascotte", "Mascot"), "${pet.name} · ${settings.mascot.species.label} · ${settings.mascot.palette.label}") { navigate(SettingsRoute.MASCOT) } }
+        item { Category("🧪", "Tests", tr("Simuler une notification", "Simulate a notification")) { navigate(SettingsRoute.TESTS) } }
+        item { Category("ℹ️", tr("À propos", "About"), "Version ${BuildConfig.VERSION_NAME}") { navigate(SettingsRoute.ABOUT) } }
     }
 }
 
@@ -120,14 +121,14 @@ private fun SourcesPage(viewModel: CompanionViewModel) {
                 }
             }
         }
-        section("Où")
+        section(tr("Où", "Where"))
         item {
-            Toggle("💻 Ordinateurs", "Claude Code, Codex", settings.localSessions) { on -> update { it.copy(localSessions = on) } }
+            Toggle(tr("💻 Ordinateurs", "💻 Computers"), "Claude Code, Codex", settings.localSessions) { on -> update { it.copy(localSessions = on) } }
         }
         item {
-            Toggle("☁️ Sessions cloud", "claude.ai/code", settings.cloudSessions) { on -> update { it.copy(cloudSessions = on) } }
+            Toggle(tr("☁️ Sessions cloud", "☁️ Cloud sessions"), "claude.ai/code", settings.cloudSessions) { on -> update { it.copy(cloudSessions = on) } }
         }
-        if (accounts.isNotEmpty()) section("Ordinateurs et environnements")
+        if (accounts.isNotEmpty()) section(tr("Ordinateurs et environnements", "Computers and environments"))
         accounts.sorted().forEach { account ->
             item {
                 Toggle("👤 $account", null, account !in settings.mutedAccounts) { on -> viewModel.setAccountEnabled(account, on) }
@@ -142,23 +143,29 @@ private fun SourcesPage(viewModel: CompanionViewModel) {
 private fun AnswersPage(viewModel: CompanionViewModel, navigate: (String) -> Unit) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val toast = rememberToast()
-    Page("Réponses") {
+    Page(tr("Réponses", "Replies")) {
         item {
-            Toggle("⌚ Répondre depuis la montre", "Autorisations, questions, messages", settings.remoteAnswers) { on ->
+            Toggle(tr("⌚ Répondre depuis la montre", "⌚ Reply from the watch"), tr("Autorisations, questions, messages", "Permissions, questions, messages"), settings.remoteAnswers) { on ->
                 viewModel.setRemoteAnswers(on, onError = toast)
             }
         }
-        item { Setting("⏱ Attendre ma réponse", settings.answerDelay.label) { viewModel.nextAnswerDelay(onError = toast) } }
+        item { Setting(tr("⏱ Attendre ma réponse", "⏱ Wait for my reply"), settings.answerDelay.label) { viewModel.nextAnswerDelay(onError = toast) } }
         item {
             Note(
                 if (settings.remoteAnswers) {
-                    "L'agent attend ta réponse ${settings.answerDelay.label}, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur."
+                    tr(
+                        "L'agent attend ta réponse ${settings.answerDelay.label}, puis demande sur l'ordinateur. Balaie la notification pour répondre tout de suite sur l'ordinateur.",
+                        "The agent waits ${settings.answerDelay.label} for your reply, then asks on the computer. Swipe the notification away to answer on the computer right now.",
+                    )
                 } else {
-                    "À activer quand tu t'éloignes : les questions de Claude Code et de Codex arrivent ici avec leurs réponses."
+                    tr(
+                        "À activer quand tu t'éloignes : les questions de Claude Code et de Codex arrivent ici avec leurs réponses.",
+                        "Turn it on when you step away: Claude Code and Codex questions arrive here with their answers.",
+                    )
                 },
             )
         }
-        item { Category("💬", "Réponses rapides", settings.quickReplies.joinToString(" · ").ifEmpty { "Aucune" }) { navigate(SettingsRoute.QUICK_REPLIES) } }
+        item { Category("💬", tr("Réponses rapides", "Quick replies"), settings.quickReplies.joinToString(" · ").ifEmpty { tr("Aucune", "None") }) { navigate(SettingsRoute.QUICK_REPLIES) } }
     }
 }
 
@@ -168,26 +175,26 @@ private fun QuickRepliesPage(viewModel: CompanionViewModel) {
     // Réponse dépliée (Modifier / Supprimer), et celle en cours de saisie (hors de la liste : nouvelle).
     var selected by remember { mutableStateOf<Int?>(null) }
     var editing by remember { mutableIntStateOf(0) }
-    val edit = rememberTextInput("Réponse rapide") { text ->
+    val edit = rememberTextInput(tr("Réponse rapide", "Quick reply")) { text ->
         viewModel.setQuickReply(editing, text)
         selected = null
     }
-    Page("Réponses rapides") {
+    Page(tr("Réponses rapides", "Quick replies")) {
         settings.quickReplies.forEachIndexed { index, reply ->
             item {
-                Setting("💬 $reply", if (selected == index) "Toucher pour fermer" else "Toucher pour modifier") {
+                Setting("💬 $reply", if (selected == index) tr("Toucher pour fermer", "Tap to close") else tr("Toucher pour modifier", "Tap to edit")) {
                     selected = if (selected == index) null else index
                 }
             }
             if (selected == index) {
                 item {
-                    Setting("✏️ Modifier", reply) {
+                    Setting(tr("✏️ Modifier", "✏️ Edit"), reply) {
                         editing = index
                         edit()
                     }
                 }
                 item {
-                    Setting("🗑️ Supprimer", reply) {
+                    Setting(tr("🗑️ Supprimer", "🗑️ Delete"), reply) {
                         viewModel.removeQuickReply(index)
                         selected = null
                     }
@@ -196,14 +203,14 @@ private fun QuickRepliesPage(viewModel: CompanionViewModel) {
         }
         if (settings.quickReplies.size < CompanionSettings.MAX_QUICK_REPLIES) {
             item {
-                Setting("➕ Ajouter", "Nouvelle réponse rapide") {
+                Setting(tr("➕ Ajouter", "➕ Add"), tr("Nouvelle réponse rapide", "New quick reply")) {
                     editing = settings.quickReplies.size
                     edit()
                 }
             }
         }
         if (settings.quickReplies != CompanionSettings.DEFAULT_QUICK_REPLIES) {
-            item { Setting("↩️ Rétablir", "Réponses par défaut", onClick = viewModel::resetQuickReplies) }
+            item { Setting(tr("↩️ Rétablir", "↩️ Reset"), tr("Réponses par défaut", "Default replies"), onClick = viewModel::resetQuickReplies) }
         }
     }
 }
@@ -215,41 +222,52 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val update = viewModel::updateSettings
     Page("Notifications") {
-        item { Category("📋", "Me notifier quand…", "${settings.enabledEvents.size} sur ${EventType.entries.count { !it.silent }}") { navigate(SettingsRoute.EVENTS) } }
         item {
-            Category("🎨", "Styles des alertes", "Urgentes : ${settings.urgentStyle.label} · Autres : ${settings.infoStyle.label}") {
+            Category("📋", tr("Me notifier quand…", "Notify me when…"), "${settings.enabledEvents.size} ${tr("sur", "of")} ${EventType.entries.count { !it.silent }}") {
+                navigate(SettingsRoute.EVENTS)
+            }
+        }
+        item {
+            Category("🎨", tr("Styles des alertes", "Alert styles"), tr("Urgentes : ", "Urgent: ") + settings.urgentStyle.label + tr(" · Autres : ", " · Others: ") + settings.infoStyle.label) {
                 navigate(SettingsRoute.STYLES)
             }
         }
-        item { Toggle("🔊 Son", null, settings.sound) { on -> update { it.copy(sound = on) } } }
+        item { Toggle(tr("🔊 Son", "🔊 Sound"), null, settings.sound) { on -> update { it.copy(sound = on) } } }
         item {
-            Toggle("👁️ Aperçu du message", "Masque le texte si désactivé", settings.showPreview) { on -> update { it.copy(showPreview = on) } }
+            Toggle(tr("👁️ Aperçu du message", "👁️ Message preview"), tr("Masque le texte si désactivé", "Hides the text when off"), settings.showPreview) { on -> update { it.copy(showPreview = on) } }
         }
         item {
-            Toggle("📚 Résumé groupé", "« 3 tâches terminées sur 2 projets »", settings.groupInfo) { on -> update { it.copy(groupInfo = on) } }
+            Toggle(tr("📚 Résumé groupé", "📚 Grouped summary"), tr("« 3 tâches terminées sur 2 projets »", "\"3 tasks done across 2 projects\""), settings.groupInfo) { on -> update { it.copy(groupInfo = on) } }
         }
         if (settings.groupInfo) {
-            item { Note("Les événements non urgents s'ajoutent à une seule notification, qui ne vibre qu'une fois. Les urgences restent à part.") }
+            item {
+                Note(
+                    tr(
+                        "Les événements non urgents s'ajoutent à une seule notification, qui ne vibre qu'une fois. Les urgences restent à part.",
+                        "Non-urgent events stack into a single notification that only vibrates once. Urgent ones stay separate.",
+                    ),
+                )
+            }
         }
 
-        section("Ne pas déranger")
+        section(tr("Ne pas déranger", "Do not disturb"))
         item {
-            Toggle("⌚ Suivre la montre", "Ne pas déranger, mode Coucher", settings.followSystemQuiet) { on ->
+            Toggle(tr("⌚ Suivre la montre", "⌚ Follow the watch"), tr("Ne pas déranger, mode Coucher", "Do not disturb, Bedtime mode"), settings.followSystemQuiet) { on ->
                 update { it.copy(followSystemQuiet = on) }
             }
         }
         item {
-            Toggle("🌙 Heures calmes", "${settings.quietStart}h → ${settings.quietEnd}h", settings.quietHoursEnabled) { on ->
+            Toggle(tr("🌙 Heures calmes", "🌙 Quiet hours"), "${settings.quietStart}h → ${settings.quietEnd}h", settings.quietHoursEnabled) { on ->
                 update { it.copy(quietHoursEnabled = on) }
             }
         }
         if (settings.quietHoursEnabled) {
-            item { Setting("Début", "${settings.quietStart}h") { update { it.copy(quietStart = (it.quietStart + 1) % 24) } } }
-            item { Setting("Fin", "${settings.quietEnd}h") { update { it.copy(quietEnd = (it.quietEnd + 1) % 24) } } }
+            item { Setting(tr("Début", "Start"), "${settings.quietStart}h") { update { it.copy(quietStart = (it.quietStart + 1) % 24) } } }
+            item { Setting(tr("Fin", "End"), "${settings.quietEnd}h") { update { it.copy(quietEnd = (it.quietEnd + 1) % 24) } } }
         }
         if (settings.quietHoursEnabled || settings.followSystemQuiet) {
             item {
-                Toggle("Laisser passer les urgences", null, settings.quietAllowsUrgent) { on -> update { it.copy(quietAllowsUrgent = on) } }
+                Toggle(tr("Laisser passer les urgences", "Let urgent events through"), null, settings.quietAllowsUrgent) { on -> update { it.copy(quietAllowsUrgent = on) } }
             }
         }
     }
@@ -258,10 +276,10 @@ private fun NotificationsPage(viewModel: CompanionViewModel, navigate: (String) 
 @Composable
 private fun EventsPage(viewModel: CompanionViewModel) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    Page("Me notifier quand…") {
+    Page(tr("Me notifier quand…", "Notify me when…")) {
         EventType.entries.filter { !it.silent }.forEach { type ->
             item {
-                Toggle("${type.emoji} ${type.label}", if (type.urgent) "Urgent" else null, type in settings.enabledEvents) { on ->
+                Toggle("${type.emoji} ${type.label}", if (type.urgent) tr("Urgent", "Urgent") else null, type in settings.enabledEvents) { on ->
                     viewModel.updateSettings { s -> s.copy(enabledEvents = if (on) s.enabledEvents + type else s.enabledEvents - type) }
                 }
             }
@@ -273,17 +291,17 @@ private fun EventsPage(viewModel: CompanionViewModel) {
 private fun StylesPage(viewModel: CompanionViewModel) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val update = viewModel::updateSettings
-    Page("Styles des alertes") {
-        section("Urgentes")
-        item { Setting("Affichage", settings.urgentStyle.label) { update { it.copy(urgentStyle = it.urgentStyle.next()) } } }
+    Page(tr("Styles des alertes", "Alert styles")) {
+        section(tr("Urgentes", "Urgent"))
+        item { Setting(tr("Affichage", "Display"), settings.urgentStyle.label) { update { it.copy(urgentStyle = it.urgentStyle.next()) } } }
         item {
             Setting("Vibration", settings.urgentVibration.label) {
                 update { it.copy(urgentVibration = it.urgentVibration.next()) }
                 viewModel.previewVibration(settings.urgentVibration.next())
             }
         }
-        section("Autres")
-        item { Setting("Affichage", settings.infoStyle.label) { update { it.copy(infoStyle = it.infoStyle.next()) } } }
+        section(tr("Autres", "Others"))
+        item { Setting(tr("Affichage", "Display"), settings.infoStyle.label) { update { it.copy(infoStyle = it.infoStyle.next()) } } }
         item {
             Setting("Vibration", settings.infoVibration.label) {
                 update { it.copy(infoVibration = it.infoVibration.next()) }
@@ -302,8 +320,8 @@ private fun MascotPage(viewModel: CompanionViewModel) {
     val look = settings.mascot
     val level = PetLogic.level(pet.xp)
     val toast = rememberToast()
-    val editName = rememberTextInput("Nom de la mascotte") { name -> viewModel.rename(name) }
-    Page("Mascotte") {
+    val editName = rememberTextInput(tr("Nom de la mascotte", "Mascot name")) { name -> viewModel.rename(name) }
+    Page(tr("Mascotte", "Mascot")) {
         item {
             Mascot(
                 mood = PetLogic.mood(pet),
@@ -313,31 +331,38 @@ private fun MascotPage(viewModel: CompanionViewModel) {
                 onTap = viewModel::caress,
             )
         }
-        item { Setting("✏️ Nom", pet.name, onClick = editName) }
+        item { Setting(tr("✏️ Nom", "✏️ Name"), pet.name, onClick = editName) }
         item {
-            Setting("🧬 Espèce", look.species.label) {
+            Setting(tr("🧬 Espèce", "🧬 Species"), look.species.label) {
                 val species = look.species.next()
                 // Nouvelle espèce : ses couleurs par défaut.
                 viewModel.setLook(look.copy(species = species, palette = species.defaultPalette))
             }
         }
-        item { Setting("🎨 Couleurs", look.palette.label) { viewModel.setLook(look.copy(palette = look.palette.next())) } }
+        item { Setting(tr("🎨 Couleurs", "🎨 Colors"), look.palette.label) { viewModel.setLook(look.copy(palette = look.palette.next())) } }
         item {
             val locked = MascotSprite.Accessory.entries.count { it.level > level }
-            Setting("🎩 Accessoire", look.accessory.label + if (locked > 0) " · $locked à débloquer" else "") {
+            Setting(tr("🎩 Accessoire", "🎩 Accessory"), look.accessory.label + if (locked > 0) " · $locked " + tr("à débloquer", "to unlock") else "") {
                 val unlocked = MascotSprite.Accessory.entries.filter { it.level <= level }
                 val next = unlocked[(unlocked.indexOf(look.accessory) + 1) % unlocked.size]
                 viewModel.setLook(look.copy(accessory = next))
             }
         }
         MascotSprite.Accessory.entries.firstOrNull { it.level > level }?.let { next ->
-            item { Note("🔒 ${next.label} au niveau ${next.level} : accomplis des tâches avec ton agent pour monter de niveau.") }
+            item {
+                Note(
+                    tr(
+                        "🔒 ${next.label} au niveau ${next.level} : accomplis des tâches avec ton agent pour monter de niveau.",
+                        "🔒 ${next.label} at level ${next.level}: get tasks done with your agent to level up.",
+                    ),
+                )
+            }
         }
-        item { Setting("🖼️ Icônes d'actions", settings.iconSet.label) { viewModel.updateSettings { it.copy(iconSet = it.iconSet.next()) } } }
+        item { Setting(tr("🖼️ Icônes d'actions", "🖼️ Action icons"), settings.iconSet.label) { viewModel.updateSettings { it.copy(iconSet = it.iconSet.next()) } } }
         item {
-            Setting("📱 Icône de l'appli", settings.appIcon.label) {
+            Setting(tr("📱 Icône de l'appli", "📱 App icon"), settings.appIcon.label) {
                 viewModel.setAppIcon(settings.appIcon.next())
-                toast("L'icône change dans le lanceur d'ici quelques secondes")
+                toast(tr("L'icône change dans le lanceur d'ici quelques secondes", "The launcher icon updates in a few seconds"))
             }
         }
     }
@@ -346,17 +371,17 @@ private fun MascotPage(viewModel: CompanionViewModel) {
 @Composable
 private fun TestsPage(viewModel: CompanionViewModel) {
     Page("Tests") {
-        item { Setting("🔐 Alerte urgente", "Simuler une demande") { viewModel.sendTest(EventType.PERMISSION) } }
-        item { Setting("✅ Tâche terminée", "Simuler une fin de tâche") { viewModel.sendTest(EventType.TASK_DONE) } }
+        item { Setting(tr("🔐 Alerte urgente", "🔐 Urgent alert"), tr("Simuler une demande", "Simulate a request")) { viewModel.sendTest(EventType.PERMISSION) } }
+        item { Setting(tr("✅ Tâche terminée", "✅ Task done"), tr("Simuler une fin de tâche", "Simulate a finished task")) { viewModel.sendTest(EventType.TASK_DONE) } }
     }
 }
 
 @Composable
 private fun AboutPage() {
-    Page("À propos") {
+    Page(tr("À propos", "About")) {
         item { Setting("⌚ Agentchi", "Version ${BuildConfig.VERSION_NAME}") {} }
         item {
-            Note("Appli non officielle, sans lien avec Anthropic ni OpenAI.\ngithub.com/Pelagoss/agentchi")
+            Note(tr("Appli non officielle, sans lien avec Anthropic ni OpenAI.", "Unofficial app, not affiliated with Anthropic or OpenAI.") + "\ngithub.com/Pelagoss/agentchi")
         }
     }
 }

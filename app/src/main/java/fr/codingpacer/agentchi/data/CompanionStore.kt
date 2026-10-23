@@ -127,7 +127,8 @@ class CompanionStore(context: Context) {
             p[Keys.groupInfo] = s.groupInfo
             p[Keys.remoteAnswers] = s.remoteAnswers
             p[Keys.answerDelay] = s.answerDelay.name
-            p[Keys.quickReplies] = s.quickReplies.joinToString("\n")
+            // Réponses par défaut non enregistrées : elles suivent la langue de la montre.
+            if (s.quickReplies == CompanionSettings.DEFAULT_QUICK_REPLIES) p.remove(Keys.quickReplies) else p[Keys.quickReplies] = s.quickReplies.joinToString("\n")
             p[Keys.mascotSpecies] = s.mascot.species.name
             p[Keys.mascotPalette] = s.mascot.palette.name
             p[Keys.mascotAccessory] = s.mascot.accessory.name

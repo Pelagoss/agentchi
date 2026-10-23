@@ -25,6 +25,8 @@ type Device struct {
 	Answers bool `json:"answers,omitempty"`
 	// Attente maximale d'une réponse, en secondes (0 : défaut du serveur).
 	AnswerTimeout int `json:"answer_timeout,omitempty"`
+	// Langue de la montre ("fr", "en"), pour les textes écrits par le serveur ; vide pour une appli d'avant la traduction.
+	Lang string `json:"lang,omitempty"`
 }
 
 // Un code d'appairage, saisi sur un ordinateur ou dans un environnement cloud.
@@ -114,9 +116,9 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
-func (s *Store) CreateDevice(name, pushToken string) (*Device, string, error) {
+func (s *Store) CreateDevice(name, pushToken, lang string) (*Device, string, error) {
 	token := "ccd_" + randomToken(32)
-	d := &Device{ID: "w" + randomToken(15), TokenHash: hashToken(token), Name: name, Created: time.Now().UTC(), PushToken: pushToken}
+	d := &Device{ID: "w" + randomToken(15), TokenHash: hashToken(token), Name: name, Created: time.Now().UTC(), PushToken: pushToken, Lang: lang}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.st.Devices[d.ID] = d
@@ -151,18 +153,32 @@ func (s *Store) PushToken(deviceID string) string {
 	return ""
 }
 
-// SetPushToken enregistre le jeton FCM (Firebase le renouvelle de temps en temps).
-func (s *Store) SetPushToken(deviceID, pushToken string) error {
+// Lang retourne la langue de la montre ("" si elle ne l'a jamais transmise).
+func (s *Store) Lang(deviceID string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if d, ok := s.st.Devices[deviceID]; ok {
+		return d.Lang
+	}
+	return ""
+}
+
+// SetPushToken enregistre le jeton FCM (Firebase le renouvelle de temps en temps) et, si elle est donnée,
+// la langue de la montre, qui peut avoir changé depuis l'enregistrement.
+func (s *Store) SetPushToken(deviceID, pushToken, lang string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.st.Devices[deviceID]
 	if !ok {
 		return errNotFound
 	}
-	if d.PushToken == pushToken {
+	if lang == "" {
+		lang = d.Lang
+	}
+	if d.PushToken == pushToken && d.Lang == lang {
 		return nil
 	}
-	d.PushToken = pushToken
+	d.PushToken, d.Lang = pushToken, lang
 	return s.save()
 }
 

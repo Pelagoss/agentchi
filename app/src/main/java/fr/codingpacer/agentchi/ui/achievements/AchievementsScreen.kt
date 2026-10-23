@@ -22,6 +22,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import fr.codingpacer.agentchi.pet.Achievement
 import fr.codingpacer.agentchi.pet.Achievements
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.theme.BrandOrange
 import java.text.DateFormat
@@ -45,10 +46,13 @@ fun AchievementsScreen(viewModel: CompanionViewModel) {
         positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            item { ListHeader { Text("Succès") } }
+            item { ListHeader { Text(tr("Succès", "Achievements")) } }
             item {
                 Text(
-                    if (streak > 0) "🔥 $streak jour${if (streak > 1) "s" else ""} d'affilée" else "🔥 Pas de série en cours",
+                    when {
+                        streak <= 0 -> tr("🔥 Pas de série en cours", "🔥 No streak yet")
+                        else -> tr("🔥 $streak jour${if (streak > 1) "s" else ""} d'affilée", "🔥 $streak-day streak")
+                    },
                     style = MaterialTheme.typography.title3,
                     color = BrandOrange,
                     textAlign = TextAlign.Center,
@@ -56,7 +60,10 @@ fun AchievementsScreen(viewModel: CompanionViewModel) {
             }
             item {
                 Text(
-                    "Record : ${progress.bestStreak} j · ${progress.unlocked.size} sur ${Achievement.entries.size} succès",
+                    tr(
+                        "Record : ${progress.bestStreak} j · ${progress.unlocked.size} sur ${Achievement.entries.size} succès",
+                        "Best: ${progress.bestStreak} d · ${progress.unlocked.size} of ${Achievement.entries.size} unlocked",
+                    ),
                     style = MaterialTheme.typography.caption3,
                     color = MaterialTheme.colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,

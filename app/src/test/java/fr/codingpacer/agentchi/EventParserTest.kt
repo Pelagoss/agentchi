@@ -13,6 +13,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class EventParserTest {
     // Données de push FCM réellement produites par le serveur (server/) pour un hook Claude Code
@@ -165,7 +166,7 @@ class EventParserTest {
     }
 
     @Test
-    fun `resume des reponses pour l historique`() {
+    fun `resume des reponses pour l historique`() = inLocale(Locale.FRENCH) {
         val permission = Ask(id = "q1", kind = Ask.PERMISSION)
         assertEquals("✅ Autorisé", AskAnswer(AskAnswer.ALLOW).summary(permission))
         assertEquals("♾️ Toujours autorisé", AskAnswer(AskAnswer.ALWAYS).summary(permission))

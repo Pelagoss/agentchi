@@ -2,6 +2,8 @@ package fr.codingpacer.agentchi.net
 
 import fr.codingpacer.agentchi.data.AskAnswer
 import fr.codingpacer.agentchi.data.CompanionSettings
+import fr.codingpacer.agentchi.text.isFrench
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -42,13 +44,19 @@ class CompanionApi(
         .build(),
 ) {
     suspend fun register(serverUrl: String, name: String, pushToken: String): DeviceRegistration =
-        call(serverUrl, null, "POST", "/v1/devices", jsonBody { put("name", name); put("push_token", pushToken) })
+        call(serverUrl, null, "POST", "/v1/devices", jsonBody { put("name", name); put("push_token", pushToken); put("lang", lang) })
             .let { EventParser.json.decodeFromString(DeviceRegistration.serializer(), it) }
 
-    /** Transmet le jeton FCM de la montre (Firebase le renouvelle de temps en temps). */
+    /**
+     * Transmet le jeton FCM de la montre (Firebase le renouvelle de temps en temps) et sa langue,
+     * pour les textes écrits par le serveur (push de test, événements sans message).
+     */
     suspend fun setPushToken(settings: CompanionSettings, token: String) {
-        call(settings, "PUT", "/v1/device/push", jsonBody { put("token", token) })
+        call(settings, "PUT", "/v1/device/push", jsonBody { put("token", token); put("lang", lang) })
     }
+
+    /** Langue de l'interface : celle que le serveur utilise pour ses propres textes. */
+    private val lang: String get() = if (isFrench) "fr" else "en"
 
     /** Active ou non les réponses depuis la montre : les hooks attendent alors sa réponse, au plus [CompanionSettings.answerDelay]. */
     suspend fun setAnswers(settings: CompanionSettings) {
@@ -107,7 +115,7 @@ class CompanionApi(
                     val message = runCatching {
                         EventParser.json.decodeFromString(ErrorBody.serializer(), text).error
                     }.getOrNull()
-                    throw ServerException(response.code, message ?: "Erreur du serveur (HTTP ${response.code})")
+                    throw ServerException(response.code, message ?: tr("Erreur du serveur (HTTP ${response.code})", "Server error (HTTP ${response.code})"))
                 }
                 text
             }

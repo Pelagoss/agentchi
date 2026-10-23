@@ -144,10 +144,11 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 	in.Agent = agentOf(r.Header.Get("X-Agent"))
 	answers, deviceTimeout := s.store.Answers(c.DeviceID)
 	timeout := s.askTimeout(deviceTimeout)
-	view, payload, askable := buildAsk(in, c.Label, remote, timeout)
+	lang := s.store.Lang(c.DeviceID)
+	view, payload, askable := buildAsk(in, c.Label, remote, lang, timeout)
 	if !askable || !answers {
 		// Pas de réponse possible : Stop reste une simple notification, comme avec /h.
-		if p, show := ToPayload(in, c.Label, remote); show {
+		if p, show := ToPayload(in, c.Label, remote, lang); show {
 			s.pushAsync(c.DeviceID, p)
 		}
 		w.WriteHeader(http.StatusNoContent)
@@ -250,7 +251,7 @@ func (s *Server) handleSetAnswers(w http.ResponseWriter, r *http.Request, d *Dev
 // --- Questions ---
 
 // buildAsk prépare la question à pousser à la montre. ok vaut false si l'événement n'en est pas une.
-func buildAsk(in HookInput, account, remoteSession string, timeout time.Duration) (AskView, Payload, bool) {
+func buildAsk(in HookInput, account, remoteSession, lang string, timeout time.Duration) (AskView, Payload, bool) {
 	v := AskView{ID: "q" + randomToken(21), Tool: in.ToolName, Expires: time.Now().Add(timeout).Unix()}
 	p := Payload{Account: account, Ask: &v}
 	tool := toolInput(in.ToolInput)
@@ -259,7 +260,7 @@ func buildAsk(in HookInput, account, remoteSession string, timeout time.Duration
 		v.Kind, p.Type = askPermission, "permission"
 		v.Detail = describeTool(in.ToolName, tool, in.ToolInput)
 		v.Always = hasSuggestions(in.PermissionSuggestions)
-		p.Message = in.AgentName() + " veut " + toolAction(in.ToolName)
+		p.Message = in.AgentName() + text(lang, " veut ", " wants to ") + toolAction(in.ToolName, lang)
 	case in.HookEventName == "PreToolUse" && in.ToolName == "AskUserQuestion":
 		v.Kind, p.Type = askQuestion, "input"
 		v.Questions = questionsOf(tool)
@@ -271,17 +272,17 @@ func buildAsk(in HookInput, account, remoteSession string, timeout time.Duration
 		v.Kind, p.Type = askPlan, "input"
 		plan, _ := tool["plan"].(string)
 		v.Detail = strings.TrimSpace(plan)
-		p.Message = in.AgentName() + " propose un plan"
+		p.Message = in.AgentName() + text(lang, " propose un plan", " proposes a plan")
 	case in.HookEventName == "Stop":
 		v.Kind, p.Type = askReply, "done"
 		v.Tool = ""
 		// La fin du message, là où l'agent pose sa question.
 		v.Detail = tail(strings.TrimSpace(in.LastAssistantMessage), 1500)
-		p.Message = firstNonEmpty(in.LastAssistantMessage, in.AgentName()+" a terminé sa tâche.")
+		p.Message = firstNonEmpty(in.LastAssistantMessage, in.AgentName()+text(lang, " a terminé sa tâche.", " finished its task."))
 	default:
 		return v, p, false
 	}
-	p.describe(in, remoteSession)
+	p.describe(in, remoteSession, lang)
 	fitPayload(&p)
 	return v, p, true
 }
@@ -294,19 +295,19 @@ func toolInput(raw json.RawMessage) map[string]any {
 	return m
 }
 
-// toolAction : « utiliser Bash », « modifier des fichiers »…
-func toolAction(name string) string {
+// toolAction : « utiliser Bash », « modifier des fichiers »… (« use Bash », « edit files »…).
+func toolAction(name, lang string) string {
 	switch name {
 	case "":
-		return "utiliser un outil"
+		return text(lang, "utiliser un outil", "use a tool")
 	case "apply_patch":
-		return "modifier des fichiers"
+		return text(lang, "modifier des fichiers", "edit files")
 	case "write_stdin":
-		return "écrire dans un terminal"
+		return text(lang, "écrire dans un terminal", "write to a terminal")
 	case "request_permissions":
-		return "obtenir des permissions"
+		return text(lang, "obtenir des permissions", "get permissions")
 	}
-	return "utiliser " + name
+	return text(lang, "utiliser ", "use ") + name
 }
 
 // patchFiles : fichiers touchés par un patch Codex (« *** Update File: chemin »…), un par ligne.

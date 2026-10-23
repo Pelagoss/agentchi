@@ -99,7 +99,7 @@ func (s *Server) handleHook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.Agent = agentOf(r.Header.Get("X-Agent"))
-	payload, show := ToPayload(in, c.Label, r.Header.Get("X-Claude-Remote-Session"))
+	payload, show := ToPayload(in, c.Label, r.Header.Get("X-Claude-Remote-Session"), s.store.Lang(c.DeviceID))
 	if show {
 		s.pushAsync(c.DeviceID, payload)
 	}
@@ -200,13 +200,15 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Name      string `json:"name"`
 		PushToken string `json:"push_token"`
+		Lang      string `json:"lang"`
 	}
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body)
 	if s.cfg.MaxDevices > 0 && s.store.DeviceCount() >= s.cfg.MaxDevices {
 		httpError(w, http.StatusForbidden, "ce serveur n'accepte plus de nouvelles montres")
 		return
 	}
-	d, token, err := s.store.CreateDevice(cleanLabel(body.Name, "Montre"), strings.TrimSpace(body.PushToken))
+	lang := watchLang(body.Lang)
+	d, token, err := s.store.CreateDevice(cleanLabel(body.Name, text(lang, "Montre", "Watch")), strings.TrimSpace(body.PushToken), lang)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -215,18 +217,19 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetDevice(w http.ResponseWriter, _ *http.Request, d *Device) {
-	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != "", "answers": d.Answers, "answer_timeout": d.AnswerTimeout})
+	writeJSON(w, http.StatusOK, map[string]any{"id": d.ID, "name": d.Name, "created": d.Created, "push": d.PushToken != "", "answers": d.Answers, "answer_timeout": d.AnswerTimeout, "lang": d.Lang})
 }
 
 func (s *Server) handleSetPush(w http.ResponseWriter, r *http.Request, d *Device) {
 	var body struct {
 		Token string `json:"token"`
+		Lang  string `json:"lang"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil || strings.TrimSpace(body.Token) == "" {
 		httpError(w, http.StatusBadRequest, "jeton FCM manquant")
 		return
 	}
-	if err := s.store.SetPushToken(d.ID, strings.TrimSpace(body.Token)); err != nil {
+	if err := s.store.SetPushToken(d.ID, strings.TrimSpace(body.Token), watchLang(body.Lang)); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -292,7 +295,7 @@ func (s *Server) handleDeleteCode(w http.ResponseWriter, r *http.Request, d *Dev
 
 // handleTest envoie un push de test et attend la réponse de Firebase, pour afficher l'erreur sur la montre.
 func (s *Server) handleTest(w http.ResponseWriter, r *http.Request, d *Device) {
-	p := Payload{Type: "done", Message: "Push FCM reçu : tout fonctionne 🎉", Account: "Serveur"}
+	p := Payload{Type: "done", Message: text(d.Lang, "Push FCM reçu : tout fonctionne 🎉", "FCM push received: everything works 🎉"), Account: text(d.Lang, "Serveur", "Server")}
 	ctx, cancel := context.WithTimeout(r.Context(), pushTimeout)
 	defer cancel()
 	if err := s.push(ctx, d.ID, p, 0); err != nil {

@@ -19,6 +19,7 @@ import fr.codingpacer.agentchi.CompanionApp
 import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.PetLogic
 import fr.codingpacer.agentchi.pet.PetState
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.MainActivity
 import kotlinx.coroutines.flow.first
 
@@ -50,7 +51,7 @@ class PetComplicationService : SuspendingComplicationDataSourceService() {
     ): ComplicationData? {
         val emoji = if (pending) "🔔" else PetLogic.emoji(PetLogic.mood(pet))
         val value = PetLogic.wellbeing(pet)
-        val description = plain(if (pending) "Un agent attend ta réponse" else "${pet.name} : en forme à $value %")
+        val description = plain(if (pending) tr("Un agent attend ta réponse", "An agent is waiting for your reply") else tr("${pet.name} : en forme à $value %", "${pet.name}: $value% fit"))
         val tap = openApp(this)
         return when (type) {
             ComplicationType.RANGED_VALUE -> RangedValueComplicationData.Builder(value.toFloat(), 0f, 100f, description)

@@ -13,6 +13,7 @@ import fr.codingpacer.agentchi.data.VibrationPattern
 import fr.codingpacer.agentchi.data.next
 import fr.codingpacer.agentchi.data.AppIcon
 import fr.codingpacer.agentchi.pet.MascotSprite
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.widget.AppIconSwitcher
 import fr.codingpacer.agentchi.net.PairingCode
 import fr.codingpacer.agentchi.pet.Achievements
@@ -81,7 +82,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
     fun connect() = serverCall {
         val settings = store.settings.first()
         val pushToken = Push.token()
-        val device = app.api.register(settings.serverUrl, Build.MODEL ?: "Montre", pushToken)
+        val device = app.api.register(settings.serverUrl, Build.MODEL ?: tr("Montre", "Watch"), pushToken)
         store.saveDevice(settings.serverUrl, device.id, device.token)
         if (settings.remoteAnswers) runCatching { app.api.setAnswers(store.settings.first()) }
         val codes = app.api.codes(store.settings.first())
@@ -140,7 +141,7 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
         val settings = store.settings.first()
         if (!settings.isConnected) {
             if (settings.remoteAnswers) {
-                onError("Connecte d'abord la montre au serveur")
+                onError(tr("Connecte d'abord la montre au serveur", "Connect the watch to the server first"))
                 store.updateSettings { it.copy(remoteAnswers = false) }
             }
             return@launch
@@ -194,11 +195,15 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun describe(error: Throwable): String = when (error) {
         is fr.codingpacer.agentchi.net.ServerException ->
-            if (error.status == 401) "La montre n'est plus reconnue par le serveur : reconnecte-la." else error.message.orEmpty()
-        is java.net.UnknownHostException -> "Serveur introuvable : vérifie l'adresse."
-        is java.io.IOException -> "Serveur injoignable."
-        is IllegalStateException -> error.message ?: "Push FCM indisponible"
-        else -> error.message ?: "Erreur inattendue"
+            if (error.status == 401) {
+                tr("La montre n'est plus reconnue par le serveur : reconnecte-la.", "The server no longer recognizes the watch: reconnect it.")
+            } else {
+                error.message.orEmpty()
+            }
+        is java.net.UnknownHostException -> tr("Serveur introuvable : vérifie l'adresse.", "Server not found: check the address.")
+        is java.io.IOException -> tr("Serveur injoignable.", "Server unreachable.")
+        is IllegalStateException -> error.message ?: tr("Push FCM indisponible", "FCM push unavailable")
+        else -> error.message ?: tr("Erreur inattendue", "Unexpected error")
     }
 
     val history: StateFlow<List<AgentEvent>> =
@@ -249,9 +254,9 @@ class CompanionViewModel(application: Application) : AndroidViewModel(applicatio
             id = "test-${System.currentTimeMillis()}",
             type = type,
             message = when (type) {
-                EventType.PERMISSION -> "Claude veut exécuter : npm test"
-                EventType.INPUT_NEEDED -> "Claude attend ta réponse pour continuer."
-                else -> "J'ai fini de refactorer le module d'authentification."
+                EventType.PERMISSION -> tr("Claude veut exécuter : npm test", "Claude wants to run: npm test")
+                EventType.INPUT_NEEDED -> tr("Claude attend ta réponse pour continuer.", "Claude is waiting for your reply to continue.")
+                else -> tr("J'ai fini de refactorer le module d'authentification.", "I've finished refactoring the authentication module.")
             },
             project = "demo",
             time = System.currentTimeMillis() / 1000,

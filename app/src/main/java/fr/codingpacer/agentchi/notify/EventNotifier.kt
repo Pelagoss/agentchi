@@ -30,6 +30,7 @@ import fr.codingpacer.agentchi.data.CompanionSettings
 import fr.codingpacer.agentchi.data.VibrationPattern
 import fr.codingpacer.agentchi.net.EventParser
 import fr.codingpacer.agentchi.pet.Achievement
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.MainActivity
 import fr.codingpacer.agentchi.text.markdownSpanned
 import fr.codingpacer.agentchi.ui.alert.AlertActivity
@@ -54,11 +55,11 @@ class EventNotifier(private val context: Context) {
             }
         nm.createNotificationChannels(
             listOf(
-                channel(CH_URGENT, "Un agent a besoin de toi", NotificationManager.IMPORTANCE_HIGH, false),
-                channel(CH_URGENT_SOUND, "Un agent a besoin de toi (son)", NotificationManager.IMPORTANCE_HIGH, true),
-                channel(CH_INFO, "Activité des sessions", NotificationManager.IMPORTANCE_DEFAULT, false),
-                channel(CH_INFO_SOUND, "Activité des sessions (son)", NotificationManager.IMPORTANCE_DEFAULT, true),
-                channel(CH_SILENT, "Notifications discrètes", NotificationManager.IMPORTANCE_LOW, false),
+                channel(CH_URGENT, tr("Un agent a besoin de toi", "An agent needs you"), NotificationManager.IMPORTANCE_HIGH, false),
+                channel(CH_URGENT_SOUND, tr("Un agent a besoin de toi (son)", "An agent needs you (sound)"), NotificationManager.IMPORTANCE_HIGH, true),
+                channel(CH_INFO, tr("Activité des sessions", "Session activity"), NotificationManager.IMPORTANCE_DEFAULT, false),
+                channel(CH_INFO_SOUND, tr("Activité des sessions (son)", "Session activity (sound)"), NotificationManager.IMPORTANCE_DEFAULT, true),
+                channel(CH_SILENT, tr("Notifications discrètes", "Silent notifications"), NotificationManager.IMPORTANCE_LOW, false),
             ),
         )
     }
@@ -83,9 +84,9 @@ class EventNotifier(private val context: Context) {
         val ask = event.ask?.takeUnless { it.isExpired() }
         // Les agents écrivent en Markdown : converti en gras, italique, code… que la notification sait afficher.
         val text: CharSequence = when {
-            !settings.showPreview -> event.project ?: "Session ${event.agent.label}"
+            !settings.showPreview -> event.project ?: tr("Session ${event.agent.label}", "${event.agent.label} session")
             // Une commande n'est pas du Markdown : `rm *.log *.tmp` doit rester tel quel.
-            ask?.kind == Ask.PERMISSION && ask.detail.isNotBlank() -> SpannableStringBuilder(event.message + " : ").apply {
+            ask?.kind == Ask.PERMISSION && ask.detail.isNotBlank() -> SpannableStringBuilder(event.message + tr(" : ", ": ")).apply {
                 val start = length
                 append(ask.detail)
                 setSpan(TypefaceSpan("monospace"), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -120,7 +121,7 @@ class EventNotifier(private val context: Context) {
         if (ask != null) addAnswerActions(builder, ask, settings.quickReplies)
 
         if (event.openableOnPhone) {
-            builder.addAction(0, "📱 Ouvrir sur le téléphone", OpenOnPhoneReceiver.pendingIntent(context, event, notificationId))
+            builder.addAction(0, tr("📱 Ouvrir sur le téléphone", "📱 Open on phone"), OpenOnPhoneReceiver.pendingIntent(context, event, notificationId))
         }
 
         if (style == AlertStyle.FULL_SCREEN) {
@@ -167,8 +168,8 @@ class EventNotifier(private val context: Context) {
             val builder = NotificationCompat.Builder(context, CH_INFO)
                 .setSmallIcon(R.drawable.ic_stat_agentchi)
                 .setColor(ContextCompat.getColor(context, R.color.brand_orange))
-                .setContentTitle("🏆 Succès débloqué")
-                .setContentText("${a.emoji} ${a.title} : ${a.description}")
+                .setContentTitle(tr("🏆 Succès débloqué", "🏆 Achievement unlocked"))
+                .setContentText("${a.emoji} ${a.title}${tr(" : ", ": ")}${a.description}")
                 .setStyle(NotificationCompat.BigTextStyle().bigText("${a.emoji} ${a.title}\n${a.description}"))
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
@@ -207,12 +208,12 @@ class EventNotifier(private val context: Context) {
             builder.addAction(AnswerReceiver.action(context, ask, index, title, answer))
         when (ask.kind) {
             Ask.PERMISSION -> {
-                add(1, "✅ Autoriser", AskAnswer(AskAnswer.ALLOW))
-                add(2, "❌ Refuser", AskAnswer(AskAnswer.DENY))
+                add(1, tr("✅ Autoriser", "✅ Allow"), AskAnswer(AskAnswer.ALLOW))
+                add(2, tr("❌ Refuser", "❌ Deny"), AskAnswer(AskAnswer.DENY))
             }
             Ask.PLAN -> {
-                add(1, "✅ Approuver le plan", AskAnswer(AskAnswer.ALLOW))
-                add(2, "❌ Refuser", AskAnswer(AskAnswer.DENY))
+                add(1, tr("✅ Approuver le plan", "✅ Approve the plan"), AskAnswer(AskAnswer.ALLOW))
+                add(2, tr("❌ Refuser", "❌ Deny"), AskAnswer(AskAnswer.DENY))
             }
             Ask.QUESTION -> {
                 val single = ask.questions.singleOrNull()?.takeIf { !it.multi && it.options.size in 1..4 }
@@ -222,7 +223,7 @@ class EventNotifier(private val context: Context) {
             }
             Ask.REPLY -> {
                 builder.addAction(AnswerReceiver.replyAction(context, ask, 1, quickReplies))
-                add(2, "🏁 Terminer", AskAnswer.pass)
+                add(2, tr("🏁 Terminer", "🏁 Finish"), AskAnswer.pass)
             }
         }
     }

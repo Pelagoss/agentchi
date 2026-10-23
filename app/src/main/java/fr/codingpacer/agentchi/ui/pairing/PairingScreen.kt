@@ -38,6 +38,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import fr.codingpacer.agentchi.net.PairingCode
 import fr.codingpacer.agentchi.push.Push
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.common.rememberTextInput
 import com.google.zxing.BarcodeFormat
@@ -60,11 +61,11 @@ fun PairingScreen(viewModel: CompanionViewModel) {
     val listState = rememberScalingLazyListState(initialCenterItemIndex = 1)
     var confirm by remember { mutableStateOf<String?>(null) }
 
-    val editServer = rememberTextInput("Adresse du serveur Agentchi") { url ->
+    val editServer = rememberTextInput(tr("Adresse du serveur Agentchi", "Agentchi server address")) { url ->
         if (url.startsWith("https://") || url.startsWith("http://")) viewModel.setServer(url)
-        else Toast.makeText(context, "L'adresse doit commencer par https://", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, tr("L'adresse doit commencer par https://", "The address must start with https://"), Toast.LENGTH_SHORT).show()
     }
-    val newCode = rememberTextInput("Nom de l'ordinateur ou de l'environnement") { label -> viewModel.createCode(label) }
+    val newCode = rememberTextInput(tr("Nom de l'ordinateur ou de l'environnement", "Computer or environment name")) { label -> viewModel.createCode(label) }
 
     LaunchedEffect(settings.isConnected) { if (settings.isConnected) viewModel.refreshCodes() }
 
@@ -77,28 +78,37 @@ fun PairingScreen(viewModel: CompanionViewModel) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { ListHeader { Text("Serveur") } }
+            item { ListHeader { Text(tr("Serveur", "Server")) } }
 
             val created = ui.newCode
             val createdCode = created?.code
             when {
                 settings.serverUrl.isBlank() -> {
-                    hint("Indique l'adresse de ton serveur Agentchi (dossier server/ du dépôt).")
-                    item { Action("🌐 Adresse du serveur", "Non configurée", onClick = editServer) }
+                    hint(tr("Indique l'adresse de ton serveur Agentchi (dossier server/ du dépôt).", "Enter the address of your Agentchi server (the repo's server/ folder)."))
+                    item { Action(tr("🌐 Adresse du serveur", "🌐 Server address"), tr("Non configurée", "Not set"), onClick = editServer) }
                 }
 
                 !Push.isConfigured -> {
-                    hint("Cette version de l'appli a été compilée sans projet Firebase : la montre ne peut pas recevoir de push. Voir le README, section « Firebase ».")
+                    hint(
+                        tr(
+                            "Cette version de l'appli a été compilée sans projet Firebase : la montre ne peut pas recevoir de push. Voir docs/self-hosted, étape « Firebase ».",
+                            "This build of the app has no Firebase project: the watch can't receive pushes. See docs/self-hosted, \"Firebase\" step.",
+                        ),
+                    )
                 }
 
                 !settings.isConnected -> {
-                    hint("Connecte la montre à ${host(settings.serverUrl)} pour appairer tes ordinateurs.")
-                    item { Action(if (ui.busy) "Connexion…" else "🔗 Connecter la montre", null, primary = true) { if (!ui.busy) viewModel.connect() } }
-                    item { Action("🌐 Adresse", settings.serverUrl, onClick = editServer) }
+                    hint(tr("Connecte la montre à ${host(settings.serverUrl)} pour appairer tes ordinateurs.", "Connect the watch to ${host(settings.serverUrl)} to pair your computers."))
+                    item {
+                        Action(if (ui.busy) tr("Connexion…", "Connecting…") else tr("🔗 Connecter la montre", "🔗 Connect the watch"), null, primary = true) {
+                            if (!ui.busy) viewModel.connect()
+                        }
+                    }
+                    item { Action(tr("🌐 Adresse", "🌐 Address"), settings.serverUrl, onClick = editServer) }
                 }
 
                 created != null && createdCode != null -> {
-                    item { Text("Code pour « ${created.label} »", style = MaterialTheme.typography.caption2, textAlign = TextAlign.Center) }
+                    item { Text(tr("Code pour « ${created.label} »", "Code for \"${created.label}\""), style = MaterialTheme.typography.caption2, textAlign = TextAlign.Center) }
                     item {
                         Text(
                             createdCode,
@@ -109,21 +119,33 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                         )
                     }
                     item { QrCode(remember(createdCode) { qrMatrix(createdCode) }, Modifier.size(96.dp)) }
-                    hint("Claude Code : plugin agentchi. Codex : variable AGENTCHI_CODE. Serveur ${host(settings.serverUrl)}, commandes sur sa page.")
-                    hint("Ce code n'est affiché qu'une fois.")
-                    item { Action("✅ C'est noté", null, primary = true, onClick = viewModel::dismissNewCode) }
+                    hint(
+                        tr(
+                            "Claude Code : plugin agentchi. Codex : variable AGENTCHI_CODE. Serveur ${host(settings.serverUrl)}, commandes sur sa page.",
+                            "Claude Code: agentchi plugin. Codex: AGENTCHI_CODE variable. Server ${host(settings.serverUrl)}, commands on its page.",
+                        ),
+                    )
+                    hint(tr("Ce code n'est affiché qu'une fois.", "This code is only shown once."))
+                    item { Action(tr("✅ C'est noté", "✅ Got it"), null, primary = true, onClick = viewModel::dismissNewCode) }
                 }
 
                 else -> {
-                    item { Action(if (ui.busy) "…" else "➕ Nouveau code", "Un par ordinateur ou environnement cloud", primary = true, onClick = newCode) }
-                    if (ui.codes.isNotEmpty()) item { ListHeader { Text("Ordinateurs et cloud", color = MaterialTheme.colors.primary) } }
-                    if (ui.codes.isEmpty() && !ui.busy) hint("Aucun ordinateur appairé pour l'instant.")
+                    item {
+                        Action(
+                            if (ui.busy) "…" else tr("➕ Nouveau code", "➕ New code"),
+                            tr("Un par ordinateur ou environnement cloud", "One per computer or cloud environment"),
+                            primary = true,
+                            onClick = newCode,
+                        )
+                    }
+                    if (ui.codes.isNotEmpty()) item { ListHeader { Text(tr("Ordinateurs et cloud", "Computers and cloud"), color = MaterialTheme.colors.primary) } }
+                    if (ui.codes.isEmpty() && !ui.busy) hint(tr("Aucun ordinateur appairé pour l'instant.", "No computer paired yet."))
                     ui.codes.sortedByDescending { it.lastUsed ?: it.created }.forEach { code ->
                         item {
                             val confirming = confirm == code.id
                             Action(
-                                label = if (confirming) "Révoquer « ${code.label} » ?" else "💻 ${code.label}",
-                                secondary = if (confirming) "Toucher pour confirmer" else usage(code),
+                                label = if (confirming) tr("Révoquer « ${code.label} » ?", "Revoke \"${code.label}\"?") else "💻 ${code.label}",
+                                secondary = if (confirming) tr("Toucher pour confirmer", "Tap to confirm") else usage(code),
                                 primary = confirming,
                             ) {
                                 if (confirming) {
@@ -136,17 +158,17 @@ fun PairingScreen(viewModel: CompanionViewModel) {
                         }
                     }
                     item {
-                        Action("📡 Tester le push", "Le serveur envoie une notification") {
+                        Action(tr("📡 Tester le push", "📡 Test push"), tr("Le serveur envoie une notification", "The server sends a notification")) {
                             viewModel.testServer()
-                            Toast.makeText(context, "Test envoyé…", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, tr("Test envoyé…", "Test sent…"), Toast.LENGTH_SHORT).show()
                         }
                     }
-                    item { Action("🌐 Adresse", settings.serverUrl, onClick = editServer) }
+                    item { Action(tr("🌐 Adresse", "🌐 Address"), settings.serverUrl, onClick = editServer) }
                     item {
                         val confirming = confirm == DISCONNECT
                         Action(
-                            if (confirming) "Confirmer ?" else "Déconnecter la montre",
-                            "Révoque tous les codes",
+                            if (confirming) tr("Confirmer ?", "Confirm?") else tr("Déconnecter la montre", "Disconnect the watch"),
+                            tr("Révoque tous les codes", "Revokes all codes"),
                             primary = confirming,
                         ) {
                             if (confirming) {
@@ -202,15 +224,15 @@ private fun Action(label: String, secondary: String?, primary: Boolean = false, 
 
 /** « Utilisé il y a 5 min · mon-projet », ou « Jamais utilisé ». */
 private fun usage(code: PairingCode): String {
-    val used = code.lastUsed?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return "Jamais utilisé"
+    val used = code.lastUsed?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return tr("Jamais utilisé", "Never used")
     val minutes = Duration.between(used, Instant.now()).toMinutes()
     val ago = when {
-        minutes < 1 -> "à l'instant"
-        minutes < 60 -> "il y a $minutes min"
-        minutes < 48 * 60 -> "il y a ${minutes / 60} h"
-        else -> "il y a ${minutes / (24 * 60)} j"
+        minutes < 1 -> tr("à l'instant", "just now")
+        minutes < 60 -> tr("il y a $minutes min", "$minutes min ago")
+        minutes < 48 * 60 -> tr("il y a ${minutes / 60} h", "${minutes / 60} h ago")
+        else -> tr("il y a ${minutes / (24 * 60)} j", "${minutes / (24 * 60)} d ago")
     }
-    return listOfNotNull("Utilisé $ago", code.lastProject).joinToString(" · ")
+    return listOfNotNull(tr("Utilisé $ago", "Used $ago"), code.lastProject).joinToString(" · ")
 }
 
 private fun host(url: String) = url.substringAfter("://").substringBefore('/')

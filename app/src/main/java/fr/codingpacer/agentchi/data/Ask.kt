@@ -1,6 +1,7 @@
 package fr.codingpacer.agentchi.data
 
 import kotlinx.serialization.SerialName
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.serialization.Serializable
 
 /**
@@ -57,26 +58,26 @@ data class AskAnswer(
 ) {
     /** La réponse en une ligne, pour l'historique. */
     fun summary(ask: Ask): String = when {
-        decision == PASS -> if (ask.kind == Ask.REPLY) "🏁 Terminé" else "💻 Laissée à l'ordinateur"
+        decision == PASS -> if (ask.kind == Ask.REPLY) tr("🏁 Terminé", "🏁 Finished") else tr("💻 Laissée à l'ordinateur", "💻 Left to the computer")
         ask.kind == Ask.PERMISSION -> when (decision) {
-            ALWAYS -> "♾️ Toujours autorisé"
-            DENY -> "❌ Refusé" + message.suffix()
-            else -> "✅ Autorisé"
+            ALWAYS -> tr("♾️ Toujours autorisé", "♾️ Always allowed")
+            DENY -> tr("❌ Refusé", "❌ Denied") + message.suffix()
+            else -> tr("✅ Autorisé", "✅ Allowed")
         }
         ask.kind == Ask.PLAN -> if (decision == DENY) {
-            if (message.isNullOrBlank()) "❌ Plan refusé" else "✍️ Changements demandés : $message"
+            if (message.isNullOrBlank()) tr("❌ Plan refusé", "❌ Plan rejected") else tr("✍️ Changements demandés : ", "✍️ Changes requested: ") + message
         } else {
-            "✅ Plan approuvé"
+            tr("✅ Plan approuvé", "✅ Plan approved")
         }
         ask.kind == Ask.QUESTION -> if (decision == DENY) {
-            "❌ Pas de réponse" + message.suffix()
+            tr("❌ Pas de réponse", "❌ No answer") + message.suffix()
         } else {
             "✅ " + ask.questions.mapNotNull { answers?.get(it.question) }.joinToString(" · ")
         }
         else -> "💬 " + message.orEmpty()
     }
 
-    private fun String?.suffix() = if (isNullOrBlank()) "" else " : $this"
+    private fun String?.suffix() = if (isNullOrBlank()) "" else tr(" : ", ": ") + this
 
     companion object {
         const val ALLOW = "allow"
@@ -89,6 +90,6 @@ data class AskAnswer(
         val pass = AskAnswer(PASS)
 
         /** Historique : question restée sans réponse de la montre. */
-        const val UNANSWERED = "⏱ Sans réponse : posée sur l'ordinateur"
+        val UNANSWERED: String get() = tr("⏱ Sans réponse : posée sur l'ordinateur", "⏱ No answer: asked on the computer")
     }
 }

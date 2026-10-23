@@ -23,6 +23,7 @@ import fr.codingpacer.agentchi.pet.MascotSprite
 import fr.codingpacer.agentchi.pet.PetLogic
 import fr.codingpacer.agentchi.pet.PetState
 import fr.codingpacer.agentchi.text.Markdown
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -83,7 +84,7 @@ class CompanionTileService : TileService() {
         val mood = PetLogic.mood(pet)
         val reaction = PetLogic.currentReaction(pet, now)
         val bubble = if (pending != null) "❗" else MascotSprite.bubble(mood, reaction)
-        val title = if (pending != null) "${pending.type.emoji} ${pending.agent.label} attend" else "${pet.name} · niv. ${PetLogic.level(pet.xp)}"
+        val title = if (pending != null) "${pending.type.emoji} " + tr("${pending.agent.label} attend", "${pending.agent.label} is waiting") else "${pet.name} · ${tr("niv.", "Lv.")} ${PetLogic.level(pet.xp)}"
         val body = pending?.message?.let { Markdown.plain(it) } ?: listOfNotNull(bubble, PetLogic.moodLine(pet, reaction)).joinToString(" ")
         val footer = pending?.origin ?: "🍪 ${pet.satiety.toInt()}  ⚡ ${pet.energy.toInt()}  💖 ${pet.happiness.toInt()}"
         return PrimaryLayout.Builder(device)
@@ -104,7 +105,7 @@ class CompanionTileService : TileService() {
             )
             .setSecondaryLabelTextContent(text(footer, Typography.TYPOGRAPHY_CAPTION2, GREY, maxLines = 1))
             .setPrimaryChipContent(
-                CompactChip.Builder(this, if (pending != null) "Répondre" else "Ouvrir", openApp(pending != null), device).build(),
+                CompactChip.Builder(this, if (pending != null) tr("Répondre", "Reply") else tr("Ouvrir", "Open"), openApp(pending != null), device).build(),
             )
             .build()
     }

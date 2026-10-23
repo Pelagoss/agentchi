@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Textes du manifeste. Ceux de l'appli sont dans le code, en français et en anglais (text/Tr.kt). -->
 <resources>
     <string name="app_name">Agentchi</string>
+    <string name="complication_name">Agentchi mascot</string>
 </resources>

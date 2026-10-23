@@ -1,6 +1,7 @@
 package fr.codingpacer.agentchi.pet
 
 import fr.codingpacer.agentchi.data.EventType
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.serialization.Serializable
 
 enum class Reaction { NONE, CELEBRATE, ALERT, WAVE, THINK, LOVE, EAT, PLAY, CLEAN }
@@ -146,22 +147,22 @@ object PetLogic {
     }
 
     fun moodLine(s: PetState, reaction: Reaction): String = when (reaction) {
-        Reaction.ALERT -> "On a besoin de toi !"
-        Reaction.CELEBRATE -> "Tâche terminée, bravo !"
-        Reaction.WAVE -> "Coucou !"
-        Reaction.THINK -> "Je range mes idées…"
-        Reaction.EAT -> "Miam !"
-        Reaction.PLAY -> "Youpi !"
+        Reaction.ALERT -> tr("On a besoin de toi !", "You're needed!")
+        Reaction.CELEBRATE -> tr("Tâche terminée, bravo !", "Task done, nice work!")
+        Reaction.WAVE -> tr("Coucou !", "Hi there!")
+        Reaction.THINK -> tr("Je range mes idées…", "Tidying up my thoughts…")
+        Reaction.EAT -> tr("Miam !", "Yum!")
+        Reaction.PLAY -> tr("Youpi !", "Yay!")
         Reaction.LOVE -> "♥"
-        Reaction.CLEAN -> "Tout propre, merci !"
+        Reaction.CLEAN -> tr("Tout propre, merci !", "All clean, thanks!")
         Reaction.NONE -> when (mood(s)) {
             Mood.SLEEPING -> "Zzz…"
-            Mood.HUNGRY -> "J'ai faim…"
-            Mood.DIRTY -> "Ça sent pas bon ici…"
-            Mood.TIRED -> "Je suis épuisé…"
-            Mood.SAD -> "On joue ?"
-            Mood.HAPPY -> "Tout va bien !"
-            Mood.NEUTRAL -> "Prêt à coder."
+            Mood.HUNGRY -> tr("J'ai faim…", "I'm hungry…")
+            Mood.DIRTY -> tr("Ça sent pas bon ici…", "Something stinks in here…")
+            Mood.TIRED -> tr("Je suis épuisé…", "I'm worn out…")
+            Mood.SAD -> tr("On joue ?", "Wanna play?")
+            Mood.HAPPY -> tr("Tout va bien !", "All good!")
+            Mood.NEUTRAL -> tr("Prêt à coder.", "Ready to code.")
         }
     }
 

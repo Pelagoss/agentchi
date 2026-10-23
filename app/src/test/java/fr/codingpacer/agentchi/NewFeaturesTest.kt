@@ -20,6 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.Locale
 
 /** Résumé groupé, Ne pas déranger, séries et succès, sessions en cours. */
 class NewFeaturesTest {
@@ -35,7 +36,7 @@ class NewFeaturesTest {
     // --- Résumé groupé ---
 
     @Test
-    fun `resume de taches sur plusieurs projets`() {
+    fun `resume de taches sur plusieurs projets`() = inLocale(Locale.FRENCH) {
         val s = Digest.summary(
             listOf(event("3", EventType.TASK_DONE, "api"), event("2", EventType.TASK_DONE), event("1", EventType.TASK_DONE)),
         )
@@ -45,7 +46,7 @@ class NewFeaturesTest {
     }
 
     @Test
-    fun `resume de types differents sur un projet`() {
+    fun `resume de types differents sur un projet`() = inLocale(Locale.FRENCH) {
         val s = Digest.summary(listOf(event("2", EventType.SESSION_END), event("1", EventType.TASK_DONE), event("0", EventType.TASK_DONE)))
         assertEquals("✅ 2 tâches terminées · 1 session terminée", s.title)
         assertEquals("sur demo", s.text)

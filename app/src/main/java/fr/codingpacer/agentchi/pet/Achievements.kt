@@ -2,6 +2,7 @@ package fr.codingpacer.agentchi.pet
 
 import fr.codingpacer.agentchi.data.Ask
 import fr.codingpacer.agentchi.data.AskAnswer
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.ZoneId
@@ -31,30 +32,35 @@ data class Progress(
 /** Un succès : atteint quand [metric] vaut au moins [goal]. */
 enum class Achievement(
     val emoji: String,
-    val title: String,
-    val description: String,
+    private val titleFr: String,
+    private val titleEn: String,
+    private val descriptionFr: String,
+    private val descriptionEn: String,
     val goal: Int,
     val metric: (Progress, PetState) -> Int,
 ) {
-    FIRST_TASK("🎉", "Premier succès", "Une tâche terminée par un agent", 1, { _, pet -> pet.tasksCompleted }),
-    TASKS_10("🛠️", "Bon début", "10 tâches terminées", 10, { _, pet -> pet.tasksCompleted }),
-    TASKS_100("🏗️", "Centurion", "100 tâches terminées", 100, { _, pet -> pet.tasksCompleted }),
-    TASKS_1000("🚀", "Usine à code", "1 000 tâches terminées", 1000, { _, pet -> pet.tasksCompleted }),
-    STREAK_3("🔥", "Trois jours d'affilée", "Une tâche terminée 3 jours de suite", 3, { p, _ -> p.bestStreak }),
-    STREAK_7("📅", "Une semaine d'affilée", "Une tâche terminée 7 jours de suite", 7, { p, _ -> p.bestStreak }),
-    STREAK_30("🗓️", "Un mois d'affilée", "Une tâche terminée 30 jours de suite", 30, { p, _ -> p.bestStreak }),
-    FIRST_ALLOW("✅", "Feu vert", "Première autorisation donnée depuis la montre", 1, { p, _ -> p.allowed }),
-    ALLOW_100("🛂", "Douanier", "100 autorisations données depuis la montre", 100, { p, _ -> p.allowed }),
-    FIRST_DENY("🛑", "Garde-fou", "Premier refus depuis la montre", 1, { p, _ -> p.denied }),
-    FIRST_MESSAGE("🗣️", "Premiers mots", "Premier message à un agent, au clavier ou à la voix", 1, { p, _ -> p.messages }),
-    MESSAGES_50("💬", "Bavard", "50 messages envoyés depuis la montre", 50, { p, _ -> p.messages }),
-    FIRST_PLAN("🗺️", "Architecte", "Premier plan approuvé depuis la montre", 1, { p, _ -> p.plans }),
-    FIRST_QUESTION("🧩", "Décideur", "Première question à choix répondue depuis la montre", 1, { p, _ -> p.questions }),
-    NIGHT_OWL("🦉", "Oiseau de nuit", "Une tâche terminée entre minuit et 5 h", 1, { p, _ -> p.nightTasks }),
-    CARETAKER("🍪", "Aux petits soins", "Nourrir la mascotte 50 fois", 50, { p, _ -> p.feeds }),
-    JANITOR("🧽", "Grand ménage", "Nettoyer 30 cacas", 30, { p, _ -> p.cleaned }),
-    LEVEL_5("👑", "Niveau 5", "La mascotte atteint le niveau 5", 5, { _, pet -> PetLogic.level(pet.xp) }),
-    LEVEL_10("🌟", "Niveau 10", "La mascotte atteint le niveau 10", 10, { _, pet -> PetLogic.level(pet.xp) }),
+    FIRST_TASK("🎉", "Premier succès", "First success", "Une tâche terminée par un agent", "A task finished by an agent", 1, { _, pet -> pet.tasksCompleted }),
+    TASKS_10("🛠️", "Bon début", "Good start", "10 tâches terminées", "10 tasks done", 10, { _, pet -> pet.tasksCompleted }),
+    TASKS_100("🏗️", "Centurion", "Centurion", "100 tâches terminées", "100 tasks done", 100, { _, pet -> pet.tasksCompleted }),
+    TASKS_1000("🚀", "Usine à code", "Code factory", "1 000 tâches terminées", "1,000 tasks done", 1000, { _, pet -> pet.tasksCompleted }),
+    STREAK_3("🔥", "Trois jours d'affilée", "Three days in a row", "Une tâche terminée 3 jours de suite", "A task done 3 days in a row", 3, { p, _ -> p.bestStreak }),
+    STREAK_7("📅", "Une semaine d'affilée", "One week in a row", "Une tâche terminée 7 jours de suite", "A task done 7 days in a row", 7, { p, _ -> p.bestStreak }),
+    STREAK_30("🗓️", "Un mois d'affilée", "One month in a row", "Une tâche terminée 30 jours de suite", "A task done 30 days in a row", 30, { p, _ -> p.bestStreak }),
+    FIRST_ALLOW("✅", "Feu vert", "Green light", "Première autorisation donnée depuis la montre", "First permission granted from the watch", 1, { p, _ -> p.allowed }),
+    ALLOW_100("🛂", "Douanier", "Customs officer", "100 autorisations données depuis la montre", "100 permissions granted from the watch", 100, { p, _ -> p.allowed }),
+    FIRST_DENY("🛑", "Garde-fou", "Guardrail", "Premier refus depuis la montre", "First denial from the watch", 1, { p, _ -> p.denied }),
+    FIRST_MESSAGE("🗣️", "Premiers mots", "First words", "Premier message à un agent, au clavier ou à la voix", "First message to an agent, by keyboard or voice", 1, { p, _ -> p.messages }),
+    MESSAGES_50("💬", "Bavard", "Chatterbox", "50 messages envoyés depuis la montre", "50 messages sent from the watch", 50, { p, _ -> p.messages }),
+    FIRST_PLAN("🗺️", "Architecte", "Architect", "Premier plan approuvé depuis la montre", "First plan approved from the watch", 1, { p, _ -> p.plans }),
+    FIRST_QUESTION("🧩", "Décideur", "Decision-maker", "Première question à choix répondue depuis la montre", "First multiple-choice question answered from the watch", 1, { p, _ -> p.questions }),
+    NIGHT_OWL("🦉", "Oiseau de nuit", "Night owl", "Une tâche terminée entre minuit et 5 h", "A task done between midnight and 5 am", 1, { p, _ -> p.nightTasks }),
+    CARETAKER("🍪", "Aux petits soins", "Pampered", "Nourrir la mascotte 50 fois", "Feed the mascot 50 times", 50, { p, _ -> p.feeds }),
+    JANITOR("🧽", "Grand ménage", "Spring cleaning", "Nettoyer 30 cacas", "Clean up 30 poops", 30, { p, _ -> p.cleaned }),
+    LEVEL_5("👑", "Niveau 5", "Level 5", "La mascotte atteint le niveau 5", "The mascot reaches level 5", 5, { _, pet -> PetLogic.level(pet.xp) }),
+    LEVEL_10("🌟", "Niveau 10", "Level 10", "La mascotte atteint le niveau 10", "The mascot reaches level 10", 10, { _, pet -> PetLogic.level(pet.xp) });
+
+    val title: String get() = tr(titleFr, titleEn)
+    val description: String get() = tr(descriptionFr, descriptionEn)
 }
 
 /** Logique pure des séries et des succès (sans dépendance Android, testable en JVM). */

@@ -288,7 +288,7 @@ func TestToPayload(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, show := ToPayload(tc.in, "", "")
+			got, show := ToPayload(tc.in, "", "", "")
 			if show != tc.show || (show && got != tc.want) {
 				t.Fatalf("reçu %+v (%v), attendu %+v (%v)", got, show, tc.want, tc.show)
 			}
@@ -296,18 +296,18 @@ func TestToPayload(t *testing.T) {
 	}
 
 	long := strings.Repeat("é", 400) + "\n\n  fin"
-	got, _ := ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: long}, "", "")
+	got, _ := ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: long}, "", "", "")
 	if n := len([]rune(got.Message)); n != maxMessageRunes {
 		t.Fatalf("message de %d caractères", n)
 	}
-	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: "a\n\tb   c"}, "", "pas un id/valide")
+	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: "a\n\tb   c"}, "", "pas un id/valide", "")
 	if got.Message != "a\n  b c" || got.Cloud {
 		t.Fatalf("%+v", got)
 	}
 
 	// Markdown de Claude : lignes et indentation gardées, une seule ligne vide entre paragraphes.
 	md := "## Fini  \r\n\n\n\n- **un**\n  - deux   mots\n\n```\nx := 1\n```\n  "
-	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: md}, "", "")
+	got, _ = ToPayload(HookInput{HookEventName: "Stop", LastAssistantMessage: md}, "", "", "")
 	if want := "## Fini\n\n- **un**\n  - deux mots\n\n```\nx := 1\n```"; got.Message != want {
 		t.Fatalf("message %q, attendu %q", got.Message, want)
 	}

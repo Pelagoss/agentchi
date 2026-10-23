@@ -79,12 +79,12 @@ func TestEvenementsCodex(t *testing.T) {
 func TestPatchCodexSurLaMontre(t *testing.T) {
 	patch := "*** Begin Patch\n*** Update File: src/app.ts\n@@\n-a\n+b\n*** Add File: docs/new.md\n+x\n*** Delete File: old.txt\n*** End Patch"
 	input, _ := json.Marshal(map[string]any{"command": patch})
-	v, p, ok := buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "apply_patch", ToolInput: input, Agent: "codex"}, "", "", time.Minute)
+	v, p, ok := buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "apply_patch", ToolInput: input, Agent: "codex"}, "", "", "", time.Minute)
 	if !ok || p.Message != "Codex veut modifier des fichiers" || v.Detail != "~ src/app.ts\n+ docs/new.md\n- old.txt" || v.Always || p.Agent != "codex" {
 		t.Fatalf("%+v %+v", p, v)
 	}
 	// Commande shell : même format que Claude Code (Bash, command, description).
-	_, p, _ = buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "Bash", ToolInput: json.RawMessage(`{"command":"npm test","description":"tests"}`), Agent: "codex"}, "", "", time.Minute)
+	_, p, _ = buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "Bash", ToolInput: json.RawMessage(`{"command":"npm test","description":"tests"}`), Agent: "codex"}, "", "", "", time.Minute)
 	if p.Message != "Codex veut utiliser Bash" || p.Ask.Detail != "npm test" {
 		t.Fatalf("%+v", p)
 	}

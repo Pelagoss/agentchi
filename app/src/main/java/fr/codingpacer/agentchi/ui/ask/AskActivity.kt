@@ -46,6 +46,7 @@ import fr.codingpacer.agentchi.data.AgentEvent
 import fr.codingpacer.agentchi.net.EventParser
 import fr.codingpacer.agentchi.sync.AskResponder
 import fr.codingpacer.agentchi.text.markdownAnnotated
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.common.rememberTextInput
 import fr.codingpacer.agentchi.ui.theme.BrandOrange
 import fr.codingpacer.agentchi.ui.theme.CompanionTheme
@@ -131,11 +132,11 @@ private fun AskScreen(event: AgentEvent, ask: Ask, responder: AskResponder, quic
     var otherFor by remember { mutableStateOf<AskQuestion?>(null) }
     val chosen = remember { mutableStateMapOf<String, Set<String>>() }
     val other = remember { mutableStateMapOf<String, String>() }
-    val denyWithMessage = rememberTextInput(if (ask.kind == Ask.PLAN) "Ce qu'il faut changer" else "Pourquoi refuser ?") {
+    val denyWithMessage = rememberTextInput(if (ask.kind == Ask.PLAN) tr("Ce qu'il faut changer", "What to change") else tr("Pourquoi refuser ?", "Why deny?")) {
         send(AskAnswer(AskAnswer.DENY, message = it))
     }
-    val reply = rememberTextInput("Ta réponse à ${event.agent.label}") { send(AskAnswer(AskAnswer.ALLOW, message = it)) }
-    val otherAnswer = rememberTextInput("Ta réponse") { text ->
+    val reply = rememberTextInput(tr("Ta réponse à ${event.agent.label}", "Your reply to ${event.agent.label}")) { send(AskAnswer(AskAnswer.ALLOW, message = it)) }
+    val otherAnswer = rememberTextInput(tr("Ta réponse", "Your answer")) { text ->
         otherFor?.let { q ->
             other[q.question] = text
             if (!q.multi) chosen[q.question] = emptySet()
@@ -163,17 +164,17 @@ private fun AskScreen(event: AgentEvent, ask: Ask, responder: AskResponder, quic
                 Ask.PERMISSION -> {
                     item { Text(markdownAnnotated(event.message), style = MaterialTheme.typography.caption1, textAlign = TextAlign.Center) }
                     if (ask.detail.isNotBlank()) item { Detail(ask.detail, code = true) }
-                    item { Action("✅ Autoriser", busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
+                    item { Action(tr("✅ Autoriser", "✅ Allow"), busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
                     if (ask.always) {
-                        item { Action("♾️ Toujours autoriser", busy, secondary = "Ne plus demander pour ça") { send(AskAnswer(AskAnswer.ALWAYS)) } }
+                        item { Action(tr("♾️ Toujours autoriser", "♾️ Always allow"), busy, secondary = tr("Ne plus demander pour ça", "Don't ask again for this")) { send(AskAnswer(AskAnswer.ALWAYS)) } }
                     }
-                    item { Action("❌ Refuser", busy) { send(AskAnswer(AskAnswer.DENY)) } }
-                    item { Action("✍️ Refuser et expliquer", busy, onClick = denyWithMessage) }
+                    item { Action(tr("❌ Refuser", "❌ Deny"), busy) { send(AskAnswer(AskAnswer.DENY)) } }
+                    item { Action(tr("✍️ Refuser et expliquer", "✍️ Deny and explain"), busy, onClick = denyWithMessage) }
                 }
                 Ask.PLAN -> {
                     if (ask.detail.isNotBlank()) item { Detail(ask.detail) }
-                    item { Action("✅ Approuver le plan", busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
-                    item { Action("✍️ Demander des changements", busy, onClick = denyWithMessage) }
+                    item { Action(tr("✅ Approuver le plan", "✅ Approve the plan"), busy, primary = true) { send(AskAnswer(AskAnswer.ALLOW)) } }
+                    item { Action(tr("✍️ Demander des changements", "✍️ Ask for changes"), busy, onClick = denyWithMessage) }
                 }
                 Ask.QUESTION -> {
                     ask.questions.forEach { q ->
@@ -188,22 +189,26 @@ private fun AskScreen(event: AgentEvent, ask: Ask, responder: AskResponder, quic
                                 .joinToString(", ")
                         }
                         val complete = answers.values.all { it.isNotBlank() }
-                        Action("📨 Envoyer", busy || !complete, primary = true) { send(AskAnswer(AskAnswer.ALLOW, answers = answers)) }
+                        Action(tr("📨 Envoyer", "📨 Send"), busy || !complete, primary = true) { send(AskAnswer(AskAnswer.ALLOW, answers = answers)) }
                     }
-                    item { Action("❌ Ne pas répondre", busy) { send(AskAnswer(AskAnswer.DENY)) } }
+                    item { Action(tr("❌ Ne pas répondre", "❌ Don't answer"), busy) { send(AskAnswer(AskAnswer.DENY)) } }
                 }
                 Ask.REPLY -> {
                     item { Detail(ask.detail.ifBlank { event.message }) }
-                    item { Action("🎤 Répondre…", busy, primary = true, onClick = reply) }
+                    item { Action(tr("🎤 Répondre…", "🎤 Reply…"), busy, primary = true, onClick = reply) }
                     quickReplies.forEach { text ->
                         item { Action(text, busy) { send(AskAnswer(AskAnswer.ALLOW, message = text)) } }
                     }
-                    item { Action("🏁 Terminer", busy) { send(AskAnswer.pass) } }
+                    item { Action(tr("🏁 Terminer", "🏁 Finish"), busy) { send(AskAnswer.pass) } }
                 }
             }
             if (ask.kind != Ask.REPLY) {
                 item {
-                    Action("💻 Répondre sur l'ordinateur", busy, secondary = "${event.agent.product} pose la question") { send(AskAnswer.pass) }
+                    Action(
+                        tr("💻 Répondre sur l'ordinateur", "💻 Answer on the computer"),
+                        busy,
+                        secondary = tr("${event.agent.product} pose la question", "${event.agent.product} asks the question"),
+                    ) { send(AskAnswer.pass) }
                 }
             }
         }
@@ -246,7 +251,7 @@ private fun ScalingLazyListScope.question(
         }
     }
     item {
-        Action("✍️ Autre réponse…", busy, secondary = other[q.question], onClick = onOther)
+        Action(tr("✍️ Autre réponse…", "✍️ Other answer…"), busy, secondary = other[q.question], onClick = onOther)
     }
 }
 

@@ -37,6 +37,7 @@ import fr.codingpacer.agentchi.pet.Achievements
 import fr.codingpacer.agentchi.pet.Mood
 import fr.codingpacer.agentchi.pet.PixelIcon
 import fr.codingpacer.agentchi.pet.PetLogic
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.theme.BrandOrange
 
@@ -80,7 +81,7 @@ fun PetScreen(
             }
             item {
                 Text(
-                    text = "${pet.name} · niv. ${PetLogic.level(pet.xp)}",
+                    text = "${pet.name} · ${tr("niv.", "Lv.")} ${PetLogic.level(pet.xp)}",
                     style = MaterialTheme.typography.title3,
                     color = BrandOrange,
                 )
@@ -101,12 +102,12 @@ fun PetScreen(
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ActionButton(PixelIcon.FEED, settings.iconSet, "Nourrir", enabled = !pet.sleeping, onClick = viewModel::feed)
-                    ActionButton(PixelIcon.PLAY, settings.iconSet, "Jouer", enabled = !pet.sleeping && pet.energy >= 10f, onClick = viewModel::play)
+                    ActionButton(PixelIcon.FEED, settings.iconSet, tr("Nourrir", "Feed"), enabled = !pet.sleeping, onClick = viewModel::feed)
+                    ActionButton(PixelIcon.PLAY, settings.iconSet, tr("Jouer", "Play"), enabled = !pet.sleeping && pet.energy >= 10f, onClick = viewModel::play)
                     ActionButton(
                         if (mood == Mood.SLEEPING) PixelIcon.WAKE else PixelIcon.SLEEP,
                         settings.iconSet,
-                        if (mood == Mood.SLEEPING) "Réveiller" else "Dormir",
+                        if (mood == Mood.SLEEPING) tr("Réveiller", "Wake up") else tr("Dormir", "Sleep"),
                         onClick = viewModel::toggleSleep,
                     )
                 }
@@ -115,7 +116,7 @@ fun PetScreen(
                 item {
                     CompactChip(
                         onClick = viewModel::clean,
-                        label = { Text(if (pet.poops > 1) "Nettoyer (${pet.poops})" else "Nettoyer") },
+                        label = { Text(if (pet.poops > 1) tr("Nettoyer", "Clean") + " (${pet.poops})" else tr("Nettoyer", "Clean")) },
                         icon = { ActionIcon(PixelIcon.CLEAN, settings.iconSet, size = 16.dp) },
                         colors = ChipDefaults.secondaryChipColors(),
                     )
@@ -123,7 +124,7 @@ fun PetScreen(
             }
             item {
                 Text(
-                    text = "✅ ${pet.tasksCompleted} tâches accomplies avec toi",
+                    text = tr("✅ ${pet.tasksCompleted} tâches accomplies avec toi", "✅ ${pet.tasksCompleted} tasks done together"),
                     style = MaterialTheme.typography.caption3,
                     color = MaterialTheme.colors.onSurfaceVariant,
                 )
@@ -133,15 +134,15 @@ fun PetScreen(
                 val working = visible.count { it.state == SessionState.WORKING }
                 Chip(
                     onClick = onOpenSessions,
-                    label = { Text("Sessions en cours") },
+                    label = { Text(tr("Sessions en cours", "Active sessions")) },
                     secondaryLabel = {
                         Text(
                             when {
-                                visible.isEmpty() -> "Aucune"
+                                visible.isEmpty() -> tr("Aucune", "None")
                                 else -> listOfNotNull(
-                                    "${visible.size} active${if (visible.size > 1) "s" else ""}",
-                                    "$working au travail".takeIf { working > 0 },
-                                    "$waiting t'attend${if (waiting > 1) "ent" else ""}".takeIf { waiting > 0 },
+                                    tr("${visible.size} active${if (visible.size > 1) "s" else ""}", "${visible.size} active"),
+                                    tr("$working au travail", "$working working").takeIf { working > 0 },
+                                    tr("$waiting t'attend${if (waiting > 1) "ent" else ""}", "$waiting waiting").takeIf { waiting > 0 },
                                 ).joinToString(" · ")
                             },
                         )
@@ -154,11 +155,11 @@ fun PetScreen(
             item {
                 Chip(
                     onClick = onOpenAchievements,
-                    label = { Text("Succès") },
+                    label = { Text(tr("Succès", "Achievements")) },
                     secondaryLabel = {
                         Text(
                             listOfNotNull(
-                                "🔥 $streak j".takeIf { streak > 0 },
+                                tr("🔥 $streak j", "🔥 $streak d").takeIf { streak > 0 },
                                 "${progress.unlocked.size} / ${Achievement.entries.size}",
                             ).joinToString(" · "),
                         )
@@ -172,7 +173,7 @@ fun PetScreen(
                 Chip(
                     onClick = onOpenHistory,
                     label = { Text("Notifications") },
-                    secondaryLabel = { Text(history.firstOrNull()?.title ?: "Aucune pour l'instant") },
+                    secondaryLabel = { Text(history.firstOrNull()?.title ?: tr("Aucune pour l'instant", "None yet")) },
                     icon = { ActionIcon(PixelIcon.NOTIFICATIONS, settings.iconSet) },
                     colors = ChipDefaults.secondaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),
@@ -181,7 +182,7 @@ fun PetScreen(
             item {
                 Chip(
                     onClick = onOpenSettings,
-                    label = { Text("Paramètres") },
+                    label = { Text(tr("Paramètres", "Settings")) },
                     icon = { ActionIcon(PixelIcon.SETTINGS, settings.iconSet) },
                     colors = ChipDefaults.secondaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),

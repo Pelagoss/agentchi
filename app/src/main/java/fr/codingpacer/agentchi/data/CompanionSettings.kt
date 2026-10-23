@@ -2,11 +2,14 @@ package fr.codingpacer.agentchi.data
 
 import fr.codingpacer.agentchi.BuildConfig
 import fr.codingpacer.agentchi.pet.MascotSprite
+import fr.codingpacer.agentchi.text.tr
 
-enum class AlertStyle(val label: String) {
-    FULL_SCREEN("Plein écran"),
-    HEADS_UP("Notification"),
-    SILENT("Discrète"),
+enum class AlertStyle(private val fr: String, private val en: String) {
+    FULL_SCREEN("Plein écran", "Full screen"),
+    HEADS_UP("Notification", "Notification"),
+    SILENT("Discrète", "Silent");
+
+    val label: String get() = tr(fr, en)
 }
 
 /** Attente maximale d'une réponse de la montre, avant que l'ordinateur pose la question. */
@@ -17,23 +20,29 @@ enum class AnswerDelay(val seconds: Int, val label: String) {
 }
 
 /** Icônes des actions de la mascotte (nourrir, jouer, dormir…). */
-enum class IconSet(val label: String) {
-    PIXEL("Pixel"),
-    EMOJI("Emojis"),
+enum class IconSet(private val fr: String, private val en: String) {
+    PIXEL("Pixel", "Pixel"),
+    EMOJI("Emojis", "Emoji");
+
+    val label: String get() = tr(fr, en)
 }
 
 /** Icône de l'appli dans le lanceur. */
-enum class AppIcon(val label: String) {
-    CLASSIC("Classique"),
-    MASCOT("Assortie à la mascotte"),
+enum class AppIcon(private val fr: String, private val en: String) {
+    CLASSIC("Classique", "Classic"),
+    MASCOT("Assortie à la mascotte", "Matches the mascot");
+
+    val label: String get() = tr(fr, en)
 }
 
-enum class VibrationPattern(val label: String, val timings: LongArray?) {
-    NONE("Aucune", null),
-    SHORT("Courte", longArrayOf(0, 120)),
-    DOUBLE("Double", longArrayOf(0, 100, 120, 100)),
-    LONG("Longue", longArrayOf(0, 500)),
-    HEARTBEAT("Battement", longArrayOf(0, 80, 100, 80, 400, 80, 100, 80)),
+enum class VibrationPattern(private val fr: String, private val en: String, val timings: LongArray?) {
+    NONE("Aucune", "None", null),
+    SHORT("Courte", "Short", longArrayOf(0, 120)),
+    DOUBLE("Double", "Double", longArrayOf(0, 100, 120, 100)),
+    LONG("Longue", "Long", longArrayOf(0, 500)),
+    HEARTBEAT("Battement", "Heartbeat", longArrayOf(0, 80, 100, 80, 400, 80, 100, 80));
+
+    val label: String get() = tr(fr, en)
 }
 
 data class CompanionSettings(
@@ -103,7 +112,9 @@ data class CompanionSettings(
         /** Défini à la compilation : -PcompanionServer=https://… ou variable COMPANION_SERVER. */
         val DEFAULT_SERVER: String = BuildConfig.COMPANION_SERVER
         val DEVICE_ID_REGEX = Regex("^[-_A-Za-z0-9]{1,64}$")
-        val DEFAULT_QUICK_REPLIES = listOf("Oui", "Non", "Continue", "Fais au mieux")
+        /** Dans la langue de la montre ; enregistrées seulement une fois modifiées (voir CompanionStore). */
+        val DEFAULT_QUICK_REPLIES: List<String>
+            get() = listOf(tr("Oui", "Yes"), tr("Non", "No"), tr("Continue", "Continue"), tr("Fais au mieux", "Do your best"))
         const val MAX_QUICK_REPLIES = 6
 
         fun isInQuietHours(hour: Int, start: Int, end: Int): Boolean = when {

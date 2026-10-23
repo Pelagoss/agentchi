@@ -22,6 +22,7 @@ import fr.codingpacer.agentchi.data.SessionState
 import fr.codingpacer.agentchi.data.Sessions
 import fr.codingpacer.agentchi.notify.PhoneLink
 import fr.codingpacer.agentchi.text.markdownAnnotated
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.ui.CompanionViewModel
 import fr.codingpacer.agentchi.ui.ask.AskActivity
 
@@ -41,11 +42,11 @@ fun SessionsScreen(viewModel: CompanionViewModel) {
         positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            item { ListHeader { Text("Sessions en cours") } }
+            item { ListHeader { Text(tr("Sessions en cours", "Active sessions")) } }
             if (visible.isEmpty()) {
                 item {
                     Text(
-                        "Aucune session active. Elles apparaissent ici dès qu'un agent démarre ou te répond.",
+                        tr("Aucune session active. Elles apparaissent ici dès qu'un agent démarre ou te répond.", "No active session. They show up here as soon as an agent starts or replies to you."),
                         style = MaterialTheme.typography.caption2,
                     )
                 }
@@ -66,12 +67,12 @@ fun SessionsScreen(viewModel: CompanionViewModel) {
                 ) {
                     Text(session.origin, style = MaterialTheme.typography.caption3, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     when {
-                        pending != null -> Text("⌚ Toucher pour répondre", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
-                        session.url != null -> Text("📱 Toucher pour ouvrir sur le téléphone", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                        pending != null -> Text(tr("⌚ Toucher pour répondre", "⌚ Tap to reply"), style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
+                        session.url != null -> Text(tr("📱 Toucher pour ouvrir sur le téléphone", "📱 Tap to open on phone"), style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.primary)
                     }
                     session.message?.let { Text(markdownAnnotated(it), maxLines = 3, overflow = TextOverflow.Ellipsis) }
                     if (session.state == SessionState.WORKING && now - session.lastEvent > 30 * 60) {
-                        Text("Sans nouvelles depuis ${ago(now - session.lastEvent)}", style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.onSurfaceVariant)
+                        Text(tr("Sans nouvelles depuis ${ago(now - session.lastEvent)}", "No news for ${ago(now - session.lastEvent)}"), style = MaterialTheme.typography.caption3, color = MaterialTheme.colors.onSurfaceVariant)
                     }
                 }
             }
@@ -81,7 +82,7 @@ fun SessionsScreen(viewModel: CompanionViewModel) {
 
 /** « 3 min », « 2 h », « à l'instant ». */
 private fun ago(seconds: Long): String = when {
-    seconds < 60 -> "à l'instant"
+    seconds < 60 -> tr("à l'instant", "now")
     seconds < 3600 -> "${seconds / 60} min"
     else -> "${seconds / 3600} h"
 }

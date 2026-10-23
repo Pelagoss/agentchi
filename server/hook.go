@@ -80,7 +80,8 @@ var (
 
 // ToPayload traduit un événement de hook. ok vaut false pour un événement que la montre n'affiche pas.
 // remoteSession est l'id de session cloud (variable CLAUDE_CODE_REMOTE_SESSION_ID), vide en local.
-func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
+// lang : langue de la montre, pour les messages écrits par le serveur (voir text).
+func ToPayload(in HookInput, account, remoteSession, lang string) (Payload, bool) {
 	p := Payload{Type: "other", Account: account}
 	switch in.HookEventName {
 	case "Notification":
@@ -108,28 +109,28 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 		p.Type = "done"
 		p.Message = in.LastAssistantMessage
 		if strings.TrimSpace(p.Message) == "" {
-			p.Message = in.AgentName() + " a terminé sa tâche."
+			p.Message = in.AgentName() + text(lang, " a terminé sa tâche.", " finished its task.")
 		}
 	case "StopFailure":
 		p.Type = "error"
 		// Pour StopFailure, last_assistant_message contient le texte de l'erreur API.
-		p.Message = firstNonEmpty(in.LastAssistantMessage, in.ErrorDetails, "Erreur API ("+firstNonEmpty(in.Error, "unknown")+")")
+		p.Message = firstNonEmpty(in.LastAssistantMessage, in.ErrorDetails, text(lang, "Erreur API (", "API error (")+firstNonEmpty(in.Error, "unknown")+")")
 	case "SubagentStop":
 		p.Type = "subagent"
-		p.Message = "Un sous-agent a terminé."
+		p.Message = text(lang, "Un sous-agent a terminé.", "A subagent finished.")
 	case "SessionStart":
 		p.Type = "session_start"
-		p.Message = "Nouvelle session" + paren(in.Source)
+		p.Message = text(lang, "Nouvelle session", "New session") + paren(in.Source)
 	case "SessionEnd":
 		p.Type = "session_end"
-		p.Message = "Session terminée" + paren(in.Reason)
+		p.Message = text(lang, "Session terminée", "Session ended") + paren(in.Reason)
 	case "PreCompact":
 		p.Type = "compact"
-		p.Message = "Compaction du contexte" + paren(in.Trigger)
+		p.Message = text(lang, "Compaction du contexte", "Context compaction") + paren(in.Trigger)
 	case "UserPromptSubmit":
 		// La session se remet au travail (écran « Sessions en cours ») : le message lui-même n'est pas transmis.
 		p.Type = typePrompt
-		p.Message = "Message envoyé à " + in.AgentName()
+		p.Message = text(lang, "Message envoyé à ", "Message sent to ") + in.AgentName()
 	case "", "PermissionRequest", "PreToolUse":
 		// Les questions passent par /ask (ask.go), qui les affiche lui-même.
 		return p, false
@@ -137,18 +138,18 @@ func ToPayload(in HookInput, account, remoteSession string) (Payload, bool) {
 		p.Message = in.Message
 	}
 
-	p.describe(in, remoteSession)
+	p.describe(in, remoteSession, lang)
 	return p, true
 }
 
 // describe complète le payload : projet, session, origine cloud, message sur une ligne.
-func (p *Payload) describe(in HookInput, remoteSession string) {
+func (p *Payload) describe(in HookInput, remoteSession, lang string) {
 	p.Agent = in.Agent
 	p.Project = projectOf(in.Cwd)
 	p.Session = truncate(in.SessionID, 8)
 	p.Message = compact(p.Message, maxMessageRunes)
 	if p.Message == "" {
-		p.Message = "Événement " + in.AgentName() + " (" + p.Type + ")"
+		p.Message = text(lang, "Événement "+in.AgentName(), in.AgentName()+" event") + " (" + p.Type + ")"
 	}
 	if remoteSessionR.MatchString(remoteSession) {
 		p.Cloud = true

@@ -264,20 +264,20 @@ func TestReponsesDesactivees(t *testing.T) {
 
 func TestPermissionRequestDesQuestions(t *testing.T) {
 	// AskUserQuestion et ExitPlanMode passent par PreToolUse : PermissionRequest ne les pose pas deux fois.
-	if _, _, ok := buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "AskUserQuestion"}, "", "", time.Minute); ok {
+	if _, _, ok := buildAsk(HookInput{HookEventName: "PermissionRequest", ToolName: "AskUserQuestion"}, "", "", "", time.Minute); ok {
 		t.Fatal("AskUserQuestion posée par PermissionRequest")
 	}
-	if _, _, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "Bash"}, "", "", time.Minute); ok {
+	if _, _, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "Bash"}, "", "", "", time.Minute); ok {
 		t.Fatal("PreToolUse Bash posé comme question")
 	}
-	if _, _, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "AskUserQuestion", ToolInput: json.RawMessage(`{}`)}, "", "", time.Minute); ok {
+	if _, _, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "AskUserQuestion", ToolInput: json.RawMessage(`{}`)}, "", "", "", time.Minute); ok {
 		t.Fatal("AskUserQuestion sans question")
 	}
 }
 
 func TestQuestionTientDansUnPush(t *testing.T) {
 	long := strings.Repeat("é", 5000)
-	_, p, _ := buildAsk(HookInput{HookEventName: "Stop", LastAssistantMessage: long + " Une question ?"}, "", "", time.Minute)
+	_, p, _ := buildAsk(HookInput{HookEventName: "Stop", LastAssistantMessage: long + " Une question ?"}, "", "", "", time.Minute)
 	if n := len(p.JSON()); n > maxAskPayload {
 		t.Fatalf("payload de %d octets", n)
 	}
@@ -293,7 +293,7 @@ func TestQuestionTientDansUnPush(t *testing.T) {
 		}
 		qs = append(qs, `{"question":"Q`+string(rune('0'+i))+strings.Repeat("?", 200)+`","options":[`+strings.Join(opts, ",")+`]}`)
 	}
-	_, p, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "AskUserQuestion", ToolInput: json.RawMessage(`{"questions":[` + strings.Join(qs, ",") + `]}`)}, "", "", time.Minute)
+	_, p, ok := buildAsk(HookInput{HookEventName: "PreToolUse", ToolName: "AskUserQuestion", ToolInput: json.RawMessage(`{"questions":[` + strings.Join(qs, ",") + `]}`)}, "", "", "", time.Minute)
 	if !ok || len(p.JSON()) > maxAskPayload || len(p.Ask.Questions) != 4 {
 		t.Fatalf("questions : %v, %d octets", ok, len(p.JSON()))
 	}
@@ -301,7 +301,7 @@ func TestQuestionTientDansUnPush(t *testing.T) {
 
 func TestToPayloadIgnoreLesQuestions(t *testing.T) {
 	for _, ev := range []string{"PermissionRequest", "PreToolUse"} {
-		if _, show := ToPayload(HookInput{HookEventName: ev}, "", ""); show {
+		if _, show := ToPayload(HookInput{HookEventName: ev}, "", "", ""); show {
 			t.Fatalf("%s affiché par /h", ev)
 		}
 	}

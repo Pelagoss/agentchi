@@ -2,6 +2,7 @@ package fr.codingpacer.agentchi.push
 
 import android.content.Context
 import fr.codingpacer.agentchi.BuildConfig
+import fr.codingpacer.agentchi.text.tr
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -32,12 +33,12 @@ object Push {
 
     /** Jeton FCM de la montre, à transmettre au serveur. */
     suspend fun token(): String {
-        check(isConfigured) { "Push FCM non configuré dans cette version de l'appli (projet Firebase manquant)" }
+        check(isConfigured) { tr("Push FCM non configuré dans cette version de l'appli (projet Firebase manquant)", "FCM push isn't set up in this build of the app (no Firebase project)") }
         return try {
             FirebaseMessaging.getInstance().token.await()
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
-            throw IllegalStateException("Jeton FCM indisponible (services Google Play ?) : ${e.message}", e)
+            throw IllegalStateException(tr("Jeton FCM indisponible (services Google Play ?) : ", "FCM token unavailable (Google Play services?): ") + e.message, e)
         }
     }
 }

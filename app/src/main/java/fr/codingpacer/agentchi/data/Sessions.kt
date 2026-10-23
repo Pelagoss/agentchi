@@ -1,13 +1,16 @@
 package fr.codingpacer.agentchi.data
 
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.serialization.Serializable
 
 /** Où en est une session, d'après le dernier événement reçu. */
-enum class SessionState(val emoji: String, val label: String) {
-    WORKING("⚙️", "Au travail"),
-    WAITING("🔔", "Attend ta réponse"),
-    IDLE("✅", "À toi de jouer"),
-    ERROR("⚠️", "Erreur"),
+enum class SessionState(val emoji: String, private val fr: String, private val en: String) {
+    WORKING("⚙️", "Au travail", "Working"),
+    WAITING("🔔", "Attend ta réponse", "Waiting for you"),
+    IDLE("✅", "À toi de jouer", "Your turn"),
+    ERROR("⚠️", "Erreur", "Error");
+
+    val label: String get() = tr(fr, en)
 }
 
 /** Une session d'agent en cours (écran « Sessions en cours »). */

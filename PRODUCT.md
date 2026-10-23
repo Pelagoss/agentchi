@@ -30,7 +30,7 @@ Le seul compagnon de poignet pour agents de code qui combine réponses actionnab
 
 - Serveur Go (`server/`), binaire statique distroless ; la page d'accueil est rendue par `html/template`.
 - Mascotte : 3 espèces (Crabe, Points, Fantôme), 6 couleurs (Corail, Encre, Océan, Menthe, Lilas, Rose), 5 accessoires ; grilles portées en JS dans `Stores/source/mascot.js`.
-- L'appli est en français uniquement.
+- L'appli est en anglais, ou en français sur une montre réglée en français (`text/Tr.kt`) ; le serveur écrit ses propres textes dans la langue transmise par la montre.
 - Pas encore de lien Play Store publié : l'appel à l'action de la page d'accueil mène au guide d'installation.
 
 ## Brand Commitments

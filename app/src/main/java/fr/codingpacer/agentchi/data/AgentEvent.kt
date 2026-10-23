@@ -1,5 +1,6 @@
 package fr.codingpacer.agentchi.data
 
+import fr.codingpacer.agentchi.text.tr
 import kotlinx.serialization.Serializable
 
 /** Agent de code à l'origine d'un événement. La clé correspond au champ `ag` du serveur. */
@@ -18,23 +19,26 @@ enum class Agent(val key: String, val label: String, val product: String) {
  */
 enum class EventType(
     val key: String,
-    val label: String,
+    private val fr: String,
+    private val en: String,
     val emoji: String,
     val urgent: Boolean,
     val defaultEnabled: Boolean,
     /** Jamais notifié ni gardé dans l'historique : sert seulement à l'écran « Sessions en cours ». */
     val silent: Boolean = false,
 ) {
-    PERMISSION("permission", "Demande d'autorisation", "🔐", urgent = true, defaultEnabled = true),
-    INPUT_NEEDED("input", "Réponse attendue", "💬", urgent = true, defaultEnabled = true),
-    TASK_DONE("done", "Tâche terminée", "✅", urgent = false, defaultEnabled = true),
-    SUBAGENT_DONE("subagent", "Sous-agent terminé", "🤖", urgent = false, defaultEnabled = false),
-    SESSION_START("session_start", "Session démarrée", "🚀", urgent = false, defaultEnabled = false),
-    SESSION_END("session_end", "Session terminée", "🏁", urgent = false, defaultEnabled = true),
-    COMPACT("compact", "Compaction du contexte", "🗜️", urgent = false, defaultEnabled = false),
-    ERROR("error", "Erreur", "⚠️", urgent = true, defaultEnabled = true),
-    OTHER("other", "Autre notification", "✳️", urgent = false, defaultEnabled = true),
-    PROMPT("prompt", "Message envoyé à l'agent", "⌨️", urgent = false, defaultEnabled = false, silent = true);
+    PERMISSION("permission", "Demande d'autorisation", "Permission request", "🔐", urgent = true, defaultEnabled = true),
+    INPUT_NEEDED("input", "Réponse attendue", "Reply expected", "💬", urgent = true, defaultEnabled = true),
+    TASK_DONE("done", "Tâche terminée", "Task done", "✅", urgent = false, defaultEnabled = true),
+    SUBAGENT_DONE("subagent", "Sous-agent terminé", "Subagent finished", "🤖", urgent = false, defaultEnabled = false),
+    SESSION_START("session_start", "Session démarrée", "Session started", "🚀", urgent = false, defaultEnabled = false),
+    SESSION_END("session_end", "Session terminée", "Session ended", "🏁", urgent = false, defaultEnabled = true),
+    COMPACT("compact", "Compaction du contexte", "Context compaction", "🗜️", urgent = false, defaultEnabled = false),
+    ERROR("error", "Erreur", "Error", "⚠️", urgent = true, defaultEnabled = true),
+    OTHER("other", "Autre notification", "Other notification", "✳️", urgent = false, defaultEnabled = true),
+    PROMPT("prompt", "Message envoyé à l'agent", "Message sent to the agent", "⌨️", urgent = false, defaultEnabled = false, silent = true);
+
+    val label: String get() = tr(fr, en)
 
     companion object {
         fun fromKey(key: String?): EventType = entries.firstOrNull { it.key == key } ?: OTHER

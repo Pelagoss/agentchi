@@ -3,6 +3,7 @@ package fr.codingpacer.agentchi.notify
 import fr.codingpacer.agentchi.data.AgentEvent
 import fr.codingpacer.agentchi.data.EventType
 import fr.codingpacer.agentchi.text.Markdown
+import fr.codingpacer.agentchi.text.tr
 
 /**
  * Résumé des événements non urgents (« ✅ 3 tâches terminées sur 2 projets ») : une seule
@@ -31,9 +32,9 @@ object Digest {
             .joinToString(" · ") { count(it, counts.getValue(it)) }
         val projects = events.mapNotNull { it.project }.distinct()
         val text = when (projects.size) {
-            0 -> "${events.size} événements"
-            1 -> "sur ${projects.single()}"
-            else -> "sur ${projects.size} projets : ${projects.joinToString(", ")}"
+            0 -> tr("${events.size} événements", "${events.size} events")
+            1 -> tr("sur ${projects.single()}", "on ${projects.single()}")
+            else -> tr("sur ${projects.size} projets : ", "across ${projects.size} projects: ") + projects.joinToString(", ")
         }
         val lines = events.take(MAX_LINES).map { e ->
             listOfNotNull(e.type.emoji, e.project, Markdown.plain(e.message).lineSequence().firstOrNull()).joinToString(" ")
@@ -41,17 +42,17 @@ object Digest {
         return Summary(title, text, lines)
     }
 
-    /** « 1 tâche terminée », « 3 tâches terminées ». */
+    /** « 1 tâche terminée », « 3 tâches terminées » (« 1 task done », « 3 tasks done »). */
     fun count(type: EventType, n: Int): String {
         val (one, many) = when (type) {
-            EventType.TASK_DONE -> "tâche terminée" to "tâches terminées"
-            EventType.SUBAGENT_DONE -> "sous-agent terminé" to "sous-agents terminés"
-            EventType.SESSION_START -> "session démarrée" to "sessions démarrées"
-            EventType.SESSION_END -> "session terminée" to "sessions terminées"
+            EventType.TASK_DONE -> tr("tâche terminée", "task done") to tr("tâches terminées", "tasks done")
+            EventType.SUBAGENT_DONE -> tr("sous-agent terminé", "subagent finished") to tr("sous-agents terminés", "subagents finished")
+            EventType.SESSION_START -> tr("session démarrée", "session started") to tr("sessions démarrées", "sessions started")
+            EventType.SESSION_END -> tr("session terminée", "session ended") to tr("sessions terminées", "sessions ended")
             EventType.COMPACT -> "compaction" to "compactions"
-            EventType.PERMISSION -> "demande d'autorisation" to "demandes d'autorisation"
-            EventType.INPUT_NEEDED -> "réponse attendue" to "réponses attendues"
-            EventType.ERROR -> "erreur" to "erreurs"
+            EventType.PERMISSION -> tr("demande d'autorisation", "permission request") to tr("demandes d'autorisation", "permission requests")
+            EventType.INPUT_NEEDED -> tr("réponse attendue", "reply expected") to tr("réponses attendues", "replies expected")
+            EventType.ERROR -> tr("erreur", "error") to tr("erreurs", "errors")
             EventType.OTHER -> "notification" to "notifications"
             EventType.PROMPT -> "message" to "messages"
         }

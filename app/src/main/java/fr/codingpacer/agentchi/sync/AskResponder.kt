@@ -12,6 +12,7 @@ import fr.codingpacer.agentchi.net.CompanionApi
 import fr.codingpacer.agentchi.net.ServerException
 import fr.codingpacer.agentchi.notify.EventNotifier
 import fr.codingpacer.agentchi.pet.Achievements
+import fr.codingpacer.agentchi.text.tr
 import fr.codingpacer.agentchi.widget.Widgets
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,10 +29,12 @@ class AskResponder(
     private val notifier: EventNotifier,
     private val rewards: Rewards,
 ) {
-    enum class Result(val message: String?) {
-        SENT(null),
-        EXPIRED("Trop tard : l'agent n'attend plus cette réponse"),
-        FAILED("Réponse non envoyée : serveur injoignable"),
+    enum class Result(private val fr: String?, private val en: String?) {
+        SENT(null, null),
+        EXPIRED("Trop tard : l'agent n'attend plus cette réponse", "Too late: the agent is no longer waiting for this answer"),
+        FAILED("Réponse non envoyée : serveur injoignable", "Answer not sent: server unreachable");
+
+        val message: String? get() = if (fr == null || en == null) null else tr(fr, en)
     }
 
     private val _ended = MutableStateFlow<Set<String>>(emptySet())
