@@ -90,7 +90,7 @@ type askRegistry struct {
 	m  map[string]*pendingAsk
 }
 
-var errAskGone = errors.New("cette question n'attend plus de réponse")
+var errAskGone = errors.New("this question is no longer waiting for an answer")
 
 func (r *askRegistry) add(p *pendingAsk) bool {
 	r.mu.Lock()
@@ -214,7 +214,7 @@ func (s *Server) endAsk(p *pendingAsk) {
 func (s *Server) handleAnswer(w http.ResponseWriter, r *http.Request, d *Device) {
 	var a Answer
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&a); err != nil {
-		httpError(w, http.StatusBadRequest, "JSON invalide")
+		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
 	switch err := s.asks.answer(d.ID, r.PathValue("id"), a); {
@@ -234,11 +234,11 @@ func (s *Server) handleSetAnswers(w http.ResponseWriter, r *http.Request, d *Dev
 		Timeout int `json:"timeout"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		httpError(w, http.StatusBadRequest, "JSON invalide")
+		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
 	if body.Timeout != 0 && (time.Duration(body.Timeout)*time.Second < minAskTimeout || time.Duration(body.Timeout)*time.Second > maxAskTimeout) {
-		httpError(w, http.StatusBadRequest, fmt.Sprintf("délai entre %d et %d secondes", int(minAskTimeout.Seconds()), int(maxAskTimeout.Seconds())))
+		httpError(w, http.StatusBadRequest, fmt.Sprintf("timeout must be between %d and %d seconds", int(minAskTimeout.Seconds()), int(maxAskTimeout.Seconds())))
 		return
 	}
 	if err := s.store.SetAnswers(d.ID, body.Enabled, body.Timeout); err != nil {
@@ -411,7 +411,7 @@ func fitPayload(p *Payload) {
 func hookOutput(kind string, in HookInput, a Answer) ([]byte, error) {
 	a.Message = strings.TrimSpace(a.Message)
 	if utf8.RuneCountInString(a.Message) > maxAnswerRunes {
-		return nil, errors.New("réponse trop longue")
+		return nil, errors.New("answer too long")
 	}
 	if a.Decision == "pass" {
 		return nil, nil
@@ -430,9 +430,9 @@ func hookOutput(kind string, in HookInput, a Answer) ([]byte, error) {
 			}
 		case "deny":
 			decision["behavior"] = "deny"
-			decision["message"] = withReason("Refusé par l'utilisateur depuis sa montre.", a.Message)
+			decision["message"] = withReason("Denied by the user from their watch.", a.Message)
 		default:
-			return nil, errors.New("décision inconnue")
+			return nil, errors.New("unknown decision")
 		}
 		out = map[string]any{"hookSpecificOutput": map[string]any{"hookEventName": "PermissionRequest", "decision": decision}}
 	case askQuestion, askPlan:
@@ -450,14 +450,14 @@ func hookOutput(kind string, in HookInput, a Answer) ([]byte, error) {
 			hso["permissionDecision"] = "allow"
 			hso["updatedInput"] = tool
 		case "deny":
-			reason := "L'utilisateur a refusé de répondre depuis sa montre."
+			reason := "The user declined to answer from their watch."
 			if kind == askPlan {
-				reason = "L'utilisateur a refusé le plan depuis sa montre."
+				reason = "The user rejected the plan from their watch."
 			}
 			hso["permissionDecision"] = "deny"
 			hso["permissionDecisionReason"] = withReason(reason, a.Message)
 		default:
-			return nil, errors.New("décision inconnue")
+			return nil, errors.New("unknown decision")
 		}
 		out = map[string]any{"hookSpecificOutput": hso}
 	case askReply:
@@ -465,11 +465,11 @@ func hookOutput(kind string, in HookInput, a Answer) ([]byte, error) {
 			return nil, nil
 		}
 		if a.Message == "" {
-			return nil, errors.New("réponse vide")
+			return nil, errors.New("empty answer")
 		}
-		out = map[string]any{"decision": "block", "reason": "Réponse de l'utilisateur, envoyée depuis sa montre : " + a.Message}
+		out = map[string]any{"decision": "block", "reason": "The user's reply, sent from their watch: " + a.Message}
 	default:
-		return nil, errors.New("question inconnue")
+		return nil, errors.New("unknown question")
 	}
 	return json.Marshal(out)
 }
@@ -480,15 +480,15 @@ func checkAnswers(questions []QuestionView, answers map[string]string) (map[stri
 	for _, q := range questions {
 		v := strings.TrimSpace(answers[q.Question])
 		if v == "" {
-			return nil, errors.New("réponse manquante : " + truncate(q.Question, 80))
+			return nil, errors.New("missing answer: " + truncate(q.Question, 80))
 		}
 		if utf8.RuneCountInString(v) > maxAnswerRunes {
-			return nil, errors.New("réponse trop longue")
+			return nil, errors.New("answer too long")
 		}
 		out[q.Question] = v
 	}
 	if len(answers) != len(out) {
-		return nil, errors.New("réponse à une question inconnue")
+		return nil, errors.New("answer to an unknown question")
 	}
 	return out, nil
 }
@@ -497,7 +497,7 @@ func withReason(base, reason string) string {
 	if reason == "" {
 		return base
 	}
-	return base + " Raison : " + reason
+	return base + " Reason: " + reason
 }
 
 // tail garde les n derniers caractères.

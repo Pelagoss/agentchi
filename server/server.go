@@ -119,16 +119,16 @@ func (s *Server) hookRequest(w http.ResponseWriter, r *http.Request) (HookInput,
 	}
 	ip := s.clientIP(r)
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&in); err != nil {
-		httpError(w, http.StatusBadRequest, "JSON invalide")
+		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return in, Code{}, false
 	}
 	c, ok := s.store.UseCode(code, projectOf(in.Cwd))
 	if !ok {
-		s.authFailed(w, ip, "code d'appairage inconnu ou révoqué")
+		s.authFailed(w, ip, "unknown or revoked pairing code")
 		return in, Code{}, false
 	}
 	if !s.hookLimit.Allow(c.ID) {
-		httpError(w, http.StatusTooManyRequests, "trop d'événements")
+		httpError(w, http.StatusTooManyRequests, "too many events")
 		return in, Code{}, false
 	}
 	return in, c, true
@@ -174,18 +174,18 @@ func (s *Server) push(ctx context.Context, deviceID string, p Payload, ttl time.
 
 const promptTTL = 10 * time.Minute
 
-var errNoPushToken = errors.New("la montre n'a pas encore transmis son jeton FCM")
+var errNoPushToken = errors.New("the watch hasn't sent its FCM token yet")
 
 func (s *Server) device(next func(http.ResponseWriter, *http.Request, *Device)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ip := s.clientIP(r)
 		if !s.apiLimit.Allow(ip) {
-			httpError(w, http.StatusTooManyRequests, "trop de requêtes")
+			httpError(w, http.StatusTooManyRequests, "too many requests")
 			return
 		}
 		d, ok := s.store.DeviceByToken(bearer(r))
 		if !ok {
-			s.authFailed(w, ip, "jeton de montre invalide")
+			s.authFailed(w, ip, "invalid watch token")
 			return
 		}
 		next(w, r, &d)
@@ -194,7 +194,7 @@ func (s *Server) device(next func(http.ResponseWriter, *http.Request, *Device)) 
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if !s.registerLimit.Allow(s.clientIP(r)) {
-		httpError(w, http.StatusTooManyRequests, "trop de montres créées depuis cette adresse")
+		httpError(w, http.StatusTooManyRequests, "too many watches created from this address")
 		return
 	}
 	var body struct {
@@ -204,7 +204,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body)
 	if s.cfg.MaxDevices > 0 && s.store.DeviceCount() >= s.cfg.MaxDevices {
-		httpError(w, http.StatusForbidden, "ce serveur n'accepte plus de nouvelles montres")
+		httpError(w, http.StatusForbidden, "this server no longer accepts new watches")
 		return
 	}
 	lang := watchLang(body.Lang)
@@ -226,7 +226,7 @@ func (s *Server) handleSetPush(w http.ResponseWriter, r *http.Request, d *Device
 		Lang  string `json:"lang"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil || strings.TrimSpace(body.Token) == "" {
-		httpError(w, http.StatusBadRequest, "jeton FCM manquant")
+		httpError(w, http.StatusBadRequest, "missing FCM token")
 		return
 	}
 	if err := s.store.SetPushToken(d.ID, strings.TrimSpace(body.Token), watchLang(body.Lang)); err != nil {
@@ -287,7 +287,7 @@ func (s *Server) handleListCodes(w http.ResponseWriter, _ *http.Request, d *Devi
 
 func (s *Server) handleDeleteCode(w http.ResponseWriter, r *http.Request, d *Device) {
 	if err := s.store.DeleteCode(d.ID, r.PathValue("id")); err != nil {
-		httpError(w, http.StatusNotFound, "code introuvable")
+		httpError(w, http.StatusNotFound, "code not found")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -400,7 +400,7 @@ func (s *Server) handleCloudSettings(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) authFailed(w http.ResponseWriter, ip, msg string) {
 	if !s.authFailLimit.Allow(ip) {
-		httpError(w, http.StatusTooManyRequests, "trop d'essais")
+		httpError(w, http.StatusTooManyRequests, "too many attempts")
 		return
 	}
 	httpError(w, http.StatusUnauthorized, msg)
@@ -448,5 +448,5 @@ func httpError(w http.ResponseWriter, status int, msg string) {
 
 func serverError(w http.ResponseWriter, err error) {
 	log.Printf("erreur : %v", err)
-	httpError(w, http.StatusInternalServerError, "erreur interne")
+	httpError(w, http.StatusInternalServerError, "internal error")
 }

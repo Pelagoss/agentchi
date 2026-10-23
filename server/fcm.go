@@ -40,8 +40,8 @@ type Pusher interface {
 
 var (
 	// errUnregistered : jeton FCM périmé (appli désinstallée, données effacées…), à oublier.
-	errUnregistered = errors.New("jeton FCM inconnu de Firebase")
-	errNoPush       = errors.New("push FCM non configuré sur le serveur (CC_FCM_CREDENTIALS)")
+	errUnregistered = errors.New("FCM token unknown to Firebase")
+	errNoPush       = errors.New("FCM push is not set up on the server (CC_FCM_CREDENTIALS)")
 )
 
 // noPusher : serveur lancé sans compte de service Firebase.
@@ -86,22 +86,22 @@ func NewFCMFromFile(path string) (*FCM, error) {
 func NewFCM(credentials []byte) (*FCM, error) {
 	var sa serviceAccount
 	if err := json.Unmarshal(credentials, &sa); err != nil {
-		return nil, fmt.Errorf("compte de service illisible : %w", err)
+		return nil, fmt.Errorf("unreadable service account: %w", err)
 	}
 	if sa.ProjectID == "" || sa.ClientEmail == "" || sa.PrivateKey == "" {
-		return nil, errors.New("compte de service incomplet (project_id, client_email, private_key)")
+		return nil, errors.New("incomplete service account (project_id, client_email, private_key)")
 	}
 	block, _ := pem.Decode([]byte(sa.PrivateKey))
 	if block == nil {
-		return nil, errors.New("clé privée du compte de service illisible")
+		return nil, errors.New("unreadable service account private key")
 	}
 	parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("clé privée : %w", err)
+		return nil, fmt.Errorf("private key: %w", err)
 	}
 	key, ok := parsed.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.New("la clé du compte de service n'est pas une clé RSA")
+		return nil, errors.New("the service account key is not an RSA key")
 	}
 	if sa.TokenURI == "" {
 		sa.TokenURI = "https://oauth2.googleapis.com/token"
@@ -164,7 +164,7 @@ func (f *FCM) Send(ctx context.Context, token string, p Push) error {
 		f.accessToken = ""
 		f.mu.Unlock()
 	}
-	return fmt.Errorf("FCM HTTP %d : %s", resp.StatusCode, strings.TrimSpace(string(b)))
+	return fmt.Errorf("FCM HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
 }
 
 // token retourne un jeton d'accès OAuth 2 valide, renouvelé une minute avant expiration.
@@ -194,7 +194,7 @@ func (f *FCM) token(ctx context.Context) (string, error) {
 		ExpiresIn   int64  `json:"expires_in"`
 	}
 	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&out) != nil || out.AccessToken == "" {
-		return "", fmt.Errorf("authentification Google refusée (HTTP %d)", resp.StatusCode)
+		return "", fmt.Errorf("Google authentication refused (HTTP %d)", resp.StatusCode)
 	}
 	f.accessToken = out.AccessToken
 	f.expires = time.Now().Add(time.Duration(out.ExpiresIn) * time.Second)

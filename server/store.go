@@ -42,8 +42,8 @@ type Code struct {
 }
 
 var (
-	errNotFound    = errors.New("introuvable")
-	errTooManyCode = errors.New("trop de codes pour cette montre")
+	errNotFound    = errors.New("not found")
+	errTooManyCode = errors.New("too many codes for this watch")
 )
 
 const maxCodesPerDevice = 50

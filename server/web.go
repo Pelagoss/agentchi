@@ -94,7 +94,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("page d'accueil : %v", err)
-		httpError(w, http.StatusInternalServerError, "page indisponible")
+		httpError(w, http.StatusInternalServerError, "page unavailable")
 		return
 	}
 	if chosen {

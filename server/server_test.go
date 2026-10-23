@@ -231,7 +231,7 @@ func TestJetonFCM(t *testing.T) {
 
 	// Pas encore de jeton FCM : le test le signale à la montre.
 	resp, body := call(t, "POST", e.url+"/v1/test", token, "")
-	if resp.StatusCode != http.StatusBadGateway || !strings.Contains(body, "jeton FCM") {
+	if resp.StatusCode != http.StatusBadGateway || !strings.Contains(body, "FCM token") {
 		t.Fatalf("test sans jeton : %d %s", resp.StatusCode, body)
 	}
 	if resp, _ := call(t, "PUT", e.url+"/v1/device/push", token, `{"token":"fcm-1"}`); resp.StatusCode != http.StatusNoContent {
