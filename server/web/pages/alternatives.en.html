@@ -1,0 +1,49 @@
+{{define "title"}}Claude Code and Codex notifications: Agentchi vs ntfy, Pushover, Telegram{{end}}
+{{define "description"}}How to get notified when Claude Code or Codex needs you: desktop notifications, ntfy, Pushover, a Telegram bot, Remote Control or Agentchi on your Wear OS watch. What each one does, and what it takes to answer the agent.{{end}}
+
+{{define "content"}}<h1>Getting notified by your coding agent: the options</h1>
+<p class="doc-lead">Claude Code and Codex both pause when they need you. There are several ways to find out without staring at the terminal. Here's an honest look at the common ones, and where Agentchi fits.</p>
+
+<div class="prose">
+  <h2>At a glance</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col"></th><th scope="col">Reaches you away from the computer</th><th scope="col">Answer the agent from there</th><th scope="col">What you need</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Terminal bell, desktop notifications</th><td>No</td><td>No</td><td>Nothing, or a one-line hook</td></tr>
+        <tr><th scope="row">ntfy</th><td>Yes, on the phone</td><td>Only with your own scripts</td><td>The ntfy app, a hook calling <code>curl</code></td></tr>
+        <tr><th scope="row">Pushover</th><td>Yes, on the phone</td><td>No</td><td>A Pushover account and app, a hook</td></tr>
+        <tr><th scope="row">Telegram bot</th><td>Yes, on the phone</td><td>If you write and host the bot</td><td>A bot, a hook, some code</td></tr>
+        <tr><th scope="row">Claude Remote Control</th><td>Yes, on the phone</td><td>Yes, Claude Code only</td><td>The Claude app, phone in hand</td></tr>
+        <tr><th scope="row">Agentchi</th><td>Yes, on the wrist</td><td>Yes: permissions, questions, plans, replies</td><td>A Wear&nbsp;OS watch, a plugin or hook file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Terminal bell and desktop notifications</h2>
+  <p>The simplest option: the terminal rings, or a hook shows a system notification when the agent stops. It's built in and free, and it's enough while you're at your desk. Step away, and nothing reaches you.</p>
+
+  <h2>ntfy</h2>
+  <p><a href="https://ntfy.sh" rel="noopener">ntfy</a> is an open-source push notification service you can also host yourself. A hook that calls <code>curl</code> on a topic is all it takes to get “Claude Code is waiting” on your phone, and the phone can mirror it to your watch. ntfy supports action buttons that call a URL, so answering a permission request is possible in theory, but you'd have to build the part that holds the hook open and passes the answer back. A great choice if you don't own a Wear&nbsp;OS watch and only want to know.</p>
+
+  <h2>Pushover</h2>
+  <p><a href="https://pushover.net" rel="noopener">Pushover</a> is a polished commercial push service with phone and desktop apps. Like ntfy, a hook can send it a message when your agent stops. It's one-way: you'll know the agent is waiting, then go back to the computer to answer.</p>
+
+  <h2>A Telegram bot</h2>
+  <p>A Telegram bot can both send and receive messages, so it can go further than a notification: some developers wire one up to answer their agents. It means writing the bot, hosting it, and handling the hook that waits for the answer, and every event becomes a chat message.</p>
+
+  <h2>Claude Remote Control</h2>
+  <p>Remote Control lets you follow and drive a Claude Code session running on your computer from claude.ai/code or the Claude mobile app. It's the most complete way to steer Claude Code from your phone, but it needs your phone in hand, and it doesn't cover Codex. Agentchi works alongside it: the plugin runs on your computer, so Remote Control sessions reach your watch too.</p>
+
+  <h2>Agentchi</h2>
+  <p>Agentchi is built for one thing: answering your agents from your wrist. Permission requests, multiple-choice questions and plans arrive on your Wear&nbsp;OS watch, and you allow, deny, pick an option or reply by voice without taking out your phone. It covers Claude Code (terminal, IDE, Desktop, Remote Control, cloud sessions) and Codex, adds quiet hours and a summary for non-urgent events, and comes with Chi, a pixel-art mascot that lives in sync with your sessions.</p>
+  <p>It's free, with no account and no phone app, and its relay server is open source: use agentchi.dev or <a href="/self-hosted">host your own</a>. The catch: you need a Wear&nbsp;OS watch with Google Play services, such as a Galaxy Watch 4 or newer or a Pixel Watch.</p>
+
+  <h2>Which one should you pick?</h2>
+  <ul>
+    <li><b>You stay at your desk</b>: desktop notifications are enough.</li>
+    <li><b>You only want to know, on your phone</b>: ntfy or Pushover.</li>
+    <li><b>You want to steer Claude Code from your phone</b>: Remote Control.</li>
+    <li><b>You want to answer Claude Code and Codex without taking out your phone</b>: <a href="/claude-code-notifications">Agentchi</a>.</li>
+  </ul>
+</div>{{end}}

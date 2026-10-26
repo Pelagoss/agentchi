@@ -1,0 +1,50 @@
+{{define "locale"}}<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">{{end}}
+
+{{define "crumbs"}}Fil d'Ariane{{end}}
+{{define "updated"}}Dernière mise à jour&nbsp;: {{.Updated}}{{end}}
+
+{{define "header"}}<a class="skip" href="#content">Aller au contenu</a>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="/fr/" aria-label="Agentchi, accueil">
+      <img class="brand-icon" src="/static/img/icon-180.png?v={{.V}}" alt="" width="34" height="34">
+      <span>Agentchi</span>
+    </a>
+    <nav class="nav" aria-label="Guides">
+      <a href="/fr/claude-code-notifications">Claude Code</a>
+      <a href="/fr/codex-notifications">Codex</a>
+      <a href="/fr/alternatives">Alternatives</a>
+      <a href="/fr/self-hosted">Auto-hébergement</a>
+    </nav>
+    <a class="lang" href="{{.Alt.en}}" hreflang="en" lang="en" aria-label="English version">EN</a>
+    <a class="btn btn-sm" href="/fr/#installer">Installer</a>
+  </div>
+</header>{{end}}
+
+{{define "cta"}}<aside class="doc-cta" aria-labelledby="cta-titre">
+  <div class="wrap doc-cta-in">
+    <div>
+      <h2 id="cta-titre">Tes agents de code au poignet</h2>
+      <p>Gratuit, sans compte, sans appli téléphone. Trois étapes, toutes les commandes prêtes à copier.</p>
+    </div>
+    <a class="btn" href="/fr/#installer">Installer Agentchi</a>
+  </div>
+</aside>{{end}}
+
+{{define "foot"}}<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="foot-brand"><img src="/static/img/icon-512.png?v={{.V}}" alt="" width="28" height="28"> Agentchi</p>
+    <p>Appli non officielle, sans lien avec Anthropic ni OpenAI. Claude et Claude Code sont des marques d'Anthropic&nbsp;; Codex et OpenAI sont des marques d'OpenAI. Les écrans de montre de ce site sont redessinés à partir de l'appli.</p>
+    <nav class="foot-links" aria-label="Liens">
+      <a href="/fr/claude-code-notifications">Notifications Claude Code</a>
+      <a href="/fr/codex-notifications">Notifications Codex</a>
+      <a href="/fr/alternatives">Alternatives</a>
+      <a href="/fr/self-hosted">Auto-hébergement</a>
+      <a href="/fr/privacy">Confidentialité</a>
+      <a href="https://github.com/Pelagoss/agentchi">Code source</a>
+      <a href="/v1/cloud-settings.json">cloud-settings.json</a>
+      <a href="/v1/codex-hooks.json">codex-hooks.json</a>
+    </nav>
+  </div>
+</footer>{{end}}

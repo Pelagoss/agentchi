@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <script>document.documentElement.className = 'js';</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Agentchi · Your coding agents on your Wear OS watch</title>
+<title>Claude Code &amp; Codex notifications on your Wear OS watch · Agentchi</title>
 <meta name="description" content="Claude Code and Codex requests land on your Wear OS watch, you answer with a tap, and a pixel-art mascot lives in sync with your sessions.">
 <meta name="theme-color" content="#161514">
-<meta property="og:title" content="Agentchi · Your coding agents on your Wear OS watch">
+<meta property="og:title" content="Claude Code &amp; Codex notifications on your Wear OS watch · Agentchi">
 <meta property="og:description" content="Notifications, replies from your watch, and a pixel-art companion to look after.">
 <meta property="og:image:alt" content="Agentchi: your coding agents on your wrist, with a pixel-art companion">
 <meta property="og:locale" content="en_US">
@@ -32,6 +32,7 @@
       <a href="#mascot">The mascot</a>
       <a href="#video">Video</a>
       <a href="#server">The server</a>
+      <a href="#faq">FAQ</a>
     </nav>
     <a class="lang" href="/?lang=fr" hreflang="fr" lang="fr" aria-label="Version française">FR</a>
     <a class="btn btn-sm" href="#install">Install</a>
@@ -42,8 +43,8 @@
   <section class="hero">
     <div class="wrap hero-in">
       <div class="hero-copy">
-        <h1>Your coding agents on your wrist, <span class="accent">with a pixel&#8209;art companion.</span></h1>
-        <p class="lead">Permission requests, questions, finished tasks: it all lands on your Wear&nbsp;OS watch and you answer with a tap. Meanwhile, Chi lives in sync with your sessions.</p>
+        <h1>Claude Code and Codex on your wrist, <span class="accent">with a pixel&#8209;art companion.</span></h1>
+        <p class="lead">Permission requests, questions, finished tasks: your coding agents’ notifications land on your Wear&nbsp;OS watch and you answer with a tap. Meanwhile, Chi lives in sync with your sessions.</p>
         <div class="actions">
           <a class="btn" href="#install">Install Agentchi
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5"/></svg></a>
@@ -55,7 +56,7 @@
       </div>
       <figure class="hero-watch">
         <div class="stage" data-stage="hero">
-          <img class="fallback" src="/static/img/en/01-mascotte.png?v={{.V}}" alt="Chi the mascot on the watch, with its gauges and actions" width="480" height="480">
+          <img class="fallback" src="/static/img/en/01-mascotte.webp?v={{.V}}" alt="Chi the mascot on the watch, with its gauges and actions" width="480" height="480">
           <canvas data-watch="hero" role="img" aria-label="Agentchi watch: Chi the mascot, its three gauges and its Feed, Play and Sleep buttons"></canvas>
         </div>
         <figcaption>
@@ -80,7 +81,7 @@
     <div class="wrap day-in">
       <div class="day-watch" aria-hidden="true">
         <div class="stage" data-stage="day">
-          <img class="fallback" src="/static/img/en/03-jouer.png?v={{.V}}" alt="" width="480" height="480">
+          <img class="fallback" src="/static/img/en/03-jouer.webp?v={{.V}}" alt="Agentchi on a Wear OS watch: playing with Chi the pixel-art mascot" width="480" height="480">
           <canvas data-watch="day"></canvas>
         </div>
       </div>
@@ -141,7 +142,7 @@
       </div>
       <div class="studio-watch">
         <div class="stage" data-stage="studio">
-          <img class="fallback" src="/static/img/en/05-personnalisation.png?v={{.V}}" alt="Settings › Mascot on the watch: species, colors and accessory" width="480" height="480">
+          <img class="fallback" src="/static/img/en/05-personnalisation.webp?v={{.V}}" alt="Settings › Mascot on the watch: species, colors and accessory" width="480" height="480">
           <canvas data-watch="studio" role="img" aria-label="Preview of your mascot in Settings › Mascot"></canvas>
         </div>
       </div>
@@ -170,10 +171,10 @@
       <h2 id="more-title" class="section-title">And everything else, on your wrist</h2>
       <div class="more-in">
       <ul class="faces">
-        <li><img src="/static/img/en/01-mascotte.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>It lives on your watch</span></li>
-        <li><img src="/static/img/en/03-jouer.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>It plays with you</span></li>
-        <li><img src="/static/img/en/04-dodo.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>It sleeps when you tuck it in</span></li>
-        <li><img src="/static/img/en/05-personnalisation.png?v={{.V}}" alt="" width="480" height="480" loading="lazy"><span>It changes its look</span></li>
+        <li><img src="/static/img/en/01-mascotte.webp?v={{.V}}" alt="Agentchi watch app: the mascot with its fullness, energy and happiness gauges" width="480" height="480" loading="lazy"><span>It lives on your watch</span></li>
+        <li><img src="/static/img/en/03-jouer.webp?v={{.V}}" alt="Playing with the pixel-art mascot on the Wear OS watch" width="480" height="480" loading="lazy"><span>It plays with you</span></li>
+        <li><img src="/static/img/en/04-dodo.webp?v={{.V}}" alt="The pixel-art mascot asleep on the Wear OS watch" width="480" height="480" loading="lazy"><span>It sleeps when you tuck it in</span></li>
+        <li><img src="/static/img/en/05-personnalisation.webp?v={{.V}}" alt="Mascot settings on the watch: species, colors and accessory" width="480" height="480" loading="lazy"><span>It changes its look</span></li>
       </ul>
       <dl class="specs">
         <div><dt>Tile, complication, watch face</dt><dd>Your mascot takes center stage on the Agentchi watch face; the tile and the complication flag a pending question and take you there with a tap.</dd></div>
@@ -190,7 +191,7 @@
   <section class="relay" id="server" aria-labelledby="server-title">
     <div class="wrap">
       <h2 id="server-title" class="section-title">Your server, your data</h2>
-      <p class="section-lead">Agentchi goes through a small open-source relay server. The one at <b>agentchi.dev</b> is already set up: the watch and the plugins connect to it out of the box, nothing to install or host. And if you'd rather stay in control, you can always <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/self-hosted/README.md">host your own</a>.</p>
+      <p class="section-lead">Agentchi goes through a small open-source relay server. The one at <b>agentchi.dev</b> is already set up: the watch and the plugins connect to it out of the box, nothing to install or host. And if you'd rather stay in control, you can always <a href="/self-hosted">host your own</a>.</p>
       <div class="flow" aria-label="Path of an event: your agents, this server, Firebase Cloud Messaging, your watch">
         <ul class="flow-src">
           <li><b>Claude Code</b><span>terminal, IDE, Desktop, Remote Control · plugin</span></li>
@@ -209,6 +210,19 @@
         <li><b>One code per computer.</b> Each computer or cloud environment gets its own, revocable from the watch.</li>
         <li><b>No account, no ads.</b> Each watch registers itself and only receives its own events.</li>
       </ul>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-in">
+      <h2 id="faq-title" class="section-title">Questions</h2>
+      <div class="faq-list">
+        {{range .FAQ}}<details>
+          <summary>{{.Q}}</summary>
+          <p>{{.A}}</p>
+        </details>
+        {{end}}
+      </div>
     </div>
   </section>
 
@@ -290,18 +304,7 @@ echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # or ~/.bashrc</code></
   </section>
 </main>
 
-<footer class="foot">
-  <div class="wrap foot-in">
-    <p class="foot-brand"><img src="/static/img/icon-512.png?v={{.V}}" alt="" width="28" height="28"> Agentchi</p>
-    <p>Unofficial app, not affiliated with Anthropic or OpenAI. Claude and Claude Code are trademarks of Anthropic; Codex and OpenAI are trademarks of OpenAI. The watch screens on this page are redrawn from the app.</p>
-    <nav class="foot-links" aria-label="Links">
-      <a href="https://github.com/Pelagoss/agentchi">Source code</a>
-      <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/PRIVACY.md">Privacy</a>
-      <a href="/v1/cloud-settings.json">cloud-settings.json</a>
-      <a href="/v1/codex-hooks.json">codex-hooks.json</a>
-    </nav>
-  </div>
-</footer>
+{{template "foot" .}}
 
 <script src="/static/js/mascot.js?v={{.V}}" defer></script>
 <script src="/static/js/screens.js?v={{.V}}" defer></script>

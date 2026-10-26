@@ -80,7 +80,7 @@ Le style « Plein écran » se comporte alors comme une notification prioritaire
 
 ### 2.2 Pas de service au premier plan ni d'accès aux notifications
 
-La montre ne garde aucune connexion ouverte : elle est réveillée par les pushs FCM. Il n'y a donc **aucune déclaration de service au premier plan** à faire, et aucun accès aux notifications d'autres applis. La politique de confidentialité publique est déjà rédigée dans [`docs/PRIVACY.md`](PRIVACY.md).
+La montre ne garde aucune connexion ouverte : elle est réveillée par les pushs FCM. Il n'y a donc **aucune déclaration de service au premier plan** à faire, et aucun accès aux notifications d'autres applis. La politique de confidentialité publique est déjà rédigée dans [`docs/PRIVACY.md`](PRIVACY.md) et publiée sur https://agentchi.dev/privacy.
 
 ---
 
@@ -123,7 +123,7 @@ Vérifie au minimum : ouverture de l'appli, **Paramètres › Serveur › Connec
 
 | Rubrique | Réponse |
 |---|---|
-| **Règles de confidentialité** | URL publique, par ex. `https://github.com/Pelagoss/agentchi/blob/master/docs/PRIVACY.md` (le dépôt doit rester public). Mieux : une page GitHub Pages |
+| **Règles de confidentialité** | `https://agentchi.dev/privacy` (en français : `https://agentchi.dev/fr/privacy`), servie par le serveur à partir de `server/web/pages/privacy.*.html` |
 | **Accès aux applis** | « Toutes les fonctionnalités sont disponibles sans restriction » (pas de compte) |
 | **Annonces** | Non |
 | **Classification du contenu** | Questionnaire, catégorie *Utilitaire / productivité* ; aucune violence ni contenu sensible → **Tout public / PEGI 3** |

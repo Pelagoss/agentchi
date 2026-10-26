@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="{{.Lang}}" class="no-js">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.className = 'js';</script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{template "title" .}} · Agentchi</title>
+<meta name="description" content="{{template "description" .}}">
+<meta name="theme-color" content="#161514">
+<meta property="og:title" content="{{template "title" .}}">
+<meta property="og:description" content="{{template "description" .}}">
+{{template "locale" .}}
+{{template "seo" .}}
+<link rel="icon" type="image/png" href="/static/img/icon-512.png?v={{.V}}">
+<link rel="apple-touch-icon" href="/static/img/icon-180.png?v={{.V}}">
+<link rel="preload" href="/static/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/site.css?v={{.V}}">
+</head>
+<body id="top">
+{{template "header" .}}
+<main class="doc">
+  <article class="wrap doc-in" id="content">
+    <nav class="crumbs" aria-label="{{template "crumbs" .}}"><a href="{{.Home}}">Agentchi</a> <span aria-hidden="true">/</span> <span aria-current="page">{{template "title" .}}</span></nav>
+    {{template "content" .}}
+    <p class="doc-date">{{template "updated" .}}</p>
+  </article>
+  {{template "cta" .}}
+</main>
+{{template "foot" .}}
+<script src="/static/page.js?v={{.V}}" defer></script>
+</body>
+</html>

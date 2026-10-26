@@ -1,12 +1,11 @@
 {{define "seo"}}<link rel="canonical" href="{{.Canonical}}">
-<link rel="alternate" hreflang="en" href="{{.URL}}/">
-<link rel="alternate" hreflang="fr" href="{{.URL}}/fr/">
-<link rel="alternate" hreflang="x-default" href="{{.URL}}/">
+{{range $lang, $url := .Alt}}<link rel="alternate" hreflang="{{$lang}}" href="{{$url}}">
+{{end}}<link rel="alternate" hreflang="x-default" href="{{.Alt.en}}">
 {{if not .Indexable}}<meta name="robots" content="noindex">
 {{end}}<meta property="og:url" content="{{.Canonical}}">
+<meta property="og:type" content="{{if .Updated}}article{{else}}website{{end}}">
 <meta property="og:site_name" content="Agentchi">
-<meta property="og:type" content="website">
-<meta property="og:image" content="{{.URL}}/static/img/{{.Lang}}/og.png">
+<meta property="og:image" content="{{.URL}}/static/img/{{.Lang}}/og.jpg">
 <meta property="og:image:width" content="1024">
 <meta property="og:image:height" content="500">
 <meta name="twitter:card" content="summary_large_image">
