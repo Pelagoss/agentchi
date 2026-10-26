@@ -61,7 +61,10 @@ func NewServer(cfg Config, store *Store, pusher Pusher) *Server {
 	}
 	s.mux.HandleFunc("GET /{$}", s.handleHome)
 	// Sous-arbre plutôt que « /fr/{$} » : le mux redirige lui-même /fr vers /fr/.
-	s.mux.HandleFunc("GET /fr/", s.handleHomeFR)
+	s.mux.HandleFunc("GET /fr/", s.handleFR)
+	for _, g := range guides {
+		s.mux.HandleFunc("GET /"+g.slug, s.handleGuide(g))
+	}
 	s.mux.HandleFunc("GET /robots.txt", s.handleRobots)
 	s.mux.HandleFunc("GET /sitemap.xml", s.handleSitemap)
 	s.mux.Handle("GET /static/", staticHandler())

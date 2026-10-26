@@ -1,0 +1,41 @@
+{{define "title"}}Notifications Codex sur ta montre Wear OS{{end}}
+{{define "description"}}Reçois les fins de tâche et les demandes d'autorisation d'OpenAI Codex sur ta montre Wear OS, et réponds d'un geste. CLI, appli et extension IDE de Codex, sur macOS, Linux et WSL.{{end}}
+
+{{define "content"}}<h1>Les notifications Codex sur ta montre</h1>
+<p class="doc-lead">Codex peut travailler seul un bon moment, jusqu'à ce qu'il lui faille ton accord pour lancer une commande ou qu'il arrive au bout de sa tâche. Agentchi envoie ces moments sur ta montre Wear&nbsp;OS grâce aux hooks de Codex, et lui renvoie ta réponse&nbsp;: plus besoin de surveiller le terminal.</p>
+
+<div class="prose">
+  <h2>Ce qui arrive sur ta montre</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Dans Codex</th><th scope="col">Sur la montre</th><th scope="col">Ce que tu peux faire</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Demande d'autorisation&nbsp;: commande, modification de fichier, outil MCP</th><td>Ce que Codex veut faire, avec un compte à rebours</td><td>Autoriser ou refuser, avec ou sans raison</td></tr>
+        <tr><th scope="row">Tâche terminée</th><td>La fin du dernier message de l'agent, et Chi fait la fête</td><td>Répondre au clavier, à la voix ou par une réponse rapide</td></tr>
+        <tr><th scope="row">Sessions qui démarrent et se terminent</th><td>L'écran <i>Sessions en cours</i></td><td>Voir quelles sessions tournent</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Répondre depuis la montre est un réglage&nbsp;: active <b>Paramètres › Réponses › Répondre depuis la montre</b> quand tu quittes ton écran. La montre attend ta réponse jusqu'à cinq minutes&nbsp;; au-delà, la demande reste sur l'ordinateur.</p>
+
+  <h2>L'installer</h2>
+  <p>Sur la montre, connecte-toi au serveur et crée un code (<b>Paramètres › Serveur › Nouveau code</b>), un par ordinateur. Puis, sur ton ordinateur, enregistre les hooks et rends le code visible de Codex&nbsp;:</p>
+  <div class="code"><pre><code>curl -fsS {{.URL}}/v1/codex-hooks.json -o ~/.codex/hooks.json
+echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # ou ~/.bashrc</code></pre><button type="button" class="copy">Copier</button></div>
+  <ul>
+    <li><b>Tu as déjà un <code>~/.codex/hooks.json</code>&nbsp;?</b> Fusionne les deux fichiers au lieu d'écraser le tien (<a href="/v1/codex-hooks.json">voir les hooks d'Agentchi</a>).</li>
+    <li><b>Approuve les hooks.</b> Codex ignore un hook tant que tu ne l'as pas approuvé&nbsp;: lance <code>/hooks</code> dans Codex et approuve ceux d'Agentchi.</li>
+    <li><b>Tu préfères un plugin&nbsp;?</b> Dans l'appli Codex de bureau, ajoute la marketplace avec <code>codex plugin marketplace add Pelagoss/agentchi</code>, puis installe <code>agentchi-codex</code> depuis le répertoire des plugins. Il lit le code dans <code>AGENTCHI_CODE</code> et le serveur dans <code>AGENTCHI_SERVER</code>.</li>
+  </ul>
+  <p>Termine par <b>Paramètres › Serveur › Tester le push</b> sur la montre&nbsp;: si quelque chose cloche, la montre affiche l'erreur.</p>
+
+  <h2>Où ça marche</h2>
+  <p>Le CLI Codex, l'appli Codex et l'extension IDE, sur macOS, Linux et Windows via WSL&nbsp;: tous exécutent les mêmes hooks de <code>~/.codex/hooks.json</code>.</p>
+
+  <h2>Limites actuelles</h2>
+  <ul>
+    <li>Les questions à choix multiples de Codex restent sur l'ordinateur&nbsp;: Codex ne les transmet pas aux hooks.</li>
+    <li>Dans <i>Sessions en cours</i>, une session Codex ne repasse pas «&nbsp;au travail&nbsp;» quand tu lui écris, car ses hooks ne signalent pas les messages envoyés.</li>
+  </ul>
+  <p>Tu utilises aussi Claude Code&nbsp;? La même montre et le même serveur gèrent les deux&nbsp;: voir <a href="/fr/claude-code-notifications">les notifications Claude Code</a>.</p>
+</div>{{end}}

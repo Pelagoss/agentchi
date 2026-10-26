@@ -49,9 +49,11 @@ func TestPageAccueil(t *testing.T) {
 		wants []string
 	}{
 		"/": {"en", []string{`<html lang="en"`, "Settings › Server › New code", "AGENTCHI_CODE=&lt;your code&gt;", "approve Agentchi's", "not affiliated with Anthropic or OpenAI",
-			"/static/img/en/01-mascotte.png", "/static/video/en/agentchi-companion.mp4", "docs/PRIVACY.md", `href="/?lang=fr"`}},
+			"/static/img/en/01-mascotte.webp", "/static/video/en/agentchi-companion.mp4", `href="/privacy"`, `href="/?lang=fr"`,
+			"<title>Claude Code &amp; Codex notifications on your Wear OS watch", `id="faq"`, "<summary>Does Agentchi work on my Galaxy Watch?</summary>"}},
 		"/fr/": {"fr", []string{`<html lang="fr"`, "Paramètres › Serveur › Nouveau code", "AGENTCHI_CODE=&lt;ton code&gt;", "approuve ceux d'Agentchi", "sans lien avec Anthropic ni OpenAI",
-			"/static/img/fr/01-mascotte.png", "/static/video/fr/agentchi-companion.mp4", "docs/PRIVACY.fr.md", `href="/?lang=en"`}},
+			"/static/img/fr/01-mascotte.webp", "/static/video/fr/agentchi-companion.mp4", `href="/fr/privacy"`, `href="/?lang=en"`,
+			"<title>Notifications Claude Code et Codex sur ta montre Wear OS", `id="faq"`, "<summary>Est-ce gratuit ?</summary>"}},
 	} {
 		resp, page := getHome(t, env.url+path)
 		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
@@ -144,12 +146,17 @@ func TestReferencement(t *testing.T) {
 		if strings.Contains(page, "noindex") || resp.Header.Get("X-Robots-Tag") != "" {
 			t.Errorf("%s : serveur public en noindex", path)
 		}
-		m := regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`).FindStringSubmatch(page)
-		var ld struct {
-			Graph []map[string]any `json:"@graph"`
+		ld := structuredNodes(t, page)
+		if app := ld["SoftwareApplication"]; app == nil || app["url"] != canonical {
+			t.Errorf("%s : appli absente des données structurées : %v", path, ld)
 		}
-		if m == nil || json.Unmarshal([]byte(m[1]), &ld) != nil || len(ld.Graph) != 2 || ld.Graph[0]["url"] != canonical {
-			t.Errorf("%s : données structurées invalides : %v", path, m)
+		for _, typ := range []string{"WebSite", "Organization", "VideoObject"} {
+			if ld[typ] == nil {
+				t.Errorf("%s : %s absent des données structurées", path, typ)
+			}
+		}
+		if faq, _ := ld["FAQPage"]["mainEntity"].([]any); len(faq) != len(homeFAQ("en")) {
+			t.Errorf("%s : FAQPage avec %d questions", path, len(faq))
 		}
 	}
 
@@ -159,7 +166,9 @@ func TestReferencement(t *testing.T) {
 	}
 	resp, sitemap := getHome(t, public.URL+"/sitemap.xml")
 	if resp.StatusCode != http.StatusOK || xml.Unmarshal([]byte(sitemap), new(struct{})) != nil ||
-		strings.Count(sitemap, "<loc>") != 2 || !strings.Contains(sitemap, `hreflang="fr" href="https://agentchi.dev/fr/"`) {
+		strings.Count(sitemap, "<loc>") != 2*(1+len(guides)) || strings.Count(sitemap, "<lastmod>") != 2*(1+len(guides)) ||
+		!strings.Contains(sitemap, `hreflang="fr" href="https://agentchi.dev/fr/"`) ||
+		!strings.Contains(sitemap, `<loc>https://agentchi.dev/fr/claude-code-notifications</loc>`) {
 		t.Errorf("sitemap.xml : %d %s", resp.StatusCode, sitemap)
 	}
 
@@ -177,6 +186,127 @@ func TestReferencement(t *testing.T) {
 	}
 }
 
+// structuredNodes : les nœuds schema.org d'une page, par type.
+func structuredNodes(t *testing.T, page string) map[string]map[string]any {
+	t.Helper()
+	m := regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`).FindStringSubmatch(page)
+	var ld struct {
+		Graph []map[string]any `json:"@graph"`
+	}
+	if m == nil || json.Unmarshal([]byte(m[1]), &ld) != nil {
+		t.Fatalf("données structurées invalides : %v", m)
+	}
+	nodes := map[string]map[string]any{}
+	for _, n := range ld.Graph {
+		nodes[n["@type"].(string)] = n
+	}
+	return nodes
+}
+
+// Guides : une adresse par langue, balises de référencement, données structurées et commandes avec l'adresse du serveur.
+func TestGuides(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	public := httptest.NewServer(NewServer(Config{PublicURL: "https://agentchi.dev", Indexable: true}, store, &fakePusher{}))
+	t.Cleanup(public.Close)
+
+	for _, g := range guides {
+		for _, lang := range langs {
+			path := pagePath(lang, g.slug)
+			resp, page := getHome(t, public.URL+path)
+			if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Language") != lang {
+				t.Fatalf("%s : statut %d, langue %q", path, resp.StatusCode, resp.Header.Get("Content-Language"))
+			}
+			for _, want := range []string{
+				`<html lang="` + lang + `"`,
+				`<link rel="canonical" href="https://agentchi.dev` + path + `">`,
+				`<link rel="alternate" hreflang="en" href="https://agentchi.dev/` + g.slug + `">`,
+				`<link rel="alternate" hreflang="fr" href="https://agentchi.dev/fr/` + g.slug + `">`,
+				`<link rel="alternate" hreflang="x-default" href="https://agentchi.dev/` + g.slug + `">`,
+				`<meta property="og:type" content="article">`,
+				"<h1>",
+				dateLabel(lang, g.updated),
+			} {
+				if !strings.Contains(page, want) {
+					t.Errorf("%s ne contient pas %q", path, want)
+				}
+			}
+			if strings.Contains(page, "{{") || strings.Contains(page, "noindex") {
+				t.Errorf("%s : gabarit mal rendu ou noindex", path)
+			}
+			ld := structuredNodes(t, page)
+			doc := ld["TechArticle"]
+			if !g.article {
+				doc = ld["WebPage"]
+			}
+			if doc == nil || doc["url"] != "https://agentchi.dev"+path || doc["headline"] == "" || doc["dateModified"] != g.updated ||
+				strings.ContainsAny(doc["headline"].(string)+doc["description"].(string), "<>&") {
+				t.Errorf("%s : page absente ou mal décrite dans les données structurées : %v", path, doc)
+			}
+			if ld["BreadcrumbList"] == nil {
+				t.Errorf("%s : fil d'Ariane absent des données structurées", path)
+			}
+		}
+	}
+	_, page := getHome(t, public.URL+"/claude-code-notifications")
+	if !strings.Contains(page, "--config server_url=https://agentchi.dev --config code=XXXX-XXXX-XXXX") {
+		t.Errorf("la commande du plugin ne contient pas l'adresse du serveur")
+	}
+	if d := dateLabel("fr", "2026-10-21"); d != "21 octobre 2026" {
+		t.Errorf("date française : %q", d)
+	}
+	for _, path := range []string{"/fr/x", "/claude-code-notifications/", "/fr/privacy/"} {
+		if resp, _ := getHome(t, public.URL+path); resp.StatusCode != http.StatusNotFound {
+			t.Errorf("%s : statut %d", path, resp.StatusCode)
+		}
+	}
+}
+
+// Chaque lien interne des pages (accueil et guides) mène à une page, et chaque fichier statique cité existe.
+func TestLiensInternes(t *testing.T) {
+	env := newTestEnv(t, filepath.Join(t.TempDir(), "state.json"))
+	pages := []string{"/", "/fr/"}
+	for _, g := range guides {
+		for _, lang := range langs {
+			pages = append(pages, pagePath(lang, g.slug))
+		}
+	}
+	for _, path := range pages {
+		_, page := getHome(t, env.url+path)
+		for _, m := range regexp.MustCompile(`(?:href|src)="(/[^"#?]*)`).FindAllStringSubmatch(page, -1) {
+			link := m[1]
+			if strings.HasPrefix(link, "/static/") {
+				if _, err := webFiles.ReadFile("web" + link); err != nil {
+					t.Errorf("%s cite %s, absent de web/static", path, link)
+				}
+				continue
+			}
+			if resp, _ := getHome(t, env.url+link); resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusFound {
+				t.Errorf("%s : lien %s, statut %d", path, link, resp.StatusCode)
+			}
+		}
+	}
+}
+
+// La politique de confidentialité du site reprend docs/PRIVACY*.md : même date de mise à jour.
+func TestConfidentialiteSynchronisee(t *testing.T) {
+	g := findGuide("privacy")
+	for lang, file := range map[string]string{"en": "PRIVACY.md", "fr": "PRIVACY.fr.md"} {
+		doc, err := os.ReadFile(filepath.Join("..", "docs", file))
+		if os.IsNotExist(err) {
+			t.Skip("docs absent")
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if date := dateLabel(lang, g.updated); !strings.Contains(string(doc), date) {
+			t.Errorf("docs/%s n'est pas daté du %s : mets à jour web/pages/privacy.%s.html et la date du guide", file, date, lang)
+		}
+	}
+}
+
 func TestFichiersStatiques(t *testing.T) {
 	env := newTestEnv(t, filepath.Join(t.TempDir(), "state.json"))
 	for path, typ := range map[string]string{
@@ -187,7 +317,9 @@ func TestFichiersStatiques(t *testing.T) {
 		"/static/img/icon-512.png":                "image/png",
 		"/static/video/en/agentchi-companion.mp4": "video/mp4",
 		"/static/video/fr/agentchi-companion.mp4": "video/mp4",
-		"/static/img/en/og.png":                   "image/png",
+		"/static/img/en/og.jpg":                   "image/jpeg",
+		"/static/img/fr/03-jouer.webp":            "image/webp",
+		"/static/page.js":                         "text/javascript",
 	} {
 		resp, err := http.Get(env.url + path)
 		if err != nil {

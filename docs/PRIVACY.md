@@ -2,7 +2,7 @@
 
 *Last updated: October 21, 2026*
 
-*[Version française](PRIVACY.fr.md)*
+*[Version française](PRIVACY.fr.md) · Also published at https://agentchi.dev/privacy (copy in `server/web/pages/privacy.en.html`: keep both in sync)*
 
 Agentchi is an unofficial app, not affiliated with Anthropic or OpenAI. It is a watch app (Wear OS), with no phone app.
 

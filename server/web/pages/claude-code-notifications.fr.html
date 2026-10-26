@@ -1,0 +1,55 @@
+{{define "title"}}Notifications Claude Code sur ta montre Wear OS{{end}}
+{{define "description"}}Reçois les demandes d'autorisation, les questions et les fins de tâche de Claude Code sur ta montre Wear OS, et réponds d'un geste. Terminal, IDE, appli Desktop, Remote Control et sessions cloud claude.ai/code.{{end}}
+
+{{define "content"}}<h1>Les notifications Claude Code sur ta montre</h1>
+<p class="doc-lead">Claude Code s'arrête et attend dès qu'il lui faut une autorisation, qu'il a une question ou qu'il a fini une tâche. Agentchi envoie chacun de ces moments sur ta montre Wear&nbsp;OS et te laisse y répondre, pour qu'une longue tâche ne reste pas bloquée pendant que tu es loin du clavier.</p>
+
+<div class="prose">
+  <h2>Pourquoi des notifications pour Claude Code</h2>
+  <p>Tu confies à Claude Code une tâche de vingt minutes, puis tu vas te faire un café. Au bout de deux minutes, il veut lancer <code>npm test</code> et attend ton feu vert. À ton retour, la tâche n'a pas avancé.</p>
+  <p>La cloche du terminal et les notifications du bureau ne servent que si tu es devant ton ordinateur. Agentchi passe par les <b>hooks</b> de Claude Code pour envoyer chaque événement sur ta montre, où que tu sois, et renvoie ta réponse à la session.</p>
+
+  <h2>Ce qui arrive sur ta montre</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Dans Claude Code</th><th scope="col">Sur la montre</th><th scope="col">Ce que tu peux faire</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Demande d'autorisation</th><td>L'outil et la commande, avec un compte à rebours</td><td>Autoriser, refuser avec ou sans raison, ou autoriser «&nbsp;toujours&nbsp;»</td></tr>
+        <tr><th scope="row">Question à choix</th><td>La question et ses options</td><td>En cocher une ou plusieurs, ou dicter une autre réponse</td></tr>
+        <tr><th scope="row">Plan à valider</th><td>Le plan, Markdown compris</td><td>L'approuver ou demander des changements</td></tr>
+        <tr><th scope="row">Tâche terminée</th><td>La fin du dernier message de l'agent, et Chi fait la fête</td><td>Répondre au clavier, à la voix ou par une réponse rapide</td></tr>
+        <tr><th scope="row">Tâche en échec</th><td>L'erreur, en notification</td><td>La lire d'un coup d'œil</td></tr>
+        <tr><th scope="row">Sous-agent terminé, contexte compacté</th><td>Notifications facultatives, désactivées par défaut</td><td>Les activer dans les réglages</td></tr>
+        <tr><th scope="row">Sessions qui démarrent et se terminent</th><td>L'écran <i>Sessions en cours</i></td><td>Voir qui travaille, qui t'attend, qui a fini</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Répondre depuis la montre est un réglage&nbsp;: active <b>Paramètres › Réponses › Répondre depuis la montre</b> quand tu quittes ton écran. La montre attend ta réponse jusqu'à cinq minutes&nbsp;; au-delà, la question reste sur l'ordinateur, comme sans Agentchi.</p>
+
+  <h2>L'installer en trois étapes</h2>
+  <ol>
+    <li><b>Installe l'appli sur ta montre</b>, ouvre-la, puis <b>Paramètres › Serveur › Connecter la montre</b>.</li>
+    <li><b>Crée un code</b>&nbsp;: <b>Paramètres › Serveur › Nouveau code</b> te donne un code <code>XXXX-XXXX-XXXX</code>. Prévois-en un par ordinateur, chacun se révoque depuis la montre.</li>
+    <li><b>Installe le plugin</b> sur ton ordinateur&nbsp;:</li>
+  </ol>
+  <div class="code"><pre><code>claude plugin install agentchi --marketplace Pelagoss/agentchi \
+  --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</code></pre><button type="button" class="copy">Copier</button></div>
+  <p>Le code est rangé dans le trousseau du système, pas dans <code>settings.json</code>. Le plugin a besoin de <code>curl</code>, fourni avec macOS, Linux et Windows&nbsp;10 et plus récents. Vérifie ensuite le tout avec <b>Paramètres › Serveur › Tester le push</b>.</p>
+
+  <h2>Terminal, IDE, Desktop, Remote Control et cloud</h2>
+  <p>Le plugin marche partout où Claude Code tourne sur ton ordinateur&nbsp;: dans le terminal, dans VS Code ou JetBrains, dans l'appli Desktop, et dans les sessions <b>Remote Control</b> que tu suis depuis claude.ai/code ou l'appli mobile Claude, puisqu'elles tournent toujours sur ta machine.</p>
+  <p>Les <b>sessions cloud</b> de claude.ai/code ne chargent pas les plugins. Pour elles, ajoute un hook <code>http</code> au <code>.claude/settings.json</code> du dépôt (<a href="/v1/cloud-settings.json">télécharger le bloc</a>), définis <code>AGENTCHI_CODE</code> dans les variables de l'environnement cloud et autorise <code>{{.Host}}</code> dans son accès réseau. Le <a href="/fr/#installer">guide d'installation</a> donne le bloc prêt à copier.</p>
+
+  <h2>Des notifications qui respectent tes nuits</h2>
+  <p>Heures calmes, <i>Ne pas déranger</i> et mode Coucher de la montre la rendent silencieuse. Les événements non urgents sont regroupés en un seul résumé&nbsp;; seuls passent ceux où ton agent est bloqué. Pour chaque type d'événement, tu choisis plein écran, notification normale ou discrète, motif de vibration et son.</p>
+
+  <h2>Et une mascotte qui vit avec tes sessions</h2>
+  <p>Chi, un compagnon pixel-art, fête chaque tâche terminée, gagne de l'expérience et débloque des accessoires. Il a aussi faim, et panique quand ton agent a besoin de toi. Ses jauges et tes séries donnent une raison douce de jeter un œil, pas une alerte de plus.</p>
+
+  <h2>Pour aller plus loin</h2>
+  <ul>
+    <li><a href="/fr/codex-notifications">Les notifications Codex sur ta montre</a></li>
+    <li><a href="/fr/alternatives">Agentchi face à ntfy, Pushover, aux bots Telegram et aux notifications du bureau</a></li>
+    <li><a href="/fr/privacy">Ce qui passe par le serveur</a></li>
+  </ul>
+</div>{{end}}

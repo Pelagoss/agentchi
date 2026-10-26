@@ -1,0 +1,41 @@
+{{define "title"}}Codex notifications on your Wear OS watch{{end}}
+{{define "description"}}Get OpenAI Codex task completions and permission requests on your Wear OS watch, and answer them with a tap. Works with the Codex CLI, app and IDE extension on macOS, Linux and WSL.{{end}}
+
+{{define "content"}}<h1>Codex notifications on your watch</h1>
+<p class="doc-lead">Codex can work on its own for a long while, until it needs your approval to run a command or reaches the end of its task. Agentchi forwards those moments to your Wear&nbsp;OS watch through Codex hooks, and sends your answer back, so you don't have to keep an eye on the terminal.</p>
+
+<div class="prose">
+  <h2>What lands on your watch</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">In Codex</th><th scope="col">On the watch</th><th scope="col">What you can do</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Permission request: command, file edit, MCP tool</th><td>What Codex wants to do, with a countdown</td><td>Allow or deny, with or without a reason</td></tr>
+        <tr><th scope="row">Task finished</th><td>The end of the agent's last message, and Chi celebrates</td><td>Reply with the keyboard, by voice or with a quick reply</td></tr>
+        <tr><th scope="row">Sessions starting and ending</th><td>The <i>Active sessions</i> screen</td><td>See which sessions are running</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Answering from the watch is a setting: turn on <b>Settings › Replies › Reply from the watch</b> when you leave your screen. The watch waits up to five minutes for your answer; after that, the request stays on the computer.</p>
+
+  <h2>Set it up</h2>
+  <p>On the watch, connect to the server and create a code (<b>Settings › Server › New code</b>), one per computer. Then, on your computer, register the hooks and make the code visible to Codex:</p>
+  <div class="code"><pre><code>curl -fsS {{.URL}}/v1/codex-hooks.json -o ~/.codex/hooks.json
+echo 'export AGENTCHI_CODE=XXXX-XXXX-XXXX' >> ~/.zshrc   # or ~/.bashrc</code></pre><button type="button" class="copy">Copy</button></div>
+  <ul>
+    <li><b>Already have a <code>~/.codex/hooks.json</code>?</b> Merge the two files instead of overwriting yours (<a href="/v1/codex-hooks.json">see Agentchi's hooks</a>).</li>
+    <li><b>Approve the hooks.</b> Codex ignores a hook until you've approved it: run <code>/hooks</code> in Codex and approve Agentchi's.</li>
+    <li><b>Prefer a plugin?</b> In the Codex desktop app, add the marketplace with <code>codex plugin marketplace add Pelagoss/agentchi</code>, then install <code>agentchi-codex</code> from the plugin directory. It reads the code from <code>AGENTCHI_CODE</code> and the server from <code>AGENTCHI_SERVER</code>.</li>
+  </ul>
+  <p>Finish with <b>Settings › Server › Test push</b> on the watch: if something is wrong, the watch shows the error.</p>
+
+  <h2>Where it works</h2>
+  <p>The Codex CLI, the Codex app and the IDE extension, on macOS, Linux and Windows through WSL: they all run the same hooks from <code>~/.codex/hooks.json</code>.</p>
+
+  <h2>Current limits</h2>
+  <ul>
+    <li>Codex's multiple-choice questions stay on the computer: Codex doesn't pass them to hooks.</li>
+    <li>In <i>Active sessions</i>, a Codex session doesn't switch back to “working” when you write to it, because Codex hooks don't report sent messages.</li>
+  </ul>
+  <p>Using Claude Code too? The same watch and the same server handle both: see <a href="/claude-code-notifications">Claude Code notifications</a>.</p>
+</div>{{end}}

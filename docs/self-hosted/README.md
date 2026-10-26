@@ -83,9 +83,11 @@ Behind a reverse proxy, let `POST /ask` requests stay open for 5 minutes (Traefi
 
 ### The home page
 
-Open your server's address: its home page introduces Agentchi and gives every command from the install guide, ready to copy, with **its** address. It's in English at `/` and in French at `/fr/`; browsers that prefer French (`Accept-Language`) are sent to `/fr/`, and the **FR** / **EN** link in the header switches language (`/?lang=fr`, `/?lang=en`), remembering the choice in a cookie. Screenshots, video and share image follow the language. It's embedded in the binary (`server/web/`: `home.en.html`, `home.fr.html`, and `seo.html` for the shared canonical, hreflang, Open Graph and structured data tags) along with its fonts, the mascot scripts (copied from `Stores/source`) and the intro video.
+Open your server's address: its home page introduces Agentchi and gives every command from the install guide, ready to copy, with **its** address. It's in English at `/` and in French at `/fr/`; browsers that prefer French (`Accept-Language`) are sent to `/fr/`, and the **FR** / **EN** link in the header switches language (`/?lang=fr`, `/?lang=en`), remembering the choice in a cookie. Screenshots, video and share image follow the language. It's embedded in the binary (`server/web/`: `home.en.html`, `home.fr.html`, `seo.html` for the shared canonical, hreflang, Open Graph and structured data tags, `layout.<lang>.html` for the shared header and footer) along with its fonts, the mascot scripts (copied from `Stores/source`) and the intro video.
 
-The server also serves `robots.txt`, and `sitemap.xml` when `CC_INDEXABLE=true`. Without it, the home page is sent with `noindex`: your instance stays reachable but out of search results.
+The server also serves guides in both languages, laid out by `server/web/guide.html` from `server/web/pages/<slug>.<lang>.html`: `/claude-code-notifications`, `/codex-notifications`, `/alternatives`, `/self-hosted` and `/privacy` (in French under `/fr/`). The privacy page repeats `docs/PRIVACY*.md`: when you change one, change the other and the date in `server/web.go`.
+
+The server also serves `robots.txt`, and `sitemap.xml` when `CC_INDEXABLE=true`. Without it, the pages are sent with `noindex`: your instance stays reachable but out of search results.
 
 ## 3. The watch
 

@@ -1,0 +1,45 @@
+{{define "title"}}Self-host the Agentchi server{{end}}
+{{define "description"}}Run your own Agentchi relay server for Claude Code and Codex notifications: a small open-source Go binary with no dependencies, deployed with Docker Compose, Kubernetes or on its own, with your own Firebase project.{{end}}
+
+{{define "content"}}<h1>Host your own Agentchi server</h1>
+<p class="doc-lead">By default, the watch and the plugins go through agentchi.dev, already set up and free to use. If you'd rather keep everything under your control, the relay server is open source and runs anywhere.</p>
+
+<div class="prose">
+  <h2>What the server does</h2>
+  <p>It receives the events your Claude Code and Codex hooks send, and pushes each one right away to the right watch through Firebase Cloud Messaging. It doesn't keep events: it only stores registered watches and a hash of their codes. A question waiting for your answer lives in its memory for five minutes at most. It's <b>multi-user</b>: each watch registers itself and only receives its own events.</p>
+  <p>It's a single Go binary with no dependencies, which also serves the home page and these guides with its own address in every command.</p>
+
+  <h2>What you need</h2>
+  <ul>
+    <li><b>A Firebase project</b> (free) with an Android app for the package <code>fr.codingpacer.agentchi</code>, and a service account key so the server can send pushes.</li>
+    <li><b>A watch build tied to that project</b>: push tokens belong to a Firebase project, so the watch app has to be built with your project's values. The repository's CI produces that APK, which installs with <code>adb</code>.</li>
+    <li><b>A domain name</b> pointing at your server, with ports 80 and 443 open.</li>
+  </ul>
+
+  <h2>Docker Compose</h2>
+  <p>Caddy obtains the HTTPS certificate on its own. Put your service account key in <code>server/firebase-service-account.json</code>, then:</p>
+  <div class="code"><pre><code>git clone https://github.com/Pelagoss/agentchi && cd agentchi/server
+chmod 644 firebase-service-account.json    # readable by the container
+CC_DOMAIN=agentchi.example.com docker compose up -d</code></pre><button type="button" class="copy">Copy</button></div>
+
+  <h2>Without Docker</h2>
+  <p>Run <code>go build</code> in <code>server/</code> and start the binary behind your reverse proxy. Let <code>POST /ask</code> requests stay open for five minutes: Traefik and Caddy do so by default.</p>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Variable</th><th scope="col">Role</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>CC_FCM_CREDENTIALS</code></th><td>Path to the service account key, required for pushes</td></tr>
+        <tr><th scope="row"><code>CC_ADDR</code></th><td>Listen address, <code>:8080</code> by default</td></tr>
+        <tr><th scope="row"><code>CC_DATA</code></th><td>State file, <code>data/state.json</code> by default</td></tr>
+        <tr><th scope="row"><code>CC_PUBLIC_URL</code></th><td>Public address shown in the commands, otherwise taken from the request</td></tr>
+        <tr><th scope="row"><code>CC_TRUST_PROXY</code></th><td><code>true</code> behind a reverse proxy</td></tr>
+        <tr><th scope="row"><code>CC_MAX_DEVICES</code></th><td>Maximum number of watches, 1000 by default, 0 for no limit</td></tr>
+        <tr><th scope="row"><code>CC_INDEXABLE</code></th><td>Lets search engines index the site. Leave it unset: your instance stays reachable but out of search results</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Connect the watch and your agents</h2>
+  <p>On the watch, <b>Settings › Server</b>: enter your server's address and tap <b>Connect the watch</b>. Then open your server's home page: it gives the plugin command, the cloud session block and the Codex hooks with <b>its</b> address. Finish with <b>Settings › Server › Test push</b>, which shows the error on the watch if a push doesn't go through.</p>
+  <p>The <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/self-hosted/README.md">full self-hosting guide</a> covers the Firebase values, building the watch app, and the Kubernetes deployment.</p>
+</div>{{end}}

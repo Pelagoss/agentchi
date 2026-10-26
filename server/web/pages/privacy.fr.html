@@ -1,0 +1,25 @@
+{{define "title"}}Politique de confidentialité{{end}}
+{{define "description"}}Les données qu'Agentchi traite sur ta montre Wear OS et sur son serveur relais, ce qu'il ne fait jamais, et comment les supprimer.{{end}}
+
+{{define "content"}}<h1>Politique de confidentialité</h1>
+<p class="doc-lead">Agentchi est une application non officielle, sans lien avec Anthropic ni OpenAI. C'est une appli montre (Wear&nbsp;OS), sans appli téléphone.</p>
+
+<div class="prose">
+  <h2>Données traitées</h2>
+  <p><b>Appli montre.</b> Elle affiche les événements de tes sessions Claude Code et Codex et conserve sur la montre un historique des 30 derniers, ainsi que l'état de la mascotte et tes réglages.</p>
+  <p><b>Serveur Agentchi.</b> La montre se connecte au serveur dont tu lui donnes l'adresse, en général le tien (dossier <code>server/</code> du projet). Les hooks Claude Code et Codex de tes ordinateurs et de tes sessions cloud y envoient leurs événements&nbsp;: nom du dossier, identifiant court de session, nom donné à l'ordinateur, 300 premiers caractères du dernier message de l'agent. Quand tu écris à l'agent, le hook signale l'envoi d'un message (pour l'écran «&nbsp;Sessions en cours&nbsp;»)&nbsp;: le serveur ne transmet pas ton texte à la montre. Le serveur ne les stocke pas&nbsp;: il les transmet aussitôt à ta montre par <b>Firebase Cloud Messaging</b> (service de Google), qui les garde au plus 24 heures si la montre est hors ligne. Pour cela, la montre communique au serveur son jeton FCM. Le serveur ne conserve qu'une empreinte des codes d'appairage et du jeton d'accès de la montre. <i>Paramètres › Serveur › Déconnecter la montre</i> supprime du serveur la montre, ses codes et son jeton FCM.</p>
+  <p><b>Réponses depuis la montre.</b> Si tu actives <i>Répondre depuis la montre</i>, les questions des agents passent aussi par le serveur et Firebase&nbsp;: outil et commande concernés, questions et options proposées, plan ou fin du dernier message de l'agent (1&nbsp;500 caractères au plus). Ta réponse (choix, texte saisi ou dicté) repart de la montre vers le serveur, qui la transmet à l'agent (Claude Code ou Codex). Une question en attente ne reste qu'en mémoire du serveur, cinq minutes au plus, et Firebase ne la garde pas au-delà.</p>
+
+  <h2>Ce que nous ne faisons pas</h2>
+  <ul>
+    <li>Aucune donnée n'est envoyée au développeur de l'application.</li>
+    <li>Aucune analyse statistique, publicité ni traceur.</li>
+    <li>Aucune donnée n'est vendue ni partagée à des fins commerciales.</li>
+  </ul>
+
+  <h2>Conservation et suppression</h2>
+  <p>Les données restent sur tes appareils et sur le serveur que tu as choisi. <i>Historique → Tout effacer</i> vide l'historique de la montre. Désinstaller l'appli supprime les données de la montre.</p>
+
+  <h2>Contact</h2>
+  <p>Pour toute question&nbsp;: ouvre un ticket sur <a href="https://github.com/Pelagoss/agentchi/issues">github.com/Pelagoss/agentchi/issues</a>.</p>
+</div>{{end}}

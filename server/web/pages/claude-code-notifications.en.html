@@ -1,0 +1,55 @@
+{{define "title"}}Claude Code notifications on your Wear OS watch{{end}}
+{{define "description"}}Get Claude Code permission requests, questions and finished tasks on your Wear OS watch, and answer them with a tap. Works in the terminal, IDE, Desktop app, Remote Control and claude.ai/code cloud sessions.{{end}}
+
+{{define "content"}}<h1>Claude Code notifications on your watch</h1>
+<p class="doc-lead">Claude Code stops and waits whenever it needs a permission, has a question or finishes a task. Agentchi sends each of those moments to your Wear&nbsp;OS watch and lets you answer from there, so a long task doesn't sit idle while you're away from your keyboard.</p>
+
+<div class="prose">
+  <h2>Why Claude Code needs notifications</h2>
+  <p>You hand Claude Code a task that takes twenty minutes, then get up to make coffee. Two minutes in, it wants to run <code>npm test</code> and waits for your OK. When you come back, the task hasn't moved.</p>
+  <p>The terminal bell and desktop notifications only help when you're at your computer. Agentchi uses Claude Code <b>hooks</b> to forward each event to your watch, wherever you are, and sends your answer back to the session.</p>
+
+  <h2>What lands on your watch</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">In Claude Code</th><th scope="col">On the watch</th><th scope="col">What you can do</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Permission request</th><td>The tool and the command, with a countdown</td><td>Allow, deny with or without a reason, or allow “always”</td></tr>
+        <tr><th scope="row">Question with options</th><td>The question and its options</td><td>Tick one or several, or dictate another answer</td></tr>
+        <tr><th scope="row">Plan to review</th><td>The plan, Markdown included</td><td>Approve it or ask for changes</td></tr>
+        <tr><th scope="row">Task finished</th><td>The end of the agent's last message, and Chi celebrates</td><td>Reply with the keyboard, by voice or with a quick reply</td></tr>
+        <tr><th scope="row">Task failed</th><td>The error, as a notification</td><td>Read it at a glance</td></tr>
+        <tr><th scope="row">Subagent finished, context compacted</th><td>Optional notifications, off by default</td><td>Turn them on in the settings</td></tr>
+        <tr><th scope="row">Sessions starting and ending</th><td>The <i>Active sessions</i> screen</td><td>See who's working, who's waiting for you, who's done</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Answering from the watch is a setting: turn on <b>Settings › Replies › Reply from the watch</b> when you leave your screen. The watch waits up to five minutes for your answer; after that, the question stays on the computer, just as it would without Agentchi.</p>
+
+  <h2>Set it up in three steps</h2>
+  <ol>
+    <li><b>Install the app on your watch</b>, open it, then <b>Settings › Server › Connect the watch</b>.</li>
+    <li><b>Create a code</b>: <b>Settings › Server › New code</b> gives you an <code>XXXX-XXXX-XXXX</code> code. Use one per computer, each can be revoked from the watch.</li>
+    <li><b>Install the plugin</b> on your computer:</li>
+  </ol>
+  <div class="code"><pre><code>claude plugin install agentchi --marketplace Pelagoss/agentchi \
+  --config server_url={{.URL}} --config code=XXXX-XXXX-XXXX</code></pre><button type="button" class="copy">Copy</button></div>
+  <p>The code is stored in the system keychain, not in <code>settings.json</code>. The plugin needs <code>curl</code>, which ships with macOS, Linux and Windows&nbsp;10 and later. Then check it all with <b>Settings › Server › Test push</b>.</p>
+
+  <h2>Terminal, IDE, Desktop, Remote Control and the cloud</h2>
+  <p>The plugin works wherever Claude Code runs on your computer: in the terminal, in VS Code or JetBrains, in the Desktop app, and in <b>Remote Control</b> sessions you follow from claude.ai/code or the Claude mobile app, since those still run on your machine.</p>
+  <p><b>Cloud sessions</b> on claude.ai/code don't load plugins. For those, add an <code>http</code> hook to the repo's <code>.claude/settings.json</code> (<a href="/v1/cloud-settings.json">download the block</a>), set <code>AGENTCHI_CODE</code> in the cloud environment's variables, and allow <code>{{.Host}}</code> in its network access. The <a href="/#install">install guide</a> has the block ready to copy.</p>
+
+  <h2>Notifications that respect your nights</h2>
+  <p>Quiet hours, <i>Do not disturb</i> and the watch's Bedtime mode silence the watch. Non-urgent events are bundled into a single summary; only the ones where your agent is blocked get through. For each kind of event, you choose full screen, a regular or silent notification, the vibration pattern and the sound.</p>
+
+  <h2>And a mascot that lives with your sessions</h2>
+  <p>Chi, a pixel-art companion, celebrates each finished task, earns experience and unlocks accessories. It also gets hungry, and panics when your agent needs you. Its gauges and your streaks are a gentle reason to check in, not one more alert.</p>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href="/codex-notifications">Codex notifications on your watch</a></li>
+    <li><a href="/alternatives">Agentchi compared with ntfy, Pushover, Telegram bots and desktop notifications</a></li>
+    <li><a href="/privacy">What goes through the server</a></li>
+  </ul>
+</div>{{end}}

@@ -2,7 +2,7 @@
 
 *Dernière mise à jour : 21 octobre 2026*
 
-*[English version](PRIVACY.md)*
+*[English version](PRIVACY.md) · Aussi publiée sur https://agentchi.dev/fr/privacy (copie dans `server/web/pages/privacy.fr.html` : garder les deux synchronisées)*
 
 Agentchi est une application non officielle, sans lien avec Anthropic ni OpenAI. C'est une appli montre (Wear OS), sans appli téléphone.
 

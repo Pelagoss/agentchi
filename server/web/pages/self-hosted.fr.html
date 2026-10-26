@@ -1,0 +1,45 @@
+{{define "title"}}Héberger le serveur Agentchi{{end}}
+{{define "description"}}Fais tourner ton propre serveur relais Agentchi pour les notifications Claude Code et Codex : un petit binaire Go open source sans dépendance, avec Docker Compose, Kubernetes ou seul, et ton propre projet Firebase.{{end}}
+
+{{define "content"}}<h1>Héberger ton serveur Agentchi</h1>
+<p class="doc-lead">Par défaut, la montre et les plugins passent par agentchi.dev, déjà configuré et gratuit. Si tu préfères tout garder en main, le serveur relais est open source et tourne partout.</p>
+
+<div class="prose">
+  <h2>Ce que fait le serveur</h2>
+  <p>Il reçoit les événements qu'envoient tes hooks Claude Code et Codex, et pousse chacun aussitôt vers la bonne montre par Firebase Cloud Messaging. Il ne garde pas les événements&nbsp;: il ne stocke que les montres enregistrées et une empreinte de leurs codes. Une question qui attend ta réponse reste dans sa mémoire cinq minutes au plus. Il est <b>multi-utilisateur</b>&nbsp;: chaque montre s'enregistre seule et ne reçoit que ses propres événements.</p>
+  <p>C'est un seul binaire Go sans dépendance, qui sert aussi la page d'accueil et ces guides, avec sa propre adresse dans chaque commande.</p>
+
+  <h2>Ce qu'il te faut</h2>
+  <ul>
+    <li><b>Un projet Firebase</b> (gratuit) avec une appli Android pour le package <code>fr.codingpacer.agentchi</code>, et une clé de compte de service pour que le serveur envoie les pushs.</li>
+    <li><b>Une version de l'appli montre liée à ce projet</b>&nbsp;: les jetons de push appartiennent à un projet Firebase, l'appli montre doit donc être compilée avec les valeurs de ton projet. La CI du dépôt produit cet APK, qui s'installe avec <code>adb</code>.</li>
+    <li><b>Un nom de domaine</b> qui pointe vers ton serveur, ports 80 et 443 ouverts.</li>
+  </ul>
+
+  <h2>Docker Compose</h2>
+  <p>Caddy obtient seul le certificat HTTPS. Place ta clé de compte de service dans <code>server/firebase-service-account.json</code>, puis&nbsp;:</p>
+  <div class="code"><pre><code>git clone https://github.com/Pelagoss/agentchi && cd agentchi/server
+chmod 644 firebase-service-account.json    # lisible par le conteneur
+CC_DOMAIN=agentchi.example.com docker compose up -d</code></pre><button type="button" class="copy">Copier</button></div>
+
+  <h2>Sans Docker</h2>
+  <p>Lance <code>go build</code> dans <code>server/</code> et démarre le binaire derrière ton reverse proxy. Laisse les requêtes <code>POST /ask</code> ouvertes cinq minutes&nbsp;: Traefik et Caddy le font par défaut.</p>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Variable</th><th scope="col">Rôle</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>CC_FCM_CREDENTIALS</code></th><td>Chemin de la clé du compte de service, obligatoire pour les pushs</td></tr>
+        <tr><th scope="row"><code>CC_ADDR</code></th><td>Adresse d'écoute, <code>:8080</code> par défaut</td></tr>
+        <tr><th scope="row"><code>CC_DATA</code></th><td>Fichier d'état, <code>data/state.json</code> par défaut</td></tr>
+        <tr><th scope="row"><code>CC_PUBLIC_URL</code></th><td>Adresse publique affichée dans les commandes, sinon déduite de la requête</td></tr>
+        <tr><th scope="row"><code>CC_TRUST_PROXY</code></th><td><code>true</code> derrière un reverse proxy</td></tr>
+        <tr><th scope="row"><code>CC_MAX_DEVICES</code></th><td>Nombre maximal de montres, 1000 par défaut, 0 pour aucune limite</td></tr>
+        <tr><th scope="row"><code>CC_INDEXABLE</code></th><td>Laisse les moteurs de recherche indexer le site. Ne la définis pas&nbsp;: ton instance reste accessible mais hors des résultats de recherche</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Connecter la montre et tes agents</h2>
+  <p>Sur la montre, <b>Paramètres › Serveur</b>&nbsp;: saisis l'adresse de ton serveur et touche <b>Connecter la montre</b>. Ouvre ensuite la page d'accueil de ton serveur&nbsp;: elle donne la commande du plugin, le bloc des sessions cloud et les hooks Codex avec <b>son</b> adresse. Termine par <b>Paramètres › Serveur › Tester le push</b>, qui affiche l'erreur sur la montre si un push ne passe pas.</p>
+  <p>Le <a href="https://github.com/Pelagoss/agentchi/blob/master/docs/self-hosted/README.md">guide complet d'auto-hébergement</a> (en anglais) détaille les valeurs Firebase, la compilation de l'appli montre et le déploiement Kubernetes.</p>
+</div>{{end}}
